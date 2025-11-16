@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 17:27:51 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/16 21:28:34 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,12 +33,14 @@ Server::Server()
 
 	configs.push_back(config);
 	services.insert(std::make_pair(s.getSocketFd(), s));
+	std::cout << "socket fd for service " << s.getSocketFd() << std::endl;
 	epollFd = epoll_create(100);
 	if (epollFd < 0)
 		std::cout << "error create epoll" << std::endl;
-	evt.data.fd = epollFd;
+	std::cout << "epoll fd " << epollFd << std::endl;
+	evt.data.fd = s.getSocketFd();
 	evt.events = EPOLLIN | EPOLLOUT;
-	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, services.at(0).getSocketFd(), &evt) < 0)
+	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, s.getSocketFd(), &evt) < 0)
 		std::cout << "error add socket to epoll" << std::endl;
 }
 
@@ -57,24 +59,24 @@ void	Server::run()
 	while (true)
 	{
 		numFd = epoll_wait(epollFd, incomingEvt, 100, 1000);
-		if (numFd > 0)
+		if (numFd < 0)
+			{}//throw error
+		for (int i = 0; i < numFd; ++i)
 		{
-			for (int i = 0; i < numFd; ++i)
+			evt = incomingEvt[i];
+			if (evt.events & EPOLLIN)
 			{
-				evt = incomingEvt[i];
-				if (evt.events & EPOLLIN)
+				if (clients.count(evt.data.fd) == 0)
 				{
-					if (clients.count(evt.data.fd) == 0)
-					{
-						if (!addNewConn(evt, *services.at(evt.data.fd).getAddrInfo()))
-							std::cout << "error accept new socket to epoll" << std::endl;
-					}
-					else
-						clients[evt.data.fd].recvData(&evt);
+					std::cout << "incoming fd " << evt.data.fd << std::endl;
+					if (!addNewConn(evt, *services.at(evt.data.fd).getAddrInfo()))
+						std::cout << "error accept new socket to epoll" << std::endl;
 				}
-				else if (evt.events & EPOLLOUT)
-					clients[evt.data.fd].sendData(&evt);
+				else
+					clients[evt.data.fd].recvData(&evt);
 			}
+			else if (evt.events & EPOLLOUT)
+				clients[evt.data.fd].sendData(&evt);
 		}
 	}
 }
@@ -91,6 +93,7 @@ bool Server::addNewConn(struct epoll_event evt, struct addrinfo addr)
 		std::cout << "error accept new connection" << std::endl;
 		return false;
 	}
+	std::cout << "new connection fd " << newFd << std::endl;
 	clients[newFd] = c;
 	newEvt.data.fd = newFd;
 	newEvt.events = EPOLLIN | EPOLLOUT;

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 17:30:34 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/16 21:21:19 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,12 +43,10 @@ Service::Service(Config config)
 	addr.ai_protocol = 0;
 	if (getaddrinfo("127.0.0.1", "8080", &addr, &addrInfo))
 		std::cout << "error get addrinfo" << std::endl;
-	addrLen = addrInfo->ai_addrlen;
-	std::cout<< addrLen << std::endl;
 	socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
 	if (socketFd < 0)
 		std::cout << "error create socket" << std::endl;
-	std::cout<< socketFd << std::endl;
+	std::cout<< "SocketFD " << socketFd << std::endl;
 	if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &op, sizeof(op)) < 0)
 		std::cout << "error set socket op" << std::endl;
 	if (bind(socketFd, addrInfo->ai_addr, addrInfo->ai_addrlen) < 0)

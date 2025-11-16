@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 17:29:30 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/16 23:29:55 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,15 @@ int	Client::sendData(struct epoll_event *evt)
 	std::string			str;
 	std::string			content;
 	std::stringstream	strStream;
-	Bytes::iterator 	it;
 
-	///should look for complete request
-	it = std::search(incomingData.begin(), incomingData.end(), DOUBLE_CRLF.begin(), DOUBLE_CRLF.end());
-	if (it != incomingData.end())
+	if (!requests.empty())
 	{
+		requests.pop_front();
+		responses.push_back(Response());
+	}
+	if (!responses.empty())
+	{
+		responses.pop_front();
 		content = "<!DOCTYPE html>"
 					"<html>"
 					"<head>"
@@ -50,12 +53,7 @@ int	Client::sendData(struct epoll_event *evt)
 		str += strStream.str();
 		str += "\r\n\r\n";
 		str += content;
-		std::cout << "request" << std::endl;
-		for (size_t i = 0; i < incomingData.size(); ++i)
-			std::cout << incomingData[i];
-		std::cout << std::endl;
 		std::cout << "sending out data" << std::endl;
-		incomingData = std::vector<unsigned char>(it + 4, incomingData.end());
 		if (send(evt->data.fd, str.c_str(), str.length(), 0) < 0)
 			std::cout << "error send data out" << std::endl;
 	}
@@ -73,10 +71,11 @@ int Client::recvData(struct epoll_event *evt)
 	if (readSize > 0)
 	{
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
-		for (size_t i = 0; i < incomingData.size(); ++i)
-			std::cout << incomingData[i];
-		std::cout << std::endl;
+		// for (size_t i = 0; i < incomingData.size(); ++i)
+		// 	std::cout << incomingData[i];
+		// std::cout << std::endl;
 	}
+	processData();
 	return readSize;
 }
 
@@ -89,15 +88,22 @@ Bytes::const_iterator	&Client::searchForNewLine(Bytes::const_iterator &it)
 void	Client::processData()
 {
 	Bytes::const_iterator	it;
-	Request					*req;
 
 	while (searchForNewLine(it) != incomingData.end())
 	{
-		if (requests.empty() || requests.back().complete())
-			requests.push_back(Request());
-		req = &requests.back();
-		req->appendData(incomingData, std::distance(incomingData.cbegin(), it));
-		incomingData = Bytes(it + 2, incomingData.cend());
+		try
+		{
+			if (requests.empty() || requests.back().complete())
+				requests.push_back(Request(incomingData.begin(), incomingData.end()));
+			requests.back().parseRequest();
+			incomingData = Bytes(requests.back().getDataStart(), incomingData.cend());
+			if (requests.back().complete())
+				requests.back().printRequest();
+		}
+		catch(const std::exception& e)
+		{
+			std::cerr << e.what() << '\n';
+		}
 	}
 }
 

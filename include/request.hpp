@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 16:31:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/16 23:24:28 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,18 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <utility>
+#include <iostream>
 #include "utils.hpp"
-
 
 class Request
 {
+	static inline std::vector<std::string>	validMethod = {"POST", "GET", "DELETE"};
+	static inline std::vector<std::string>	validHttpVersion = {"HTTP/1.1"};
+
 	enum reqStatus
 	{
-		METHOD,
+		METHOD = 0,
 		ROUTE,
 		HTTPVERSION,
 		HEADERS,
@@ -35,19 +39,21 @@ class Request
 		std::string							httpVer;
 		std::map<std::string, std::string>	headers;
 		Bytes								body;
-		Bytes								incomingData;
+		Bytes::const_iterator 				newDataStart;
+		Bytes::const_iterator 				newDataEnd;
 		int									errorCode;
-		reqStatus							requestStatus;
-	public:
+		int									requestStatus;
 		Request();
+	public:
+		Request(Bytes::const_iterator newDataStart, Bytes::const_iterator newDataEnd);
 		~Request();
-		void										parseMethod(const Bytes &newData);
-		void										parseRoute(const Bytes &newData);
-		void										parseHttpVersion(const Bytes &newData);
-		void										parseRequestLine(const Bytes &newData);
-		void										parseRequest(const Bytes &newData);
+		std::string									parseReqLineSegment(const Bytes &delimiter);
+		void										parseRequestHeader();
+		void										parseBody();
+		void										parseRequestLine();
+		void										parseRequest();
 		bool										complete();
-		void										appendData(Bytes &newData, size_t size);
+		void										printRequest();
 		const std::string							&getMethod();
 		const std::string							&getRoute();
 		const std::string							&getHttpVer();
@@ -55,4 +61,8 @@ class Request
 		const Bytes									&getBody();
 		const int									&getErrorCode();
 		const reqStatus								&getReqStatus();
+		Bytes::const_iterator						&getDataStart();
+		Bytes::const_iterator						&getDataEnd();
+		void										setDataStart(Bytes::const_iterator &s);
+		void										setDataEnd(Bytes::const_iterator &e);
 };
