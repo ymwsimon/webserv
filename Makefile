@@ -19,8 +19,7 @@ OBJ_DIR = obj
 
 INC_DIR = include
 
-FLAGS = -Wall -Werror -Wextra -g
-# FLAGS = -Wall -Werror -Wextra --std=c++98
+FLAGS = -Wall -Werror -Wextra -g -std=c++98
 
 CC = g++
 

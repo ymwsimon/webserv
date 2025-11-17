@@ -6,10 +6,9 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 23:29:55 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/17 14:13:47 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 #include "../include/client.hpp"
 #include "../include/utils.hpp"
@@ -24,21 +23,13 @@ Client::~Client()
 	
 }
 
-int	Client::sendData(struct epoll_event *evt)
+std::string	staticPage()
 {
 	std::string			str;
 	std::string			content;
 	std::stringstream	strStream;
 
-	if (!requests.empty())
-	{
-		requests.pop_front();
-		responses.push_back(Response());
-	}
-	if (!responses.empty())
-	{
-		responses.pop_front();
-		content = "<!DOCTYPE html>"
+	content = "<!DOCTYPE html>"
 					"<html>"
 					"<head>"
 					"<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">"
@@ -46,16 +37,33 @@ int	Client::sendData(struct epoll_event *evt)
 					"<body>"
 					"Testing"
 					"</body></html>";
-		str = "HTTP/1.1 200 OK\r\n"
-				"Content-Type: text/html\r\n"
-				"Content-Length: ";
-		strStream << content.length();
-		str += strStream.str();
-		str += "\r\n\r\n";
-		str += content;
+	str = "HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/html\r\n"
+			"Content-Length: ";
+	strStream << content.length();
+	str += strStream.str();
+	str += "\r\n\r\n";
+	str += content;
+	return str;
+}
+
+int	Client::sendData(struct epoll_event *evt)
+{
+	std::string			content;
+
+	if (!requests.empty() && requests.front().complete())
+	{
+		requests.front().printRequest();
+		requests.pop_front();
+		responses.push_back(Response());
+	}
+	if (!responses.empty())
+	{
+		content = staticPage();
 		std::cout << "sending out data" << std::endl;
-		if (send(evt->data.fd, str.c_str(), str.length(), 0) < 0)
+		if (send(evt->data.fd, content.c_str(), content.length(), 0) < 0)
 			std::cout << "error send data out" << std::endl;
+		responses.pop_front();
 	}
 	return 1;
 }
@@ -95,10 +103,16 @@ void	Client::processData()
 		{
 			if (requests.empty() || requests.back().complete())
 				requests.push_back(Request(incomingData.begin(), incomingData.end()));
+			else
+			{
+				requests.back().setDataStart(incomingData.begin());
+				requests.back().setDataEnd(incomingData.end());
+			}
 			requests.back().parseRequest();
-			incomingData = Bytes(requests.back().getDataStart(), incomingData.cend());
-			if (requests.back().complete())
-				requests.back().printRequest();
+			incomingData = Bytes(reinterpret_cast<Bytes::iterator &>(requests.back().getDataStart()),
+				incomingData.end());
+			// if (requests.back().complete())
+			// 	requests.back().printRequest();
 		}
 		catch(const std::exception& e)
 		{

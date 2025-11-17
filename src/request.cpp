@@ -6,15 +6,22 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 23:24:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/17 21:50:35 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/request.hpp"
 
+std::string Request::valMet[3] = {"POST", "GET", "DELETE"};
+std::vector<std::string>	Request::validMethod = std::vector<std::string>(Request::valMet, Request::valMet + 3);
+std::string Request::valVer[1] = {"HTTP/1.1"};
+std::vector<std::string>	Request::validHttpVersion = std::vector<std::string>(Request::valVer, Request::valVer + 1);
+
 Request::Request(Bytes::const_iterator start, Bytes::const_iterator end) : newDataStart(start), newDataEnd(end)
 {
 	requestStatus = METHOD;
+	errorCode = 0;
+	bodyLength = 0;
 }
 
 Request::~Request()
@@ -61,6 +68,23 @@ void	Request::parseRequestLine()
 	httpVer = parseReqLineSegment(CRLF);
 }
 
+void	Request::extractContentLength(std::string &len)
+{
+	std::istringstream	ss(len);
+
+	try
+	{
+		ss >> bodyLength;
+	}
+	catch (std::exception &e)
+	{
+		(void)e;
+		if (!errorCode)
+			errorCode = 400;
+	}
+
+}
+
 void	Request::parseRequestHeader()
 {
 	std::string				key;
@@ -69,15 +93,19 @@ void	Request::parseRequestHeader()
 	Bytes::const_iterator	crlfIt;
 
 	colonIt = searchPattern(newDataStart, newDataEnd, COLON);
-	if (colonIt != newDataEnd)
+	if (colonIt != newDataEnd && (colonIt != newDataStart))
 	{
 		key = std::string(newDataStart, colonIt);
-		crlfIt = searchPattern(colonIt + 1, newDataEnd, CRLF);
+		key = trim(key);
+		crlfIt = searchPattern(colonIt + COLON.size(), newDataEnd, CRLF);
 		if (colonIt != newDataEnd)
 		{
-			value = std::string(colonIt + 1, crlfIt);
+			value = std::string(colonIt + COLON.size(), crlfIt);
+			value = trim(value);
+			if (key == "Content-Length")
+				extractContentLength(value);
 			headers.insert(std::make_pair(key, value));
-			newDataStart = crlfIt;
+			newDataStart = crlfIt + CRLF.size();
 		}
 		else if (!errorCode)
 			errorCode = 400;
@@ -89,7 +117,9 @@ void	Request::parseRequestHeader()
 void	Request::parseBody()
 {
 	body.insert(body.end(), newDataStart, newDataEnd);
-	++requestStatus;
+	// if (searchPattern(newDataStart, newDataEnd, CRLF) == newDataEnd)
+	if (body.size() >= bodyLength)
+		++requestStatus;
 }
 
 void	Request::parseRequest()
@@ -98,7 +128,7 @@ void	Request::parseRequest()
 
 	while (!complete() && (it = searchPattern(newDataStart, newDataEnd, CRLF)) != newDataEnd)
 	{
-		if (it == newDataStart)
+		if (it == newDataStart && (newDataStart != newDataEnd))
 			++requestStatus;
 		if (requestStatus == METHOD)
 			{std::cout << "parse request line" << std::endl; parseRequestLine();}
@@ -106,7 +136,7 @@ void	Request::parseRequest()
 			{std::cout << "parse header" << std::endl;; parseRequestHeader();}
 		else if (requestStatus == BODY)
 			parseBody();
-		newDataStart = it + 2;
+		newDataStart = it + CRLF.size();
 	}
 }
 
@@ -128,15 +158,14 @@ void	Request::printRequest()
 	for (size_t i = 0; i < body.size(); ++i)
 		std::cout << body[i];
 	std::cout << std::endl;
-
 }
 
-void	Request::setDataStart(Bytes::const_iterator &s)
+void	Request::setDataStart(Bytes::const_iterator s)
 {
 	newDataStart = s;
 }
 
-void	Request::setDataEnd(Bytes::const_iterator &e)
+void	Request::setDataEnd(Bytes::const_iterator e)
 {
 	newDataEnd = e;
 }
