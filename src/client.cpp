@@ -6,14 +6,14 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/17 14:13:47 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/18 23:59:58 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/client.hpp"
 #include "../include/utils.hpp"
 
-Client::Client()
+Client::Client(Service &ser) : service(ser)
 {
 
 }
@@ -54,8 +54,8 @@ int	Client::sendData(struct epoll_event *evt)
 	if (!requests.empty() && requests.front().complete())
 	{
 		requests.front().printRequest();
+		responses.push_back(Response(service, requests.front()));
 		requests.pop_front();
-		responses.push_back(Response());
 	}
 	if (!responses.empty())
 	{
@@ -134,4 +134,11 @@ const std::deque<Request>	&Client::getRequests() const
 const std::deque<Response>	&Client::getResponses() const
 {
 	return responses;
+}
+
+Client	&Client::operator=(const Client &right)
+{
+	//////////need to implement
+	(void)right;
+	return *this;
 }

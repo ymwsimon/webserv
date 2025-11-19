@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/17 21:50:35 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/18 23:58:48 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,13 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 			errorCode = err;
 	}
 	return res;
+}
+
+void	Request::splitRoute()
+{
+	
+	if (paths.empty())
+		paths.push_back("");
 }
 
 void	Request::parseRequestLine()
@@ -170,6 +177,51 @@ void	Request::setDataEnd(Bytes::const_iterator e)
 	newDataEnd = e;
 }
 
+const std::string	&Request::getMethod() const
+{
+	return method;
+}
+
+const std::string	&Request::getRoute() const
+{
+	return route;
+}
+
+const std::string	&Request::getHttpVer() const
+{
+	return httpVer;
+}
+
+const std::map<std::string, std::string>	&Request::getHeaders() const
+{
+	return headers;
+}
+
+const Bytes	&Request::getBody() const
+{
+	return body;
+}
+
+const int	&Request::getErrorCode() const
+{
+	return errorCode;
+}
+
+const size_t	&Request::getBodyLength() const
+{
+	return bodyLength;
+}
+
+const std::vector<std::string>	&Request::getPaths() const
+{
+	return paths;
+}
+
+const std::string	&Request::getFileName() const
+{
+	return fileName;
+}
+
 Bytes::const_iterator	&Request::getDataStart()
 {
 	return newDataStart;
@@ -178,4 +230,11 @@ Bytes::const_iterator	&Request::getDataStart()
 Bytes::const_iterator	&Request::getDataEnd()
 {
 	return newDataEnd;
+}
+
+Request	&Request::operator=(const Request &right)
+{
+	//////////////////need to implement
+	(void)right;
+	return *this;
 }

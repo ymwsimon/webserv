@@ -6,18 +6,19 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 16:31:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/18 21:19:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include <string>
+#include <vector>
 
 class Location
 {
 	private:
 		std::pair<std::string, std::string>	cgi;
-		std::string							route;
+		std::vector<std::string>			route;
 		std::string							rootFolder;
 		std::string							indexPage;
 		std::string							uploadDir;

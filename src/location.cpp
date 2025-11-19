@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 17:28:52 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/18 21:19:59 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@
 // 		bool								autoIndex;
 Location::Location()
 {
-	route = "/";
+	route.push_back("/");
 	rootFolder = "/data/www";
 	indexPage = "index.html";
 	allowedMethod = GET | POST;

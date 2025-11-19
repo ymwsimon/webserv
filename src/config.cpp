@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:12:27 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 17:29:49 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/18 23:49:41 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,27 +42,27 @@ Config::~Config()
 
 }
 
-const std::map<std::string, Location> &Config::getLocations()
+const std::map<std::string, Location> &Config::getLocations() const
 {
 	return locations;
 }
 
-const std::map<int, std::string>	&Config::getErrorPages()
+const std::map<int, std::string>	&Config::getErrorPages() const
 {
 	return errorPages;
 }
 
-const std::string	&Config::getListenAddress()
+const std::string	&Config::getListenAddress() const
 {
 	return listenAddress;
 }
 
-const std::string	&Config::getServerName()
+const std::string	&Config::getServerName() const
 {
 	return serverName;
 }
 
-const int	&Config::getPort()
+const int	&Config::getPort() const
 {
 	return port;
 }

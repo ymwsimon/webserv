@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/17 21:52:27 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/18 23:58:11 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,8 @@ class Request
 	private:
 		std::string							method;
 		std::string							route;
+		std::vector<std::string>			paths;
+		std::string							fileName;
 		std::string							httpVer;
 		std::map<std::string, std::string>	headers;
 		Bytes								body;
@@ -44,9 +46,10 @@ class Request
 		size_t								bodyLength;
 		Request();
 		std::string							parseReqLineSegment(const Bytes &delimiter);
-		void								parseRequestHeader();
-		void								parseBody();
 		void								parseRequestLine();
+		void								parseRequestHeader();
+		void								splitRoute();
+		void								parseBody();
 		void								extractContentLength(std::string &len);
 	public:
 		static std::string	valMet[3];
@@ -58,15 +61,19 @@ class Request
 		void										parseRequest();
 		bool										complete();
 		void										printRequest();
-		const std::string							&getMethod();
-		const std::string							&getRoute();
-		const std::string							&getHttpVer();
-		const std::map<std::string, std::string>	&getHeaders();
-		const Bytes									&getBody();
-		const int									&getErrorCode();
-		const reqStatus								&getReqStatus();
+		const std::string							&getMethod() const;
+		const std::string							&getRoute() const;
+		const std::string							&getHttpVer() const;
+		const std::map<std::string, std::string>	&getHeaders() const;
+		const Bytes									&getBody() const;
+		const int									&getErrorCode() const;
+		const reqStatus								&getReqStatus() const;
+		const size_t								&getBodyLength() const;
+		const std::vector<std::string>				&getPaths() const;
+		const std::string							&getFileName() const;
 		Bytes::const_iterator						&getDataStart();
 		Bytes::const_iterator						&getDataEnd();
 		void										setDataStart(Bytes::const_iterator s);
 		void										setDataEnd(Bytes::const_iterator e);
+		Request										&operator=(const Request &right);
 };

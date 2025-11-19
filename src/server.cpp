@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 21:28:34 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/18 23:50:15 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,10 +73,10 @@ void	Server::run()
 						std::cout << "error accept new socket to epoll" << std::endl;
 				}
 				else
-					clients[evt.data.fd].recvData(&evt);
+					clients[evt.data.fd]->recvData(&evt);
 			}
 			else if (evt.events & EPOLLOUT)
-				clients[evt.data.fd].sendData(&evt);
+				clients[evt.data.fd]->sendData(&evt);
 		}
 	}
 }
@@ -85,7 +85,7 @@ bool Server::addNewConn(struct epoll_event evt, struct addrinfo addr)
 {
 	struct epoll_event 	newEvt;
 	int					newFd;
-	Client				c;
+	Client				*c = new Client(services.at(evt.data.fd));
 
 	newFd = accept(evt.data.fd, addr.ai_addr, &addr.ai_addrlen);
 	if (newFd < 0)
@@ -94,7 +94,8 @@ bool Server::addNewConn(struct epoll_event evt, struct addrinfo addr)
 		return false;
 	}
 	std::cout << "new connection fd " << newFd << std::endl;
-	clients[newFd] = c;
+	clients.at(newFd) = c;
+	// clients.insert(std::make_pair(newFd, c));
 	newEvt.data.fd = newFd;
 	newEvt.events = EPOLLIN | EPOLLOUT;
 	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &newEvt) < 0)
@@ -115,7 +116,7 @@ const std::map<int, Service>	&Server::getServices()
 	return services;
 }
 
-const std::map<int, Client>	&Server::getClients()
+const std::map<int, Client *>	&Server::getClients()
 {
 	return clients;
 }

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 21:21:19 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/19 00:01:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,17 +60,24 @@ struct addrinfo	*Service::getAddrInfo()
 	return addrInfo;	
 }
 
-const u_int32_t	&Service::getAddrLen()
+const u_int32_t	&Service::getAddrLen() const
 {
 	return addrLen;
 }
 
-const int	&Service::getSocketFd()
+const int	&Service::getSocketFd() const
 {
 	return socketFd;
 }
 
-const Config	&Service::getServiceConfig()
+const Config	&Service::getServiceConfig() const
 {
 	return serviceConfig;
+}
+
+Service	&Service::operator=(const Service &right)
+{
+	/////////need to implement
+	(void)right;
+	return *this;
 }

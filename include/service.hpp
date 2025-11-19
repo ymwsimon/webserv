@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 21:58:23 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/16 16:51:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/19 00:01:05 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,8 @@ class Service
 		Service(Config config);
 		~Service();
 		struct addrinfo	*getAddrInfo();
-		const u_int32_t	&getAddrLen();
-		const int		&getSocketFd();
-		const Config	&getServiceConfig();
+		const u_int32_t	&getAddrLen() const;
+		const int		&getSocketFd() const;
+		const Config	&getServiceConfig() const;
+		Service			&operator=(const Service &right);
 };
