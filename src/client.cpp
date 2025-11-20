@@ -53,6 +53,7 @@ int	Client::sendData(struct epoll_event *evt)
 
 	if (!requests.empty() && requests.front().complete())
 	{
+		requests.front().setMatchLocation(service.findMatchingRoute(requests.front()));
 		requests.front().printRequest();
 		responses.push_back(Response(service, requests.front()));
 		requests.pop_front();
@@ -111,8 +112,6 @@ void	Client::processData()
 			requests.back().parseRequest();
 			incomingData = Bytes(reinterpret_cast<Bytes::iterator &>(requests.back().getDataStart()),
 				incomingData.end());
-			// if (requests.back().complete())
-			// 	requests.back().printRequest();
 		}
 		catch(const std::exception& e)
 		{

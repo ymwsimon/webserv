@@ -30,8 +30,15 @@
 Config::Config()
 {
 	Location	l;
+	Location	l2;
+	std::pair<std::vector<std::string>, std::string>	splitRes;
 
-	locations["/"] = l;
+	locations.push_back(l);
+	l2.setRouteStr("/test/");
+	splitRes = splitPath(l2.getRouteStr());
+	l2.setRoutePaths(splitRes.first);
+	l2.setRootFolder("/folderb/");
+	locations.push_back(l2);
 	listenAddress = "127.0.0.1";
 	serverName = "localhost";
 	port = 8080;
@@ -42,7 +49,7 @@ Config::~Config()
 
 }
 
-const std::map<std::string, Location> &Config::getLocations() const
+const std::vector<Location> &Config::getLocations() const
 {
 	return locations;
 }
@@ -65,4 +72,22 @@ const std::string	&Config::getServerName() const
 const int	&Config::getPort() const
 {
 	return port;
+}
+
+const Location	*Config::getLocationMatch(const std::vector<std::string> &paths) const
+{
+	const Location	*res = NULL;
+	int			matchLength = -1;
+	int			tmpRes;
+
+	for (size_t i = 0; i < getLocations().size(); ++i)
+	{
+		tmpRes = getLocations()[i].getRouteMatchLength(paths);
+		if (tmpRes > matchLength)
+		{
+			res = &getLocations()[i];
+			matchLength = tmpRes;
+		}
+	}
+	return res;
 }

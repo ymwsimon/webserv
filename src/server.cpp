@@ -94,8 +94,7 @@ bool Server::addNewConn(struct epoll_event evt, struct addrinfo addr)
 		return false;
 	}
 	std::cout << "new connection fd " << newFd << std::endl;
-	clients.at(newFd) = c;
-	// clients.insert(std::make_pair(newFd, c));
+	clients.insert(std::make_pair(newFd, c));
 	newEvt.data.fd = newFd;
 	newEvt.events = EPOLLIN | EPOLLOUT;
 	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &newEvt) < 0)

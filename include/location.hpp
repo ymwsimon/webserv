@@ -13,11 +13,14 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <iostream>
+#include "utils.hpp"
 
 class Location
 {
 	private:
 		std::pair<std::string, std::string>	cgi;
+		std::string							routeStr;
 		std::vector<std::string>			route;
 		std::string							rootFolder;
 		std::string							indexPage;
@@ -35,5 +38,12 @@ class Location
 			POST = 2,
 			DELETE = 4,
 		};
-		const std::string &getRoute();
+		const std::string				&getRouteStr() const;
+		const std::vector<std::string>	&getRoute() const;
+		const std::string				&getRootFolder() const;
+		void				setRouteStr(std::string str);
+		void				setRoutePaths(std::vector<std::string> p);
+		void				setRootFolder(std::string str);
+		void				printLocation() const;
+		int					getRouteMatchLength(const std::vector<std::string> &paths) const;
 };

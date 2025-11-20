@@ -12,23 +12,25 @@
 
 #pragma once
 #include <string>
+#include <vector>
 #include <map>
 #include "location.hpp"
 
 class Config
 {
 	private:
-		std::map<std::string, Location>	locations;
 		std::map<int, std::string> 		errorPages;
+		std::vector<Location>			locations;
 		std::string						listenAddress;
 		std::string						serverName;
 		int								port;
 	public:
 		Config();
 		~Config();
-		const std::map<std::string, Location>	&getLocations() const;
+		const std::vector<Location>				&getLocations() const;
 		const std::map<int, std::string> 		&getErrorPages() const;
 		const std::string						&getListenAddress() const;
 		const std::string						&getServerName() const;
 		const int								&getPort() const;
+		const Location							*getLocationMatch(const std::vector<std::string> &paths) const;
 };

@@ -81,3 +81,8 @@ Service	&Service::operator=(const Service &right)
 	(void)right;
 	return *this;
 }
+
+const Location	*Service::findMatchingRoute(const Request &req) const
+{
+	return serviceConfig.getLocationMatch(req.getPaths());
+}

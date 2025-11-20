@@ -13,6 +13,7 @@
 #pragma once
 #include <sys/socket.h>
 #include "config.hpp"
+#include "request.hpp"
 #include <netdb.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -35,4 +36,5 @@ class Service
 		const int		&getSocketFd() const;
 		const Config	&getServiceConfig() const;
 		Service			&operator=(const Service &right);
+		const Location	*findMatchingRoute(const Request &req) const;
 };

@@ -22,6 +22,7 @@ Request::Request(Bytes::const_iterator start, Bytes::const_iterator end) : newDa
 	requestStatus = METHOD;
 	errorCode = 0;
 	bodyLength = 0;
+	matchLocation = NULL;
 }
 
 Request::~Request()
@@ -63,15 +64,17 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 
 void	Request::splitRoute()
 {
-	
-	if (paths.empty())
-		paths.push_back("");
+	std::pair<std::vector<std::string>, std::string>	splitRes;
+	splitRes = splitPath(route);
+	paths = splitRes.first;
+	fileName = splitRes.second;
 }
 
 void	Request::parseRequestLine()
 {
 	method = parseReqLineSegment(SPACE);
 	route = parseReqLineSegment(SPACE);
+	splitRoute();
 	httpVer = parseReqLineSegment(CRLF);
 }
 
@@ -89,7 +92,6 @@ void	Request::extractContentLength(std::string &len)
 		if (!errorCode)
 			errorCode = 400;
 	}
-
 }
 
 void	Request::parseRequestHeader()
@@ -124,7 +126,6 @@ void	Request::parseRequestHeader()
 void	Request::parseBody()
 {
 	body.insert(body.end(), newDataStart, newDataEnd);
-	// if (searchPattern(newDataStart, newDataEnd, CRLF) == newDataEnd)
 	if (body.size() >= bodyLength)
 		++requestStatus;
 }
@@ -157,6 +158,11 @@ void	Request::printRequest()
 	std::cout << "Request:" << std::endl;
 	std::cout << "\tMethod:" << method << std::endl;
 	std::cout << "\tRoute:" << route << std::endl;
+	std::cout << "\tSplit route:";
+	for (std::vector<std::string>::iterator it = paths.begin(); it != paths.end(); ++it)
+		std::cout << " ,"[it != paths.begin()] << *it;
+	std::cout << std::endl;
+	std::cout << "\tFile name: " << fileName << std::endl;
 	std::cout << "\tVersion:" << httpVer << std::endl;
 	std::cout << "\tHeader:" << std::endl;
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
@@ -165,6 +171,11 @@ void	Request::printRequest()
 	for (size_t i = 0; i < body.size(); ++i)
 		std::cout << body[i];
 	std::cout << std::endl;
+	if (matchLocation)
+	{
+		std::cout << "\tMatched Location:" << std::endl;
+		matchLocation->printLocation();
+	}
 }
 
 void	Request::setDataStart(Bytes::const_iterator s)
@@ -175,6 +186,11 @@ void	Request::setDataStart(Bytes::const_iterator s)
 void	Request::setDataEnd(Bytes::const_iterator e)
 {
 	newDataEnd = e;
+}
+
+void	Request::setMatchLocation(const Location *loc)
+{
+	matchLocation = loc;
 }
 
 const std::string	&Request::getMethod() const

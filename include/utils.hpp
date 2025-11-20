@@ -14,6 +14,7 @@
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <iostream>
 #define BUFFER_SIZE 50000
 
 typedef unsigned char Byte;
@@ -39,3 +40,5 @@ Bytes::const_iterator	searchPattern(Bytes::const_iterator dataStart,
 Bytes::const_iterator	searchPattern(const Bytes &data, const Bytes &pattern);
 
 std::string	trim(std::string &str);
+
+std::pair<std::vector<std::string>, std::string>	splitPath(const std::string &pathStr);

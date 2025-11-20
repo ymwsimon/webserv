@@ -17,6 +17,7 @@
 #include <map>
 #include <utility>
 #include <iostream>
+#include "location.hpp"
 #include "utils.hpp"
 
 class Request
@@ -44,6 +45,7 @@ class Request
 		int									errorCode;
 		int									requestStatus;
 		size_t								bodyLength;
+		const Location						*matchLocation;
 		Request();
 		std::string							parseReqLineSegment(const Bytes &delimiter);
 		void								parseRequestLine();
@@ -75,5 +77,6 @@ class Request
 		Bytes::const_iterator						&getDataEnd();
 		void										setDataStart(Bytes::const_iterator s);
 		void										setDataEnd(Bytes::const_iterator e);
+		void										setMatchLocation(const Location *);
 		Request										&operator=(const Request &right);
 };
