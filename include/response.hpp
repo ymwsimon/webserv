@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/19 00:19:45 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/22 02:05:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <fstream>
 #include "service.hpp"
 #include "request.hpp"
+#include "utils.hpp"
 
 class Response
 {
@@ -22,10 +23,14 @@ class Response
 		Service			&service;
 		Request			&request;
 		std::ifstream	*pageStream;
+		int				errorCode;
 		Response();
 	public:
 		Response(const Response &other);
 		Response(Service &ser, Request &req);
 		~Response();
 		Response	&operator=(const Response &right);
+		const int	&getErrorCode() const;
+		void		printResponse() const;
+		Bytes		getOKResponse();
 };

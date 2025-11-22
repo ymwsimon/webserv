@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/18 23:58:11 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/22 00:48:59 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,7 @@ class Request
 		const std::string							&getFileName() const;
 		Bytes::const_iterator						&getDataStart();
 		Bytes::const_iterator						&getDataEnd();
+		const Location								*getMatchLocation() const;
 		void										setDataStart(Bytes::const_iterator s);
 		void										setDataEnd(Bytes::const_iterator e);
 		void										setMatchLocation(const Location *);

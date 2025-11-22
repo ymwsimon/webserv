@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/18 23:59:58 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/22 01:29:11 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,33 +23,9 @@ Client::~Client()
 	
 }
 
-std::string	staticPage()
-{
-	std::string			str;
-	std::string			content;
-	std::stringstream	strStream;
-
-	content = "<!DOCTYPE html>"
-					"<html>"
-					"<head>"
-					"<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">"
-					"<title>WebServer</title></head>"
-					"<body>"
-					"Testing"
-					"</body></html>";
-	str = "HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/html\r\n"
-			"Content-Length: ";
-	strStream << content.length();
-	str += strStream.str();
-	str += "\r\n\r\n";
-	str += content;
-	return str;
-}
-
 int	Client::sendData(struct epoll_event *evt)
 {
-	std::string			content;
+	Bytes	content;
 
 	if (!requests.empty() && requests.front().complete())
 	{
@@ -60,9 +36,12 @@ int	Client::sendData(struct epoll_event *evt)
 	}
 	if (!responses.empty())
 	{
-		content = staticPage();
+		if (responses.front().getErrorCode())
+			content = defaultErrorPage();
+		else
+			content = responses.front().getOKResponse();
 		std::cout << "sending out data" << std::endl;
-		if (send(evt->data.fd, content.c_str(), content.length(), 0) < 0)
+		if (send(evt->data.fd, content.data(), content.size(), 0) < 0)
 			std::cout << "error send data out" << std::endl;
 		responses.pop_front();
 	}

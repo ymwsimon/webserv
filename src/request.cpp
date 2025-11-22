@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/18 23:58:48 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/22 00:49:06 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -253,4 +253,9 @@ Request	&Request::operator=(const Request &right)
 	//////////////////need to implement
 	(void)right;
 	return *this;
+}
+
+const Location	*Request::getMatchLocation() const
+{
+	return matchLocation;
 }

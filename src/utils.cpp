@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/17 14:42:59 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/22 02:08:17 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,5 +69,63 @@ std::string	replaceDoubleSlash(std::string &input)
 	std::string	res;
 
 	(void)input;
+	return res;
+}
+
+Bytes	staticPage()
+{
+	std::string			str;
+	std::string			content;
+	std::stringstream	strStream;
+
+	content = "<!DOCTYPE html>"
+					"<html>"
+					"<head>"
+					"<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">"
+					"<title>WebServer</title></head>"
+					"<body>"
+					"Testing"
+					"</body></html>";
+	str = "HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/html\r\n"
+			"Content-Length: ";
+	strStream << content.length();
+	str += strStream.str();
+	str += "\r\n\r\n";
+	str += content;
+	return Bytes(str.begin(), str.end());
+}
+
+Bytes	defaultErrorPage()
+{
+	std::string			str;
+	std::string			content;
+	std::stringstream	strStream;
+
+	content = "<!DOCTYPE html>"
+					"<html>"
+					"<head>"
+					"<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">"
+					"<title>WebServer</title></head>"
+					"<body>"
+					"404 Not Found"
+					"</body></html>";
+	str = "HTTP/1.1 404 Not Found\r\n"
+			"Content-Type: text/html\r\n"
+			"Content-Length: ";
+	strStream << content.length();
+	str += strStream.str();
+	str += "\r\n\r\n";
+	str += content;
+	return Bytes(str.begin(), str.end());
+}
+
+std::string	mergeFullPath(const std::string &rootPath, const std::vector<std::string> &routePaths, const std::string &fileName)
+{
+	std::string	res = rootPath;
+
+	for (size_t i = 0; i < routePaths.size(); ++i)
+		res += "/" + routePaths[i];
+	res += "/" + fileName;
 	return res;
 }
