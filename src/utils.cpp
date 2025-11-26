@@ -117,10 +117,11 @@ Bytes	defaultErrorPage()
 	str += strStream.str();
 	str += "\r\n\r\n";
 	str += content;
+	std::cout << str << std::endl;
 	return Bytes(str.begin(), str.end());
 }
 
-std::string	mergeFullPath(const std::string &rootPath, const std::vector<std::string> &routePaths, const std::string &fileName)
+std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName)
 {
 	std::string	res = rootPath;
 

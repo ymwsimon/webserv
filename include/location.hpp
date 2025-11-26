@@ -53,7 +53,7 @@ class Location
 		void				printLocation() const;
 		int					getRouteMatchLength(const std::vector<std::string> &paths) const;
 		std::ifstream		*tryOpenIndexPages(std::string &folderPathStr) const;
-		std::string			generateIndexPages(std::string &folderPathStr) const;
+		Bytes				generateIndexPages(std::string &folderPathStr, std::string routePath) const;
 		bool				isResourceReachable(const std::string &rootPath,
 			const std::vector<std::string> &routePaths, const std::string &fileName) const;
 };

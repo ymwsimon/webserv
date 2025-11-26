@@ -27,7 +27,7 @@ Location::Location()
 	routeStr = "/";
 	splitRes = splitPath(routeStr);
 	route = splitRes.first;
-	rootFolder = "/data/www";
+	rootFolder = "./data/www";
 	indexPages.push_back("index.html");
 	indexPages.push_back("b.html");
 	allowedMethod = GET | POST;
@@ -148,24 +148,45 @@ std::ifstream	*Location::tryOpenIndexPages(std::string &folderPathStr) const
 	return file;
 }
 
-std::string	Location::generateIndexPages(std::string &folderPathStr) const
+Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string routePath) const
 {
-	DIR				*dir = NULL;
-	struct dirent	*dirEntry;
-	std::string		res;
+	DIR					*dir = NULL;
+	struct dirent		*dirEntry;
+	std::string			res;
+	std::string			str;
+	std::stringstream	strStream;
 
 	std::cout << "try to open dir " << folderPathStr << std::endl;
 	dir = opendir(folderPathStr.c_str());
 	if (dir)
 	{
+		res = "<!DOCTYPE html>"
+				"<html>"
+    			"<head>"
+				"<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">"
+				"<title>Index of " + routePath + "</title>"
+				"</head>"
+				"<body>"
+				"<h1>" + routePath + "</h1>";
+
 		for (dirEntry = readdir(dir); dirEntry; dirEntry = readdir(dir))
 		{
 			std::cout << "reading .. path: ";
 			std::cout << dirEntry->d_name << std::endl;
+			res += "<p>" + std::string(dirEntry->d_name) + "</p>";
 		}
 		closedir(dir);
+		res += "</body></html>";
 	}
-	return res;
+	str = "HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/html\r\n"
+			"Content-Length: ";
+	strStream << res.size();
+	str += strStream.str();
+	str += "\r\n\r\n";
+	res = str + res;
+	// std::cout << "res page\n" << res << std::endl;
+	return Bytes(res.begin(), res.end());
 }
 
 // bool	Location::isResourceReachable(const std::string &rootPath,

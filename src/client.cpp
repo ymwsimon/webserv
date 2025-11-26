@@ -32,14 +32,21 @@ int	Client::sendData(struct epoll_event *evt)
 		requests.front().setMatchLocation(service.findMatchingRoute(requests.front()));
 		requests.front().printRequest();
 		responses.push_back(Response(service, requests.front()));
-		requests.pop_front();
-		if (!responses.front().getPageStream() || responses.front().getErrorCode())
+		
+		if (responses.front().getErrorCode())
 			content = defaultErrorPage();
+		else if (!responses.front().getResultPage().empty())
+			content = responses.front().getResultPage();
 		else
 			content = responses.front().getOKResponse();
 		std::cout << "sending out data" << std::endl;
+		std::cout << "content\n";
+		for (size_t i = 0; i < content.size(); ++i)
+			std::cout << content[i];
+		std::cout << std::endl;
 		if (send(evt->data.fd, content.data(), content.size(), 0) < 0)
 			std::cout << "error send data out" << std::endl;
+		requests.pop_front();
 		responses.pop_front();
 	}
 	return 1;

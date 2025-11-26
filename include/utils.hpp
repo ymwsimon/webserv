@@ -48,5 +48,5 @@ std::pair<std::vector<std::string>, std::string>	splitPath(const std::string &pa
 
 Bytes		staticPage();
 Bytes		defaultErrorPage();
-std::string	mergeFullPath(const std::string &rootPath, const std::vector<std::string> &routePaths, const std::string &fileName);
+std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName);
 bool		isDir(const std::string &filePath);

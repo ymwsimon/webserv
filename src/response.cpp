@@ -33,7 +33,15 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 		{
 			try 
 			{
+				std::cout << "opening " << filePathStr << " as file\n";
 				pageStream = new std::ifstream(filePathStr.c_str(), std::ios_base::in);
+				if (!pageStream->good())
+				{
+					std::cout << "can't open " << filePathStr << " as file\n";
+					errorCode = 404;
+					pageStream->close();
+					pageStream = NULL;
+				}
 			}
 			catch (std::exception &e)
 			{
@@ -50,7 +58,7 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 				std::cout << "index page not found\n";
 				std::cout << "list folder content.." << filePathStr << std::endl;
 				if (req.getMatchLocation()->getAutoIndex())
-					req.getMatchLocation()->generateIndexPages(filePathStr);
+					resultPage = req.getMatchLocation()->generateIndexPages(filePathStr, mergeFullPath("", req.getPaths(), req.getFileName()));
 				else if (!errorCode)
 					errorCode = 404;
 			}
@@ -81,6 +89,11 @@ const int	&Response::getErrorCode() const
 const std::ifstream	*Response::getPageStream()
 {
 	return pageStream;
+}
+
+const Bytes	&Response::getResultPage() const
+{
+	return resultPage;
 }
 
 void	Response::printResponse() const
