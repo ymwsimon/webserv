@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/22 02:08:17 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/22 21:32:18 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,4 +128,15 @@ std::string	mergeFullPath(const std::string &rootPath, const std::vector<std::st
 		res += "/" + routePaths[i];
 	res += "/" + fileName;
 	return res;
+}
+
+bool	isDir(const std::string &filePath)
+{
+	DIR	*dir;
+
+	dir = opendir(filePath.c_str());
+	if (!dir)
+		return false;
+	closedir(dir);
+	return true;
 }

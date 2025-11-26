@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/22 02:06:05 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/22 21:31:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <dirent.h>
 #define BUFFER_SIZE 50000
 #define TRANSFER_SIZE 50000
 
@@ -48,3 +49,4 @@ std::pair<std::vector<std::string>, std::string>	splitPath(const std::string &pa
 Bytes		staticPage();
 Bytes		defaultErrorPage();
 std::string	mergeFullPath(const std::string &rootPath, const std::vector<std::string> &routePaths, const std::string &fileName);
+bool		isDir(const std::string &filePath);

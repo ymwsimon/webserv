@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/22 02:07:58 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/26 12:27:14 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,32 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 		filePathStr = mergeFullPath(req.getMatchLocation()->getRootFolder(),
 			req.getPaths(), req.getFileName());
 		std::cout << "File path str: " << filePathStr << std::endl;
-		pageStream = new std::ifstream(filePathStr.c_str(), std::ios_base::in);
-		if (req.getFileName().empty() || (!pageStream->is_open() && !errorCode))
-			errorCode = 404;
+		if (!req.getFileName().empty() && !isDir(filePathStr))
+		{
+			try 
+			{
+				pageStream = new std::ifstream(filePathStr.c_str(), std::ios_base::in);
+			}
+			catch (std::exception &e)
+			{
+				if (!errorCode)
+					errorCode = 404;
+			}
+		}
+		else
+		{
+			std::cout << "dir\n" << filePathStr << std::endl;
+			pageStream = req.getMatchLocation()->tryOpenIndexPages(filePathStr);
+			if (!pageStream)
+			{
+				std::cout << "index page not found\n";
+				std::cout << "list folder content.." << filePathStr << std::endl;
+				if (req.getMatchLocation()->getAutoIndex())
+					req.getMatchLocation()->generateIndexPages(filePathStr);
+				else if (!errorCode)
+					errorCode = 404;
+			}
+		}
 	}
 }
 
@@ -55,6 +78,11 @@ const int	&Response::getErrorCode() const
 	return errorCode;
 }
 
+const std::ifstream	*Response::getPageStream()
+{
+	return pageStream;
+}
+
 void	Response::printResponse() const
 {
 	std::cout << "Response: " << std::endl;
@@ -65,19 +93,22 @@ void	Response::printResponse() const
 
 Bytes	Response::getOKResponse()
 {
-	Bytes	res(BUFFER_SIZE);
+	Bytes	buf(BUFFER_SIZE);
+	Bytes	res;
 	std::string			str;
 	std::stringstream	strStream;
 
-	pageStream->read((char *)res.data(), BUFFER_SIZE);
+	pageStream->read((char *)buf.data(), BUFFER_SIZE);
 	pageStream->close();
-	delete pageStream;
 	str = "HTTP/1.1 200 OK\r\n"
 			"Content-Type: text/html\r\n"
 			"Content-Length: ";
-	strStream << res.size();
+	strStream << pageStream->gcount();
 	str += strStream.str();
 	str += "\r\n\r\n";
-	str += std::string(res.begin(), res.end());
-	return Bytes(str.begin(), str.end());
+	res.insert(res.end(), str.begin(), str.end());
+	res.insert(res.end(), buf.begin(), buf.begin() + pageStream->gcount());
+	delete pageStream;
+	pageStream = NULL;
+	return res;
 }

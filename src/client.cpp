@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/22 01:29:11 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/26 12:30:55 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,10 +33,7 @@ int	Client::sendData(struct epoll_event *evt)
 		requests.front().printRequest();
 		responses.push_back(Response(service, requests.front()));
 		requests.pop_front();
-	}
-	if (!responses.empty())
-	{
-		if (responses.front().getErrorCode())
+		if (!responses.front().getPageStream() || responses.front().getErrorCode())
 			content = defaultErrorPage();
 		else
 			content = responses.front().getOKResponse();

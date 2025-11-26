@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/18 21:19:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/25 22:57:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include "utils.hpp"
 
 class Location
@@ -23,7 +24,7 @@ class Location
 		std::string							routeStr;
 		std::vector<std::string>			route;
 		std::string							rootFolder;
-		std::string							indexPage;
+		std::vector<std::string>			indexPages;
 		std::string							uploadDir;
 		std::string							redirect;
 		int									allowedMethod;
@@ -41,9 +42,18 @@ class Location
 		const std::string				&getRouteStr() const;
 		const std::vector<std::string>	&getRoute() const;
 		const std::string				&getRootFolder() const;
+		const std::vector<std::string>	&getIndexPages() const;
+		const std::string				&getuploadDir() const;
+		bool							getAutoIndex() const;
+		int								getAllowedMethod() const;
+		int								getMaxBodySize() const;
 		void				setRouteStr(std::string str);
 		void				setRoutePaths(std::vector<std::string> p);
 		void				setRootFolder(std::string str);
 		void				printLocation() const;
 		int					getRouteMatchLength(const std::vector<std::string> &paths) const;
+		std::ifstream		*tryOpenIndexPages(std::string &folderPathStr) const;
+		std::string			generateIndexPages(std::string &folderPathStr) const;
+		bool				isResourceReachable(const std::string &rootPath,
+			const std::vector<std::string> &routePaths, const std::string &fileName) const;
 };
