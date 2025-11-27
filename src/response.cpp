@@ -62,6 +62,8 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 					resultPage = req.getMatchLocation()->generateIndexPages(filePathStr, mergeFullPath("", req.getPaths(), req.getFileName()));
 				else if (!errorCode)
 					errorCode = 404;
+				if (resultPage.empty())
+					errorCode = 500;
 				std::cout << "result page size " << resultPage.size() << std::endl;
 			}
 		}

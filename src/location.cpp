@@ -27,7 +27,7 @@ Location::Location()
 	routeStr = "/";
 	splitRes = splitPath(routeStr);
 	route = splitRes.first;
-	rootFolder = "./bdata/www";
+	rootFolder = "./data/www";
 	indexPages.push_back("index.html");
 	indexPages.push_back("b.html");
 	allowedMethod = GET | POST;
@@ -182,15 +182,15 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 		}
 		closedir(dir);
 		res += "</body></html>";
+		str = "HTTP/1.1 200 OK\r\n"
+				"Content-Type: text/html\r\n"
+				"Content-Length: ";
+		strStream << res.size();
+		str += strStream.str();
+		str += "\r\n\r\n";
+		res = str + res;
 	}
-	str = "HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/html\r\n"
-			"Content-Length: ";
-	strStream << res.size();
-	str += strStream.str();
-	str += "\r\n\r\n";
-	res = str + res;
-	std::cout << "res page\n" << res << " " << std::distance(res.begin(), res.end()) << std::endl;
+	std::cout << "res page\n" << res << " \n\tsize:" << std::distance(res.begin(), res.end()) << std::endl;
 	return Bytes(res.begin(), res.end());
 }
 
