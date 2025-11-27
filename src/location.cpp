@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/26 12:27:49 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/27 11:43:03 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ Location::Location()
 	routeStr = "/";
 	splitRes = splitPath(routeStr);
 	route = splitRes.first;
-	rootFolder = "./data/www";
+	rootFolder = "./bdata/www";
 	indexPages.push_back("index.html");
 	indexPages.push_back("b.html");
 	allowedMethod = GET | POST;
@@ -133,7 +133,11 @@ std::ifstream	*Location::tryOpenIndexPages(std::string &folderPathStr) const
 		{
 			std::cout << "try opening " << fullPath << std::endl;
 			file = new std::ifstream(fullPath.c_str(), std::ios_base::in);
-			if (!file->good())
+			if (!file)
+			{
+				std::cout << "file stream pointer is null\n";
+			}
+			else if (!file->good())
 			{
 				std::cout << "open fail\n";
 				file = NULL;
@@ -160,6 +164,7 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 	dir = opendir(folderPathStr.c_str());
 	if (dir)
 	{
+		std::cout << "generating index page..\n";
 		res = "<!DOCTYPE html>"
 				"<html>"
     			"<head>"
@@ -185,7 +190,7 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 	str += strStream.str();
 	str += "\r\n\r\n";
 	res = str + res;
-	// std::cout << "res page\n" << res << std::endl;
+	std::cout << "res page\n" << res << " " << std::distance(res.begin(), res.end()) << std::endl;
 	return Bytes(res.begin(), res.end());
 }
 

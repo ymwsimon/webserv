@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/26 12:27:14 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/11/27 11:36:04 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,9 @@
 
 Response::Response(const Response &other) : service(other.service), request(other.request)
 {
-	errorCode = other.getErrorCode();
-	pageStream =  other.pageStream;
+	errorCode = other.errorCode;
+	pageStream = other.pageStream;
+	resultPage = other.resultPage;
 }
 
 Response::Response(Service &ser, Request &req) : service(ser), request(req)
@@ -61,6 +62,7 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 					resultPage = req.getMatchLocation()->generateIndexPages(filePathStr, mergeFullPath("", req.getPaths(), req.getFileName()));
 				else if (!errorCode)
 					errorCode = 404;
+				std::cout << "result page size " << resultPage.size() << std::endl;
 			}
 		}
 	}
@@ -78,6 +80,7 @@ Response	&Response::operator=(const Response &right)
 	request = right.request;
 	pageStream = right.pageStream;
 	errorCode = right.errorCode;
+	resultPage = right.resultPage;
 	return *this;
 }
 
