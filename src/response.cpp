@@ -63,7 +63,7 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 				else if (!errorCode)
 					errorCode = 404;
 				if (resultPage.empty())
-					errorCode = 500;
+					errorCode = 404;
 				std::cout << "result page size " << resultPage.size() << std::endl;
 			}
 		}
@@ -129,7 +129,7 @@ Bytes	Response::getPageStreamResponse(int code)
 		code = 200;
 	head = genHttpResponseLine(code);
 	head += genHttpHeader("Content-Type", getMediaType("html"));
-	head += genHttpHeader("Content-Length", intToString(buf.size()));
+	head += genHttpHeader("Content-Length", toString(buf.size()));
 	head += CRLFStr;
 	res.insert(res.end(), head.begin(), head.end());
 	res.insert(res.end(), buf.begin(), buf.begin() + buf.size());

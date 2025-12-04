@@ -179,7 +179,7 @@ std::string	getFullStatusMessage(int code)
 {
 	if (messageTable.count(code) == 0)
 		code = 404;
-	return intToString(code) + " " + getStatusMessage(code);
+	return toString(code) + " " + getStatusMessage(code);
 }
 
 std::string	genHttpHeader(std::string fieldName, std::string fieldValue)
@@ -200,9 +200,43 @@ std::string	genHttpResponse(int code)
 	if (!code)
 		code = 200;
 	body = genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code));
+	return genHttpResponse(code, body);
+}
+
+std::string	genHttpResponse(int code, const std::string &content)
+{
+	std::string	res;
+
+	if (!code)
+		code = 200;
+	return genHttpResponse(code, HTML, content);
+}
+
+std::string	genHttpResponse(int code, const std::string mediaType, const std::string &content)
+{
+	std::string	res;
+
+	if (!code)
+		code = 200;
 	res = genHttpResponseLine(code);
-	res += genHttpHeader("Content-Type", getMediaType("html"));
-	res += genHttpHeader("Content-Length", intToString(body.size()));
+	res += genHttpHeader(CONTENTTYPE, getMediaType(mediaType));
+	res += genHttpHeader(CONTENTLENGTH, toString(content.size()));
 	res += CRLFStr;
-	return res + body;
+	return res + content;
+}
+
+Bytes	genHttpResponse(int code, const std::string mediaType, const Bytes &content)
+{
+	Bytes	res;
+
+	if (!code)
+		code = 200;
+	(void)mediaType;
+	(void)content;
+	// res = genHttpResponseLine(code);
+	// res += genHttpHeader(CONTENTTYPE, getMediaType(mediaType));
+	// res += genHttpHeader(CONTENTLENGTH, toString(content.size()));
+	// res += CRLFStr;
+	// return res + content;
+	return res;
 }

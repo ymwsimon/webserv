@@ -173,11 +173,8 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 		appendHtmlTag(HEAD, tmp);
 		res = tmp + body;
 		appendHtmlTag(HTML, res);
-		tmp = genHttpResponseLine(200);
-		tmp += genHttpHeader("Content-Type", getMediaType("html"));
-		tmp += genHttpHeader("Content-Length", intToString(res.size()));
-		tmp += CRLFStr;
-		res = tmp + res;
+		res += genHtmlTagStart(DOCTYPE + " " + HTML);
+		res = genHttpResponse(200, res);
 	}
 	std::cout << "res page\n" << res << " \n\tsize:" << std::distance(res.begin(), res.end()) << std::endl;
 	return Bytes(res.begin(), res.end());

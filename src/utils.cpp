@@ -140,7 +140,7 @@ bool	isDir(const std::string &filePath)
 	return true;
 }
 
-std::string	intToString(int n)
+std::string	toString(int n)
 {
 	std::stringstream	ss;
 
