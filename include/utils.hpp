@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/22 21:31:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/03 22:49:41 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 #include <iostream>
 #include <sstream>
 #include <dirent.h>
+#include "html.hpp"
+#include "http.hpp"
 #define BUFFER_SIZE 50000
 #define TRANSFER_SIZE 50000
 
@@ -25,6 +27,7 @@ typedef std::vector<Byte> Bytes;
 
 const Byte crlf[] = {'\r', '\n'};
 const Bytes CRLF = Bytes(crlf, crlf + 2);
+const std::string CRLFStr = std::string(crlf, crlf + 2);
 const Byte space[] = {' '};
 const Bytes SPACE = Bytes(space, space + 1);
 const Byte colon[] = {':'};
@@ -50,3 +53,4 @@ Bytes		staticPage();
 Bytes		defaultErrorPage();
 std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName);
 bool		isDir(const std::string &filePath);
+std::string	intToString(int n);

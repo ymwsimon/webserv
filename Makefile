@@ -2,6 +2,8 @@ NAME = webserv
 
 SRCS = 	client \
 		config \
+		html \
+		http \
 		location \
 		main \
 		request \
@@ -21,7 +23,7 @@ INC_DIR = include
 
 FLAGS = -Wall -Werror -Wextra -g -std=c++98
 
-CC = g++
+CC = c++
 
 all : $(NAME)
 

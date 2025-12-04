@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/22 21:32:18 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/03 16:54:58 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,6 @@ Bytes	staticPage()
 	content = "<!DOCTYPE html>"
 					"<html>"
 					"<head>"
-					"<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">"
 					"<title>WebServer</title></head>"
 					"<body>"
 					"Testing"
@@ -105,7 +104,6 @@ Bytes	defaultErrorPage()
 	content = "<!DOCTYPE html>"
 					"<html>"
 					"<head>"
-					"<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">"
 					"<title>WebServer</title></head>"
 					"<body>"
 					"404 Not Found"
@@ -140,4 +138,12 @@ bool	isDir(const std::string &filePath)
 		return false;
 	closedir(dir);
 	return true;
+}
+
+std::string	intToString(int n)
+{
+	std::stringstream	ss;
+
+	ss << n;
+	return ss.str();
 }
