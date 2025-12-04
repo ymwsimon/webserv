@@ -12,21 +12,6 @@
 
 #include "../include/config.hpp"
 
-// private:
-// 		std::map<std::string, Location &>	locations;
-// 		std::map<int, std::string> 			errorPages;
-// 		std::string							listenAddress;
-// 		std::string							serverName;
-// 		int									port;
-// 	public:
-// 		Config();
-// 		~Config();
-// 		std::map<std::string, Location> &getLocations();
-// 		std::map<int, std::string> 		&getErrorPages();
-// 		std::string						&getListenAddress();
-// 		std::string						&getServerName();
-// 		int								&getPort();
-
 Config::Config()
 {
 	Location	l;

@@ -12,19 +12,6 @@
 
 #include "../include/server.hpp"
 
-// private:
-// 		std::vector<Config>		configs;
-// 		std::map<int, Service>	services;
-// 		std::map<int, Client>	clients;
-// 		int						epollFd;
-// 	public:
-// 		Server();
-// 		~Server();
-// 		std::vector<Config>		&getConfigs();
-// 		std::map<int, Service>	&getServices();
-// 		std::map<int, Client>	&getClients();
-// 		int						&getEpollFd();
-
 Server::Server()
 {
 	struct epoll_event 	evt;

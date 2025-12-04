@@ -37,5 +37,5 @@ class Response
 		const Bytes	&getResultPage() const;
 		const std::ifstream	*getPageStream();
 		void		printResponse() const;
-		Bytes		getOKResponse();
+		Bytes		getPageStreamResponse(int code);
 };

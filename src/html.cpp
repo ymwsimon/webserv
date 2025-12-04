@@ -59,3 +59,16 @@ std::string	&appendHtmlTag(std::string tag,
 	content.append(genHtmlTagEnd(tag));
 	return content;
 }
+
+std::string	genHtmlPage(std::string title, std::string content)
+{
+	std::string	res;
+
+	appendHtmlTag(TITLE, title);
+	appendHtmlTag(HEAD, title);
+	appendHtmlTag(BODY, content);
+	res = title + content;
+	appendHtmlTag(HTML, res);
+	res = genHtmlTagStart(DOCTYPE + " " + HTML) + res;
+	return res;
+}

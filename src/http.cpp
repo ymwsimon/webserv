@@ -191,3 +191,18 @@ std::string	genHttpResponseLine(int code)
 {
 	return defaultHTTPVer + " " + getFullStatusMessage(code) + CRLFStr;
 }
+
+std::string	genHttpResponse(int code)
+{
+	std::string	res;
+	std::string	body;
+
+	if (!code)
+		code = 200;
+	body = genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code));
+	res = genHttpResponseLine(code);
+	res += genHttpHeader("Content-Type", getMediaType("html"));
+	res += genHttpHeader("Content-Length", intToString(body.size()));
+	res += CRLFStr;
+	return res + body;
+}

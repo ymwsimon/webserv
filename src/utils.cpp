@@ -72,52 +72,52 @@ std::string	replaceDoubleSlash(std::string &input)
 	return res;
 }
 
-Bytes	staticPage()
-{
-	std::string			str;
-	std::string			content;
-	std::stringstream	strStream;
+// Bytes	staticPage()
+// {
+// 	std::string			str;
+// 	std::string			content;
+// 	std::stringstream	strStream;
 
-	content = "<!DOCTYPE html>"
-					"<html>"
-					"<head>"
-					"<title>WebServer</title></head>"
-					"<body>"
-					"Testing"
-					"</body></html>";
-	str = "HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/html\r\n"
-			"Content-Length: ";
-	strStream << content.length();
-	str += strStream.str();
-	str += "\r\n\r\n";
-	str += content;
-	return Bytes(str.begin(), str.end());
-}
+// 	content = "<!DOCTYPE html>"
+// 					"<html>"
+// 					"<head>"
+// 					"<title>WebServer</title></head>"
+// 					"<body>"
+// 					"Testing"
+// 					"</body></html>";
+// 	str = "HTTP/1.1 200 OK\r\n"
+// 			"Content-Type: text/html\r\n"
+// 			"Content-Length: ";
+// 	strStream << content.length();
+// 	str += strStream.str();
+// 	str += "\r\n\r\n";
+// 	str += content;
+// 	return Bytes(str.begin(), str.end());
+// }
 
-Bytes	defaultErrorPage()
-{
-	std::string			str;
-	std::string			content;
-	std::stringstream	strStream;
+// Bytes	defaultErrorPage()
+// {
+// 	std::string			str;
+// 	std::string			content;
+// 	std::stringstream	strStream;
 
-	content = "<!DOCTYPE html>"
-					"<html>"
-					"<head>"
-					"<title>WebServer</title></head>"
-					"<body>"
-					"404 Not Found"
-					"</body></html>";
-	str = "HTTP/1.1 404 Not Found\r\n"
-			"Content-Type: text/html\r\n"
-			"Content-Length: ";
-	strStream << content.length();
-	str += strStream.str();
-	str += "\r\n\r\n";
-	str += content;
-	std::cout << str << std::endl;
-	return Bytes(str.begin(), str.end());
-}
+// 	content = "<!DOCTYPE html>"
+// 					"<html>"
+// 					"<head>"
+// 					"<title>WebServer</title></head>"
+// 					"<body>"
+// 					"404 Not Found"
+// 					"</body></html>";
+// 	str = "HTTP/1.1 404 Not Found\r\n"
+// 			"Content-Type: text/html\r\n"
+// 			"Content-Length: ";
+// 	strStream << content.length();
+// 	str += strStream.str();
+// 	str += "\r\n\r\n";
+// 	str += content;
+// 	std::cout << str << std::endl;
+// 	return Bytes(str.begin(), str.end());
+// }
 
 std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName)
 {
@@ -146,4 +146,9 @@ std::string	intToString(int n)
 
 	ss << n;
 	return ss.str();
+}
+
+Bytes	stringToBytes(const std::string &str)
+{
+	return Bytes(str.begin(), str.end());
 }

@@ -12,24 +12,6 @@
 
 #include "../include/service.hpp"
 
-	// private:
-	// 	struct addrinfo		*addrInfo;
-	// 	u_int32_t			addrLen;
-	// 	int					socketFd;
-	// 	Config				serviceConfig;
-	// public:
-	// 	Service(Config config);
-	// 	~Service();
-	// 	struct addrinfo		*getAddrInfo();
-	// 	u_int32_t			&getAddrLen();
-	// 	int					&getSocketFd();
-	// 	Config				&getServiceConfig();
-
-Service::~Service()
-{
-	
-}
-
 Service::Service(Config config)
 {
 	struct addrinfo		addr;
@@ -53,6 +35,11 @@ Service::Service(Config config)
 		std::cout << "error bind socket" << std::endl;
 	if (listen(socketFd, 100) < 0)
 		std::cout << "error listen socket" << std::endl;
+}
+
+Service::~Service()
+{
+	
 }
 
 struct addrinfo	*Service::getAddrInfo()

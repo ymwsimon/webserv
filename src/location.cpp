@@ -11,15 +11,7 @@
 /* ************************************************************************** */
 
 #include "../include/location.hpp"
-// std::pair<std::string, std::string>	cgi;
-// 		std::string							route;
-// 		std::string							rootFolder;
-// 		std::string							indexPage;
-// 		std::string							uploadDir;
-// 		std::string							redirect;
-// 		int									allowedMethod;
-// 		int									maxBodySize;
-// 		bool								autoIndex;
+
 Location::Location()
 {
 	std::pair<std::vector<std::string>, std::string>	splitRes;
@@ -157,58 +149,36 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 	DIR					*dir = NULL;
 	struct dirent		*dirEntry;
 	std::string			res;
-	std::string			str;
-	std::stringstream	strStream;
+	std::string			body;
+	std::string			tmp;
 
 	std::cout << "try to open dir " << folderPathStr << std::endl;
 	dir = opendir(folderPathStr.c_str());
 	if (dir)
 	{
 		std::cout << "generating index page..\n";
-		res = "<!DOCTYPE html>"
-				"<html>"
-    			"<head>"
-				"<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">"
-				"<title>Index of " + routePath + "</title>"
-				"</head>"
-				"<body>"
-				"<h1>" + routePath + "</h1>";
-
 		for (dirEntry = readdir(dir); dirEntry; dirEntry = readdir(dir))
 		{
 			std::cout << "reading .. path: ";
 			std::cout << dirEntry->d_name << std::endl;
-			res += "<p>" + std::string(dirEntry->d_name) + "</p>";
+			tmp = std::string(dirEntry->d_name);
+			body += appendHtmlTag("p", tmp);
 		}
 		closedir(dir);
-		res += "</body></html>";
-		str = "HTTP/1.1 200 OK\r\n"
-				"Content-Type: text/html\r\n"
-				"Content-Length: ";
-		strStream << res.size();
-		str += strStream.str();
-		str += "\r\n\r\n";
-		res = str + res;
+		tmp = routePath;
+		body = appendHtmlTag("h1", tmp) + body;
+		appendHtmlTag(BODY, body);
+		tmp = "Index of " + routePath;
+		appendHtmlTag(TITLE, tmp);
+		appendHtmlTag(HEAD, tmp);
+		res = tmp + body;
+		appendHtmlTag(HTML, res);
+		tmp = genHttpResponseLine(200);
+		tmp += genHttpHeader("Content-Type", getMediaType("html"));
+		tmp += genHttpHeader("Content-Length", intToString(res.size()));
+		tmp += CRLFStr;
+		res = tmp + res;
 	}
 	std::cout << "res page\n" << res << " \n\tsize:" << std::distance(res.begin(), res.end()) << std::endl;
 	return Bytes(res.begin(), res.end());
 }
-
-// bool	Location::isResourceReachable(const std::string &rootPath,
-// 	const std::vector<std::string> &routePaths, const std::string &fileName) const
-// {
-// 	std::string	filePathStr;
-
-// 	filePathStr = mergeFullPath(rootPath, routePaths, fileName);
-// 	if (isDir(filePathStr))
-// 	{
-// 		if (autoIndex)
-// 			return true;
-		
-// 	}
-// 	else
-// 	{
-
-// 	}
-// 	return false;
-// }

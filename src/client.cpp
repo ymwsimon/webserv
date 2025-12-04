@@ -35,12 +35,7 @@ int	Client::sendData(struct epoll_event *evt)
 		std::cout << responses.front().getErrorCode() << std::endl;;
 		std::cout << responses.front().getPageStream() << std::endl;
 		std::cout << responses.front().getResultPage().size() << std::endl;
-		if (responses.front().getErrorCode())
-			content = defaultErrorPage();
-		else if (!responses.front().getResultPage().empty())
-			content = responses.front().getResultPage();
-		else
-			content = responses.front().getOKResponse();
+		content = responses.front().getResultPage();
 		std::cout << "sending out data" << std::endl;
 		std::cout << "content\n";
 		for (size_t i = 0; i < content.size(); ++i)

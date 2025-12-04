@@ -68,6 +68,13 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 			}
 		}
 	}
+	if (resultPage.empty())
+	{
+		if (pageStream)
+			resultPage = getPageStreamResponse(errorCode);
+		else
+			resultPage = stringToBytes(genHttpResponse(errorCode));
+	}
 }
 
 Response::~Response()
@@ -77,7 +84,6 @@ Response::~Response()
 
 Response	&Response::operator=(const Response &right)
 {
-	////////////////////////////////////////need to implement
 	service = right.service;
 	request = right.request;
 	pageStream = right.pageStream;
@@ -109,23 +115,24 @@ void	Response::printResponse() const
 	std::cout << "Error code: " << errorCode << std::endl;
 }
 
-Bytes	Response::getOKResponse()
+Bytes	Response::getPageStreamResponse(int code)
 {
-	Bytes	buf(BUFFER_SIZE);
-	Bytes	res;
-	std::string			str;
+	Bytes				buf(BUFFER_SIZE);
+	Bytes				res;
+	std::string			head;
 	std::stringstream	strStream;
 
 	pageStream->read((char *)buf.data(), BUFFER_SIZE);
 	pageStream->close();
-	str = "HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/html\r\n"
-			"Content-Length: ";
-	strStream << pageStream->gcount();
-	str += strStream.str();
-	str += "\r\n\r\n";
-	res.insert(res.end(), str.begin(), str.end());
-	res.insert(res.end(), buf.begin(), buf.begin() + pageStream->gcount());
+	buf.resize(pageStream->gcount());
+	if (!code)
+		code = 200;
+	head = genHttpResponseLine(code);
+	head += genHttpHeader("Content-Type", getMediaType("html"));
+	head += genHttpHeader("Content-Length", intToString(buf.size()));
+	head += CRLFStr;
+	res.insert(res.end(), head.begin(), head.end());
+	res.insert(res.end(), buf.begin(), buf.begin() + buf.size());
 	delete pageStream;
 	pageStream = NULL;
 	return res;

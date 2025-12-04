@@ -16,19 +16,7 @@
 int	main(int argc, char **argv)
 {
 	Server	server;
-	std::string	head;
-	std::string	body;
-	std::string	res;
 
-	head = getFullStatusMessage(500);
-	body = head;
-	appendHtmlTag("title", head);
-	appendHtmlTag("head", head);
-	appendHtmlTag("body", body);
-	head.append(body);
-	appendHtmlTag("html", head);
-	std::cout << head << std::endl;
-	// std::cout << body << std::endl;
 	server.run();
 	(void)argc;
 	(void)argv;

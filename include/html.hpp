@@ -15,6 +15,12 @@
 #include <vector>
 #include <map>
 
+const std::string	DOCTYPE = "!DOCTYPE";
+const std::string	HTML = "html";
+const std::string	HEAD = "head";
+const std::string	TITLE = "title";
+const std::string	BODY = "body";
+
 std::string			getStatusBody(int code);
 std::string			genHtmlTagStart(std::string tag);
 std::string			genHtmlTagStart(std::string tag, std::vector<std::pair<std::string, std::string> > attr);

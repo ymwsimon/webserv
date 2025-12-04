@@ -54,3 +54,4 @@ Bytes		defaultErrorPage();
 std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName);
 bool		isDir(const std::string &filePath);
 std::string	intToString(int n);
+Bytes		stringToBytes(const std::string &str);
