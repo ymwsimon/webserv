@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/25 22:57:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:50:23 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,14 +31,16 @@ class Location
 		int									maxBodySize;
 		bool								autoIndex;
 	public:
-		Location();
-		~Location();
 		enum method
 		{
 			GET = 1,
 			POST = 2,
 			DELETE = 4,
 		};
+		Location();
+		Location(const Location &right);
+		~Location();
+		Location						&operator=(const Location &right);
 		const std::string				&getRouteStr() const;
 		const std::vector<std::string>	&getRoute() const;
 		const std::string				&getRootFolder() const;
@@ -47,13 +49,13 @@ class Location
 		bool							getAutoIndex() const;
 		int								getAllowedMethod() const;
 		int								getMaxBodySize() const;
-		void				setRouteStr(std::string str);
-		void				setRoutePaths(std::vector<std::string> p);
-		void				setRootFolder(std::string str);
-		void				printLocation() const;
-		int					getRouteMatchLength(const std::vector<std::string> &paths) const;
-		std::ifstream		*tryOpenIndexPages(std::string &folderPathStr) const;
-		Bytes				generateIndexPages(std::string &folderPathStr, std::string routePath) const;
-		bool				isResourceReachable(const std::string &rootPath,
+		void							setRouteStr(std::string str);
+		void							setRoutePaths(std::vector<std::string> p);
+		void							setRootFolder(std::string str);
+		void							printLocation() const;
+		int								getRouteMatchLength(const std::vector<std::string> &paths) const;
+		std::ifstream					*tryOpenIndexPages(std::string &folderPathStr) const;
+		Bytes							generateIndexPages(std::string &folderPathStr, std::string routePath) const;
+		bool							isResourceReachable(const std::string &rootPath,
 			const std::vector<std::string> &routePaths, const std::string &fileName) const;
 };

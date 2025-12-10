@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/22 00:49:06 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 18:04:17 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,9 +25,35 @@ Request::Request(Bytes::const_iterator start, Bytes::const_iterator end) : newDa
 	matchLocation = NULL;
 }
 
+Request::Request(const Request &right)
+{
+	*this = right;
+}
+
 Request::~Request()
 {
 	
+}
+
+Request	&Request::operator=(const Request &right)
+{
+	if (this != &right)
+	{
+		method = right.method;
+		route = right.route;
+		paths = right.paths;
+		fileName = right.fileName;
+		httpVer = right.httpVer;
+		headers = right.headers;
+		body = right.body;
+		newDataStart = right.newDataStart;
+		newDataEnd = right.newDataEnd;
+		errorCode = right.errorCode;
+		requestStatus = right.requestStatus;
+		bodyLength = right.bodyLength;
+		matchLocation = right.matchLocation;
+	}
+	return *this;
 }
 
 std::string	Request::parseReqLineSegment(const Bytes &delimiter)
@@ -148,24 +174,24 @@ void	Request::parseRequest()
 	}
 }
 
-bool	Request::complete()
+bool	Request::complete() const
 {
 	return requestStatus == COMPLETE;
 }
 
-void	Request::printRequest()
+void	Request::printRequest() const
 {
 	std::cout << "Request:" << std::endl;
 	std::cout << "\tMethod:" << method << std::endl;
 	std::cout << "\tRoute:" << route << std::endl;
 	std::cout << "\tSplit route:";
-	for (std::vector<std::string>::iterator it = paths.begin(); it != paths.end(); ++it)
+	for (std::vector<std::string>::const_iterator it = paths.begin(); it != paths.end(); ++it)
 		std::cout << " ,"[it != paths.begin()] << *it;
 	std::cout << std::endl;
 	std::cout << "\tFile name: " << fileName << std::endl;
 	std::cout << "\tVersion:" << httpVer << std::endl;
 	std::cout << "\tHeader:" << std::endl;
-	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
 		std::cout << "\t\t" << it->first << " : " << it->second << std::endl;
 	std::cout << std::endl;
 	for (size_t i = 0; i < body.size(); ++i)
@@ -238,21 +264,14 @@ const std::string	&Request::getFileName() const
 	return fileName;
 }
 
-Bytes::const_iterator	&Request::getDataStart()
+Bytes::const_iterator	Request::getDataStart() const
 {
 	return newDataStart;
 }
 
-Bytes::const_iterator	&Request::getDataEnd()
+Bytes::const_iterator	Request::getDataEnd() const
 {
 	return newDataEnd;
-}
-
-Request	&Request::operator=(const Request &right)
-{
-	//////////////////need to implement
-	(void)right;
-	return *this;
 }
 
 const Location	*Request::getMatchLocation() const

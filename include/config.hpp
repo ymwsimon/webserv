@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 21:02:21 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/18 23:49:34 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:50:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,11 +26,13 @@ class Config
 		int								port;
 	public:
 		Config();
+		Config(const Config &right);
 		~Config();
-		const std::vector<Location>				&getLocations() const;
-		const std::map<int, std::string> 		&getErrorPages() const;
-		const std::string						&getListenAddress() const;
-		const std::string						&getServerName() const;
-		const int								&getPort() const;
-		const Location							*getLocationMatch(const std::vector<std::string> &paths) const;
+		Config								&operator=(const Config &right);
+		const std::vector<Location>			&getLocations() const;
+		const std::map<int, std::string> 	&getErrorPages() const;
+		const std::string					&getListenAddress() const;
+		const std::string					&getServerName() const;
+		const int							&getPort() const;
+		const Location						*getLocationMatch(const std::vector<std::string> &paths) const;
 };

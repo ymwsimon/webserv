@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 17:31:55 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/18 21:38:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:55:08 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,10 +29,12 @@ class Server
 		bool					addNewConn(struct epoll_event evt, struct addrinfo addr);
 	public:
 		Server();
+		Server(const Server &right);
 		~Server();
+		Server							&operator=(const Server &right);
 		void							run();
-		const std::vector<Config>		&getConfigs();
-		const std::map<int, Service>	&getServices();
-		const std::map<int, Client *>	&getClients();
-		const int						&getEpollFd();
+		const std::vector<Config>		&getConfigs() const;
+		const std::map<int, Service>	&getServices() const;
+		const std::map<int, Client *>	&getClients() const;
+		const int						&getEpollFd() const;
 };

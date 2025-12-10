@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/25 23:07:07 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:56:33 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,13 +29,13 @@ class Response
 		Response();
 		bool			tryOpenIndexPages();
 	public:
-		Response(const Response &other);
 		Response(Service &ser, Request &req);
+		Response(const Response &right);
 		~Response();
-		Response	&operator=(const Response &right);
-		const int	&getErrorCode() const;
-		const Bytes	&getResultPage() const;
-		const std::ifstream	*getPageStream();
-		void		printResponse() const;
-		Bytes		getPageStreamResponse(int code);
+		Response			&operator=(const Response &right);
+		const int			&getErrorCode() const;
+		const Bytes			&getResultPage() const;
+		const std::ifstream	*getPageStream() const;
+		void				printResponse() const;
+		Bytes				getPageStreamResponse(int code);
 };

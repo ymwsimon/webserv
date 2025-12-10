@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/22 00:48:59 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 18:04:07 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,10 +59,12 @@ class Request
 		static std::string	valVer[1];
 		static std::vector<std::string>	validHttpVersion;
 		Request(Bytes::const_iterator newDataStart, Bytes::const_iterator newDataEnd);
+		Request(const Request &right);
 		~Request();
+		Request										&operator=(const Request &right);
 		void										parseRequest();
-		bool										complete();
-		void										printRequest();
+		bool										complete() const;
+		void										printRequest() const;
 		const std::string							&getMethod() const;
 		const std::string							&getRoute() const;
 		const std::string							&getHttpVer() const;
@@ -73,11 +75,10 @@ class Request
 		const size_t								&getBodyLength() const;
 		const std::vector<std::string>				&getPaths() const;
 		const std::string							&getFileName() const;
-		Bytes::const_iterator						&getDataStart();
-		Bytes::const_iterator						&getDataEnd();
+		Bytes::const_iterator						getDataStart() const;
+		Bytes::const_iterator						getDataEnd() const;
 		const Location								*getMatchLocation() const;
 		void										setDataStart(Bytes::const_iterator s);
 		void										setDataEnd(Bytes::const_iterator e);
 		void										setMatchLocation(const Location *);
-		Request										&operator=(const Request &right);
 };

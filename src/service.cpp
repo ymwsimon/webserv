@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/19 00:01:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:55:57 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,12 +37,29 @@ Service::Service(Config config)
 		std::cout << "error listen socket" << std::endl;
 }
 
+Service::Service(const Service &right)
+{
+	*this = right;
+}
+
 Service::~Service()
 {
 	
 }
 
-struct addrinfo	*Service::getAddrInfo()
+Service	&Service::operator=(const Service &right)
+{
+	if (this != &right)
+	{
+		addrInfo = right.addrInfo;
+		addrLen = right.addrLen;
+		socketFd = right.socketFd;
+		serviceConfig = right.serviceConfig;
+	}
+	return *this;
+}
+
+struct addrinfo	*Service::getAddrInfo() const
 {
 	return addrInfo;	
 }
@@ -60,13 +77,6 @@ const int	&Service::getSocketFd() const
 const Config	&Service::getServiceConfig() const
 {
 	return serviceConfig;
-}
-
-Service	&Service::operator=(const Service &right)
-{
-	/////////need to implement
-	(void)right;
-	return *this;
 }
 
 const Location	*Service::findMatchingRoute(const Request &req) const

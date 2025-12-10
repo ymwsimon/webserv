@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/27 11:43:03 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:20:15 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,9 +27,32 @@ Location::Location()
 	autoIndex = true;
 }
 
+Location::Location(const Location &right)
+{
+	*this = right;
+}
+
 Location::~Location()
 {
 
+}
+
+Location	&Location::operator=(const Location &right)
+{
+	if (this != &right)
+	{
+		cgi = right.cgi;
+		routeStr = right.routeStr;
+		route = right.route;
+		rootFolder = right.rootFolder;
+		indexPages = right.indexPages;
+		uploadDir = right.uploadDir;
+		redirect = right.redirect;
+		allowedMethod = right.allowedMethod;
+		maxBodySize = right.maxBodySize;
+		autoIndex = right.autoIndex;
+	}
+	return *this;
 }
 
 int	Location::getRouteMatchLength(const std::vector<std::string> &paths) const

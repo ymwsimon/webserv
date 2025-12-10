@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/18 23:50:15 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:55:49 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,9 +31,26 @@ Server::Server()
 		std::cout << "error add socket to epoll" << std::endl;
 }
 
+Server::Server(const Server &right)
+{
+	*this = right;
+}
+
 Server::~Server()
 {
 
+}
+
+Server	&Server::operator=(const Server &right)
+{
+	if (this != &right)
+	{
+		configs = right.configs;
+		services = right.services;
+		clients = right.clients;
+		epollFd = right.epollFd;
+	}
+	return *this;
 }
 
 void	Server::run()
@@ -92,22 +109,22 @@ bool Server::addNewConn(struct epoll_event evt, struct addrinfo addr)
 	return true;
 }
 
-const std::vector<Config>	&Server::getConfigs()
+const std::vector<Config>	&Server::getConfigs() const
 {
 	return configs;
 }
 
-const std::map<int, Service>	&Server::getServices()
+const std::map<int, Service>	&Server::getServices() const
 {
 	return services;
 }
 
-const std::map<int, Client *>	&Server::getClients()
+const std::map<int, Client *>	&Server::getClients() const
 {
 	return clients;
 }
 
-const int	&Server::getEpollFd()
+const int	&Server::getEpollFd() const
 {
 	return epollFd;
 }

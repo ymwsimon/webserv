@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 21:58:23 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/19 00:01:05 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:55:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,11 +30,12 @@ class Service
 		Service();
 	public:
 		Service(Config config);
+		Service(const Service &right);
 		~Service();
-		struct addrinfo	*getAddrInfo();
+		Service			&operator=(const Service &right);
+		struct addrinfo	*getAddrInfo() const;
 		const u_int32_t	&getAddrLen() const;
 		const int		&getSocketFd() const;
 		const Config	&getServiceConfig() const;
-		Service			&operator=(const Service &right);
 		const Location	*findMatchingRoute(const Request &req) const;
 };

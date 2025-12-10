@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/27 01:02:37 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 18:33:42 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,26 @@ Client::Client(Service &ser) : service(ser)
 
 }
 
+Client::Client(const Client &right) : service(right.service)
+{
+	*this = right;
+}
+
 Client::~Client()
 {
 	
+}
+
+Client	&Client::operator=(const Client &right)
+{
+	if (this != &right)
+	{
+		incomingData = right.incomingData;
+		requests = right.requests;
+		responses = right.responses;
+		service = right.service;
+	}
+	return *this;
 }
 
 int	Client::sendData(struct epoll_event *evt)
@@ -90,8 +107,7 @@ void	Client::processData()
 				requests.back().setDataEnd(incomingData.end());
 			}
 			requests.back().parseRequest();
-			incomingData = Bytes(reinterpret_cast<Bytes::iterator &>(requests.back().getDataStart()),
-				incomingData.end());
+			incomingData = Bytes(requests.back().getDataStart(), requests.back().getDataEnd());
 		}
 		catch(const std::exception& e)
 		{
@@ -113,11 +129,4 @@ const std::deque<Request>	&Client::getRequests() const
 const std::deque<Response>	&Client::getResponses() const
 {
 	return responses;
-}
-
-Client	&Client::operator=(const Client &right)
-{
-	//////////need to implement
-	(void)right;
-	return *this;
 }

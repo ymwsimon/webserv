@@ -6,18 +6,11 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/27 11:36:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:56:55 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/response.hpp"
-
-Response::Response(const Response &other) : service(other.service), request(other.request)
-{
-	errorCode = other.errorCode;
-	pageStream = other.pageStream;
-	resultPage = other.resultPage;
-}
 
 Response::Response(Service &ser, Request &req) : service(ser), request(req)
 {
@@ -77,6 +70,11 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 	}
 }
 
+Response::Response(const Response &right) : service(right.service), request(right.request)
+{
+	*this = right;
+}
+
 Response::~Response()
 {
 
@@ -84,11 +82,14 @@ Response::~Response()
 
 Response	&Response::operator=(const Response &right)
 {
-	service = right.service;
-	request = right.request;
-	pageStream = right.pageStream;
-	errorCode = right.errorCode;
-	resultPage = right.resultPage;
+	if (this != &right)
+	{
+		service = right.service;
+		request = right.request;
+		pageStream = right.pageStream;
+		errorCode = right.errorCode;
+		resultPage = right.resultPage;
+	}
 	return *this;
 }
 
@@ -97,7 +98,7 @@ const int	&Response::getErrorCode() const
 	return errorCode;
 }
 
-const std::ifstream	*Response::getPageStream()
+const std::ifstream	*Response::getPageStream() const
 {
 	return pageStream;
 }

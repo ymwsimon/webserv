@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:12:27 by mayeung           #+#    #+#             */
-/*   Updated: 2025/11/18 23:49:41 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/10 17:15:05 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,27 @@ Config::Config()
 	port = 8080;
 }
 
+Config::Config(const Config &right)
+{
+	*this = right;
+}
+
 Config::~Config()
 {
 
+}
+
+Config	&Config::operator=(const Config &right)
+{
+	if (this != &right)
+	{
+		errorPages = right.errorPages;
+		locations = right.locations;
+		listenAddress = right.listenAddress;
+		serverName = right.serverName;
+		port = right.port;
+	}
+	return *this;
 }
 
 const std::vector<Location> &Config::getLocations() const
