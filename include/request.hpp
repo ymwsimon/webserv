@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 18:04:07 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/17 16:31:25 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,10 +42,9 @@ class Request
 		Bytes								body;
 		Bytes::const_iterator 				newDataStart;
 		Bytes::const_iterator 				newDataEnd;
-		int									errorCode;
+		int									statusCode;
 		int									requestStatus;
 		size_t								bodyLength;
-		const Location						*matchLocation;
 		Request();
 		std::string							parseReqLineSegment(const Bytes &delimiter);
 		void								parseRequestLine();
@@ -64,21 +63,21 @@ class Request
 		Request										&operator=(const Request &right);
 		void										parseRequest();
 		bool										complete() const;
+		bool										statusOK() const;
 		void										printRequest() const;
 		const std::string							&getMethod() const;
 		const std::string							&getRoute() const;
 		const std::string							&getHttpVer() const;
 		const std::map<std::string, std::string>	&getHeaders() const;
 		const Bytes									&getBody() const;
-		const int									&getErrorCode() const;
+		int											getStatusCode() const;
 		const reqStatus								&getReqStatus() const;
-		const size_t								&getBodyLength() const;
+		size_t										getBodyLength() const;
 		const std::vector<std::string>				&getPaths() const;
 		const std::string							&getFileName() const;
 		Bytes::const_iterator						getDataStart() const;
 		Bytes::const_iterator						getDataEnd() const;
-		const Location								*getMatchLocation() const;
 		void										setDataStart(Bytes::const_iterator s);
 		void										setDataEnd(Bytes::const_iterator e);
-		void										setMatchLocation(const Location *);
+		void										setStatusCode(int code);
 };

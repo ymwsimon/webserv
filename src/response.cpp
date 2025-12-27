@@ -6,21 +6,20 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:56:55 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/17 16:33:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/response.hpp"
 
-Response::Response(Service &ser, Request &req) : service(ser), request(req)
+Response::Response(Service &ser, Request &req) : service(ser), request(req), statusCode(req.getStatusCode())
 {
 	std::string	filePathStr;
 
-	errorCode = req.getErrorCode();
-
-	if (!errorCode && req.getMatchLocation())
+	matchLocation = ser.findMatchingRoute(req);
+	if (statusOK() && matchLocation)
 	{
-		filePathStr = mergeFullPath(req.getMatchLocation()->getRootFolder(),
+		filePathStr = mergeFullPath(matchLocation->getRootFolder(),
 			req.getPaths(), req.getFileName());
 		std::cout << "File path str: " << filePathStr << std::endl;
 		if (!req.getFileName().empty() && !isDir(filePathStr))
@@ -32,31 +31,33 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 				if (!pageStream->good())
 				{
 					std::cout << "can't open " << filePathStr << " as file\n";
-					errorCode = 404;
+					setStatusCode(404);
 					pageStream->close();
+					delete pageStream;
 					pageStream = NULL;
 				}
 			}
 			catch (std::exception &e)
 			{
-				if (!errorCode)
-					errorCode = 404;
+				if (statusOK())
+					setStatusCode(404);
 			}
 		}
 		else
 		{
 			std::cout << "dir\n" << filePathStr << std::endl;
-			pageStream = req.getMatchLocation()->tryOpenIndexPages(filePathStr);
+			pageStream = matchLocation->tryOpenIndexPages(filePathStr);
 			if (!pageStream)
 			{
 				std::cout << "index page not found\n";
 				std::cout << "list folder content.." << filePathStr << std::endl;
-				if (req.getMatchLocation()->getAutoIndex())
-					resultPage = req.getMatchLocation()->generateIndexPages(filePathStr, mergeFullPath("", req.getPaths(), req.getFileName()));
-				else if (!errorCode)
-					errorCode = 404;
+				if (matchLocation->getAutoIndex())
+					resultPage = matchLocation->generateIndexPages(filePathStr,
+						mergeFullPath("", req.getPaths(), req.getFileName()));
+				else if (statusOK())
+					setStatusCode(404);
 				if (resultPage.empty())
-					errorCode = 404;
+					setStatusCode(404);
 				std::cout << "result page size " << resultPage.size() << std::endl;
 			}
 		}
@@ -64,9 +65,9 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req)
 	if (resultPage.empty())
 	{
 		if (pageStream)
-			resultPage = getPageStreamResponse(errorCode);
+			resultPage = getPageStreamResponse(statusCode);
 		else
-			resultPage = stringToBytes(genHttpResponse(errorCode));
+			resultPage = stringToBytes(genHttpResponse(statusCode));
 	}
 }
 
@@ -87,15 +88,21 @@ Response	&Response::operator=(const Response &right)
 		service = right.service;
 		request = right.request;
 		pageStream = right.pageStream;
-		errorCode = right.errorCode;
+		matchLocation = right.matchLocation;
+		statusCode = right.statusCode;
 		resultPage = right.resultPage;
 	}
 	return *this;
 }
 
-const int	&Response::getErrorCode() const
+bool	Response::statusOK() const
 {
-	return errorCode;
+	return statusCode == 200;
+}
+
+int	Response::getStatusCode() const
+{
+	return statusCode;
 }
 
 const std::ifstream	*Response::getPageStream() const
@@ -108,12 +115,17 @@ const Bytes	&Response::getResultPage() const
 	return resultPage;
 }
 
+const Location	*Response::getMatchLocation() const
+{
+	return matchLocation;
+}
+
 void	Response::printResponse() const
 {
 	std::cout << "Response: " << std::endl;
-	if (!request.getMatchLocation())
+	if (!matchLocation)
 		std::cout << "No match location" << std::endl;
-	std::cout << "Error code: " << errorCode << std::endl;
+	std::cout << "Error code: " << statusCode << std::endl;
 }
 
 Bytes	Response::getPageStreamResponse(int code)
@@ -126,8 +138,6 @@ Bytes	Response::getPageStreamResponse(int code)
 	pageStream->read((char *)buf.data(), BUFFER_SIZE);
 	pageStream->close();
 	buf.resize(pageStream->gcount());
-	if (!code)
-		code = 200;
 	head = genHttpResponseLine(code);
 	head += genHttpHeader("Content-Type", getMediaType("html"));
 	head += genHttpHeader("Content-Length", toString(buf.size()));
@@ -137,4 +147,14 @@ Bytes	Response::getPageStreamResponse(int code)
 	delete pageStream;
 	pageStream = NULL;
 	return res;
+}
+
+void	Response::setStatusCode(int code)
+{
+	statusCode = code;
+}
+
+void	Response::setMatchLocation(const Location *loc)
+{
+	matchLocation = loc;
 }

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 18:33:42 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/17 16:31:37 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,10 +46,9 @@ int	Client::sendData(struct epoll_event *evt)
 
 	if (!requests.empty() && requests.front().complete())
 	{
-		requests.front().setMatchLocation(service.findMatchingRoute(requests.front()));
 		requests.front().printRequest();
 		responses.push_back(Response(service, requests.front()));
-		std::cout << responses.front().getErrorCode() << std::endl;;
+		std::cout << responses.front().getStatusCode() << std::endl;;
 		std::cout << responses.front().getPageStream() << std::endl;
 		std::cout << responses.front().getResultPage().size() << std::endl;
 		content = responses.front().getResultPage();

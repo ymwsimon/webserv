@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:56:33 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/17 16:24:56 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,9 +23,10 @@ class Response
 	private:
 		Service			&service;
 		Request			&request;
+		const Location	*matchLocation;
 		std::ifstream	*pageStream;
 		Bytes			resultPage;
-		int				errorCode;
+		int				statusCode;
 		Response();
 		bool			tryOpenIndexPages();
 	public:
@@ -33,9 +34,13 @@ class Response
 		Response(const Response &right);
 		~Response();
 		Response			&operator=(const Response &right);
-		const int			&getErrorCode() const;
+		bool				statusOK() const;
+		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
+		const Location		*getMatchLocation() const;
 		const std::ifstream	*getPageStream() const;
 		void				printResponse() const;
 		Bytes				getPageStreamResponse(int code);
+		void				setStatusCode(int code);
+		void				setMatchLocation(const Location *);
 };

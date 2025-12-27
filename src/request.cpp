@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 18:04:17 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/17 16:32:40 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,9 +20,8 @@ std::vector<std::string>	Request::validHttpVersion = std::vector<std::string>(Re
 Request::Request(Bytes::const_iterator start, Bytes::const_iterator end) : newDataStart(start), newDataEnd(end)
 {
 	requestStatus = METHOD;
-	errorCode = 0;
+	statusCode = 200;
 	bodyLength = 0;
-	matchLocation = NULL;
 }
 
 Request::Request(const Request &right)
@@ -48,10 +47,9 @@ Request	&Request::operator=(const Request &right)
 		body = right.body;
 		newDataStart = right.newDataStart;
 		newDataEnd = right.newDataEnd;
-		errorCode = right.errorCode;
+		statusCode = right.statusCode;
 		requestStatus = right.requestStatus;
 		bodyLength = right.bodyLength;
-		matchLocation = right.matchLocation;
 	}
 	return *this;
 }
@@ -60,7 +58,7 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 {
 	Bytes::const_iterator	it;
 	std::string				res;
-	int						err = 0;
+	int						err = 200;
 
 	it = searchPattern(newDataStart, newDataEnd, delimiter);
 	if (it != newDataEnd)
@@ -73,7 +71,8 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 		}
 		else if (requestStatus == ROUTE)
 		{
-			//check start with /? and empty route
+			if (res.empty() || res[0] != '/')
+				err = 400;
 		}
 		else if (requestStatus == HTTPVERSION)
 		{
@@ -82,8 +81,8 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 		}
 		newDataStart = it + delimiter.size();
 		++requestStatus;
-		if (!errorCode)
-			errorCode = err;
+		if (statusOK())
+			setStatusCode(err);
 	}
 	return res;
 }
@@ -115,8 +114,8 @@ void	Request::extractContentLength(std::string &len)
 	catch (std::exception &e)
 	{
 		(void)e;
-		if (!errorCode)
-			errorCode = 400;
+		if (statusOK())
+			setStatusCode(400);
 	}
 }
 
@@ -142,11 +141,11 @@ void	Request::parseRequestHeader()
 			headers.insert(std::make_pair(key, value));
 			newDataStart = crlfIt + CRLF.size();
 		}
-		else if (!errorCode)
-			errorCode = 400;
+		else if (statusOK())
+			setStatusCode(400);
 	}
-	else if (!errorCode)
-		errorCode = 400;
+	else if (statusOK())
+		setStatusCode(400);
 }
 
 void	Request::parseBody()
@@ -179,6 +178,11 @@ bool	Request::complete() const
 	return requestStatus == COMPLETE;
 }
 
+bool	Request::statusOK() const
+{
+	return statusCode == 200;
+}
+
 void	Request::printRequest() const
 {
 	std::cout << "Request:" << std::endl;
@@ -197,11 +201,6 @@ void	Request::printRequest() const
 	for (size_t i = 0; i < body.size(); ++i)
 		std::cout << body[i];
 	std::cout << std::endl;
-	if (matchLocation)
-	{
-		std::cout << "\tMatched Location:" << std::endl;
-		matchLocation->printLocation();
-	}
 }
 
 void	Request::setDataStart(Bytes::const_iterator s)
@@ -214,9 +213,9 @@ void	Request::setDataEnd(Bytes::const_iterator e)
 	newDataEnd = e;
 }
 
-void	Request::setMatchLocation(const Location *loc)
+void	Request::setStatusCode(int code)
 {
-	matchLocation = loc;
+	statusCode = code;
 }
 
 const std::string	&Request::getMethod() const
@@ -244,12 +243,12 @@ const Bytes	&Request::getBody() const
 	return body;
 }
 
-const int	&Request::getErrorCode() const
+int	Request::getStatusCode() const
 {
-	return errorCode;
+	return statusCode;
 }
 
-const size_t	&Request::getBodyLength() const
+size_t	Request::getBodyLength() const
 {
 	return bodyLength;
 }
@@ -272,9 +271,4 @@ Bytes::const_iterator	Request::getDataStart() const
 Bytes::const_iterator	Request::getDataEnd() const
 {
 	return newDataEnd;
-}
-
-const Location	*Request::getMatchLocation() const
-{
-	return matchLocation;
 }
