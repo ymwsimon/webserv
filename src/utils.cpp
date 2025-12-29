@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/03 16:54:58 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/28 19:28:42 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,13 +131,20 @@ std::string	mergeFullPath(const std::string rootPath, const std::vector<std::str
 
 bool	isDir(const std::string &filePath)
 {
-	DIR	*dir;
+	struct stat	fileStat;
 
-	dir = opendir(filePath.c_str());
-	if (!dir)
-		return false;
-	closedir(dir);
-	return true;
+	if (!stat(filePath.c_str(), &fileStat))
+		return S_ISDIR(fileStat.st_mode);
+	return false;
+}
+
+bool	isRegularFile(const std::string &filePath)
+{
+	struct stat	fileStat;
+
+	if (!stat(filePath.c_str(), &fileStat))
+		return S_ISREG(fileStat.st_mode);
+	return false;
 }
 
 std::string	toString(int n)

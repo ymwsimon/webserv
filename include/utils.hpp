@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/03 22:49:41 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/28 19:29:00 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <iostream>
 #include <sstream>
 #include <dirent.h>
+#include <sys/stat.h>
 #include "html.hpp"
 #include "http.hpp"
 #define BUFFER_SIZE 50000
@@ -53,5 +54,6 @@ Bytes		staticPage();
 Bytes		defaultErrorPage();
 std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName);
 bool		isDir(const std::string &filePath);
+bool		isRegularFile(const std::string &filePath);
 std::string	toString(int n);
 Bytes		stringToBytes(const std::string &str);

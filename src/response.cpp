@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/17 16:33:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/29 18:29:20 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 		filePathStr = mergeFullPath(matchLocation->getRootFolder(),
 			req.getPaths(), req.getFileName());
 		std::cout << "File path str: " << filePathStr << std::endl;
-		if (!req.getFileName().empty() && !isDir(filePathStr))
+		if (isRegularFile(filePathStr))
 		{
 			try 
 			{
