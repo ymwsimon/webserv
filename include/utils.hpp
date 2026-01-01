@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/28 19:29:00 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/01 17:50:04 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <sstream>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "html.hpp"
 #include "http.hpp"
 #define BUFFER_SIZE 50000
@@ -46,6 +47,9 @@ Bytes::const_iterator	searchPattern(Bytes::const_iterator dataStart,
 	Bytes::const_iterator dataEnd, const Bytes &pattern);
 Bytes::const_iterator	searchPattern(const Bytes &data, const Bytes &pattern);
 
+std::string::const_iterator	searchLastStr(const std::string &data, std::string pattern);
+std::string	extractFileExt(std::string fullPath);
+
 std::string	trim(std::string &str);
 
 std::pair<std::vector<std::string>, std::string>	splitPath(const std::string &pathStr);
@@ -55,5 +59,10 @@ Bytes		defaultErrorPage();
 std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName);
 bool		isDir(const std::string &filePath);
 bool		isRegularFile(const std::string &filePath);
+bool		fileExist(const std::string &filePath);
+bool		fileReadOK(const std::string &filePath);
+bool		fileExeOK(const std::string &filePath);
+bool		fileWriteOK(const std::string &filePath);
+off_t		fileSize(const std::string &filePath);
 std::string	toString(int n);
 Bytes		stringToBytes(const std::string &str);

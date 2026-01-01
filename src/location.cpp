@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:20:15 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/01 18:21:57 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@ Location::Location()
 	allowedMethod = GET | POST;
 	maxBodySize = 1024 * 1024 * 1024;
 	autoIndex = true;
+	cgi.insert(std::make_pair("php", "php-cgi"));
+	// cgi.insert(std::make_pair("html", "aaa"));
 }
 
 Location::Location(const Location &right)
@@ -134,6 +136,28 @@ void	Location::printLocation() const
 	for (size_t i = 0; i < indexPages.size(); ++i)
 		std::cout << " " << indexPages[i];
 	std::cout << std::endl;
+}
+
+std::string	Location::findValidIndexPage(std::string &folderPathStr) const
+{
+	std::string	fullPath;
+
+	for (size_t i = 0; i < indexPages.size(); ++i)
+	{
+		fullPath = folderPathStr + indexPages[i];
+		std::cout << "try opening " << fullPath << std::endl;
+		if (isRegularFile(fullPath) || fileExist(fullPath))
+			return fullPath;
+		std::cout << "open fail\n";
+	}
+	return "";
+}
+
+std::string	Location::findCGIExecutable(std::string ext) const
+{
+	if (cgi.count(ext) > 0)
+		return cgi.at(ext);
+	return "";
 }
 
 std::ifstream	*Location::tryOpenIndexPages(std::string &folderPathStr) const

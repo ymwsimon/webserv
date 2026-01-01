@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/29 18:29:20 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/01 19:16:27 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,37 +17,27 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 	std::string	filePathStr;
 
 	matchLocation = ser.findMatchingRoute(req);
+	pageStream = NULL;
 	if (statusOK() && matchLocation)
 	{
 		filePathStr = mergeFullPath(matchLocation->getRootFolder(),
 			req.getPaths(), req.getFileName());
 		std::cout << "File path str: " << filePathStr << std::endl;
-		if (isRegularFile(filePathStr))
+		if (fileExist(filePathStr) && !fileReadOK(filePathStr))
+			statusCode = 403;
+		else if (isRegularFile(filePathStr))
 		{
-			try 
-			{
-				std::cout << "opening " << filePathStr << " as file\n";
-				pageStream = new std::ifstream(filePathStr.c_str(), std::ios_base::in);
-				if (!pageStream->good())
-				{
-					std::cout << "can't open " << filePathStr << " as file\n";
-					setStatusCode(404);
-					pageStream->close();
-					delete pageStream;
-					pageStream = NULL;
-				}
-			}
-			catch (std::exception &e)
-			{
-				if (statusOK())
-					setStatusCode(404);
-			}
+			std::cout << "opening " << filePathStr << " as file\n";
+			resourcePath = filePathStr;
 		}
-		else
+		else if (isDir(filePathStr))
 		{
+			if (!req.getFileName().empty())
+				filePathStr.append("/");
 			std::cout << "dir\n" << filePathStr << std::endl;
-			pageStream = matchLocation->tryOpenIndexPages(filePathStr);
-			if (!pageStream)
+			resourcePath = matchLocation->findValidIndexPage(filePathStr);
+			std::cout << "resourcePath: " << resourcePath << std::endl;
+			if (resourcePath.empty())
 			{
 				std::cout << "index page not found\n";
 				std::cout << "list folder content.." << filePathStr << std::endl;
@@ -61,11 +51,27 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 				std::cout << "result page size " << resultPage.size() << std::endl;
 			}
 		}
+		else
+			statusCode = 404;
 	}
 	if (resultPage.empty())
 	{
+		if (!resourcePath.empty())
+		{
+			std::cout << "ext for file " << extractFileExt(resourcePath) << std::endl;
+			std::cout << "cgi path for file " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
+			pageStream = new std::ifstream(resourcePath.c_str(), std::ios_base::in);
+			if (!pageStream->good())
+			{
+				std::cout << "can't open " << resourcePath << " as file\n";
+				setStatusCode(404);
+				pageStream->close();
+				delete pageStream;
+				pageStream = NULL;
+			}
+		}
 		if (pageStream)
-			resultPage = getPageStreamResponse(statusCode);
+			resultPage = getPageStreamResponse();
 		else
 			resultPage = stringToBytes(genHttpResponse(statusCode));
 	}
@@ -120,6 +126,11 @@ const Location	*Response::getMatchLocation() const
 	return matchLocation;
 }
 
+const std::string	Response::getResourcePath() const
+{
+	return resourcePath;
+}
+
 void	Response::printResponse() const
 {
 	std::cout << "Response: " << std::endl;
@@ -128,7 +139,7 @@ void	Response::printResponse() const
 	std::cout << "Error code: " << statusCode << std::endl;
 }
 
-Bytes	Response::getPageStreamResponse(int code)
+Bytes	Response::getPageStreamResponse()
 {
 	Bytes				buf(BUFFER_SIZE);
 	Bytes				res;
@@ -138,7 +149,7 @@ Bytes	Response::getPageStreamResponse(int code)
 	pageStream->read((char *)buf.data(), BUFFER_SIZE);
 	pageStream->close();
 	buf.resize(pageStream->gcount());
-	head = genHttpResponseLine(code);
+	head = genHttpResponseLine(statusCode);
 	head += genHttpHeader("Content-Type", getMediaType("html"));
 	head += genHttpHeader("Content-Length", toString(buf.size()));
 	head += CRLFStr;
@@ -157,4 +168,9 @@ void	Response::setStatusCode(int code)
 void	Response::setMatchLocation(const Location *loc)
 {
 	matchLocation = loc;
+}
+
+void	Response::setResourcePath(const std::string path)
+{
+	resourcePath = path;
 }

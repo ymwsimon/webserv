@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/28 19:28:42 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/01 17:51:04 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,28 @@ Bytes::const_iterator	searchPattern(Bytes::const_iterator dataStart,
 Bytes::const_iterator	searchPattern(const Bytes &data, const Bytes &pattern)
 {
 	return std::search(data.begin(), data.end(), pattern.begin(), pattern.end());
+}
+
+std::string::const_iterator	searchLastStr(const std::string &data, std::string pattern)
+{
+	return std::find_end(data.begin(), data.end(), pattern.begin(), pattern.end());
+}
+
+std::string	extractFileExt(std::string fullPath)
+{
+	std::string	res;
+	std::string	fileName;
+	size_t		pos;
+
+	pos = fullPath.find_last_of('/');
+	if (pos != std::string::npos)
+	{
+		fileName = fullPath.substr(pos);
+		pos = fileName.find_last_of('.');
+		if (pos != std::string::npos)
+			return fileName.substr(pos + 1);
+	}
+	return "";
 }
 
 std::string	trim(std::string &str)
@@ -145,6 +167,35 @@ bool	isRegularFile(const std::string &filePath)
 	if (!stat(filePath.c_str(), &fileStat))
 		return S_ISREG(fileStat.st_mode);
 	return false;
+}
+
+bool	fileExist(const std::string &filePath)
+{
+	return (access(filePath.c_str(), F_OK) == 0);
+}
+
+bool	fileReadOK(const std::string &filePath)
+{
+	return (access(filePath.c_str(), F_OK | R_OK) == 0);
+}
+
+bool	fileExeOK(const std::string &filePath)
+{
+	return (access(filePath.c_str(), F_OK | X_OK) == 0);
+}
+
+bool	fileWriteOK(const std::string &filePath)
+{
+	return (access(filePath.c_str(), F_OK | W_OK) == 0);
+}
+
+off_t	fileSize(const std::string &filePath)
+{
+	struct stat	fileInfo;
+
+	if (stat(filePath.c_str(), & fileInfo) == 0)
+		return fileInfo.st_size;
+	return 0;
 }
 
 std::string	toString(int n)

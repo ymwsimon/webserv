@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/17 16:24:56 by mayeung          ###   ########.fr       */
+/*   Updated: 2025/12/31 19:56:37 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,11 +24,11 @@ class Response
 		Service			&service;
 		Request			&request;
 		const Location	*matchLocation;
+		std::string		resourcePath;
 		std::ifstream	*pageStream;
 		Bytes			resultPage;
 		int				statusCode;
 		Response();
-		bool			tryOpenIndexPages();
 	public:
 		Response(Service &ser, Request &req);
 		Response(const Response &right);
@@ -38,9 +38,11 @@ class Response
 		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
 		const Location		*getMatchLocation() const;
+		const std::string	getResourcePath() const;
 		const std::ifstream	*getPageStream() const;
 		void				printResponse() const;
-		Bytes				getPageStreamResponse(int code);
+		Bytes				getPageStreamResponse();
 		void				setStatusCode(int code);
-		void				setMatchLocation(const Location *);
+		void				setMatchLocation(const Location *location);
+		void				setResourcePath(const std::string path);
 };

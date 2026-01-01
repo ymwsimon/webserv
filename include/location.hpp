@@ -6,13 +6,14 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:50:23 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/01 18:20:39 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 #include <iostream>
 #include <fstream>
 #include "utils.hpp"
@@ -20,7 +21,7 @@
 class Location
 {
 	private:
-		std::pair<std::string, std::string>	cgi;
+		std::map<std::string, std::string>	cgi;
 		std::string							routeStr;
 		std::vector<std::string>			route;
 		std::string							rootFolder;
@@ -54,6 +55,8 @@ class Location
 		void							setRootFolder(std::string str);
 		void							printLocation() const;
 		int								getRouteMatchLength(const std::vector<std::string> &paths) const;
+		std::string						findValidIndexPage(std::string &folderPathStr) const;
+		std::string						findCGIExecutable(std::string ext) const;
 		std::ifstream					*tryOpenIndexPages(std::string &folderPathStr) const;
 		Bytes							generateIndexPages(std::string &folderPathStr, std::string routePath) const;
 		bool							isResourceReachable(const std::string &rootPath,
