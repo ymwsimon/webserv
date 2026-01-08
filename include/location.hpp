@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/01 18:20:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/07 17:41:02 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ class Location
 		const std::vector<std::string>	&getIndexPages() const;
 		const std::string				&getuploadDir() const;
 		bool							getAutoIndex() const;
+		bool							hasCGIConfig() const;
 		int								getAllowedMethod() const;
 		int								getMaxBodySize() const;
 		void							setRouteStr(std::string str);
@@ -59,6 +60,8 @@ class Location
 		std::string						findCGIExecutable(std::string ext) const;
 		std::ifstream					*tryOpenIndexPages(std::string &folderPathStr) const;
 		Bytes							generateIndexPages(std::string &folderPathStr, std::string routePath) const;
+		const std::map<std::string, std::string>	&getCGIConfig() const;
+		bool							isOneOfCGIConfig(std::string &filePath) const;
 		bool							isResourceReachable(const std::string &rootPath,
 			const std::vector<std::string> &routePaths, const std::string &fileName) const;
 };

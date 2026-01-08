@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/31 19:56:37 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/07 21:21:20 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 #include <vector>
 #include <fstream>
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "service.hpp"
 #include "request.hpp"
 #include "utils.hpp"
@@ -42,6 +44,7 @@ class Response
 		const std::ifstream	*getPageStream() const;
 		void				printResponse() const;
 		Bytes				getPageStreamResponse();
+		Bytes				exeCGI(std::string exe);
 		void				setStatusCode(int code);
 		void				setMatchLocation(const Location *location);
 		void				setResourcePath(const std::string path);

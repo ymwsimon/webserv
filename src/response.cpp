@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/01 19:16:27 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/08 18:31:32 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,8 +58,17 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 	{
 		if (!resourcePath.empty())
 		{
-			std::cout << "ext for file " << extractFileExt(resourcePath) << std::endl;
-			std::cout << "cgi path for file " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
+			std::cout << "ext for file: " << extractFileExt(resourcePath) << std::endl;
+			std::cout << "cgi?: " << matchLocation->hasCGIConfig() << std::endl;
+			std::cout << "is one of cgi?: " << matchLocation->isOneOfCGIConfig(resourcePath) << std::endl;
+			std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
+			Bytes	cgiRes;
+			if (!((matchLocation->findCGIExecutable(extractFileExt(resourcePath))).empty()))
+				cgiRes = exeCGI(matchLocation->findCGIExecutable(extractFileExt(resourcePath)));
+			std::cout << "cgi res size: " << cgiRes.size() << std::endl;
+			std::cout << "cgi res content: ";
+			printBytes(cgiRes);
+			std::cout << std::endl;
 			pageStream = new std::ifstream(resourcePath.c_str(), std::ios_base::in);
 			if (!pageStream->good())
 			{
@@ -157,6 +166,63 @@ Bytes	Response::getPageStreamResponse()
 	res.insert(res.end(), buf.begin(), buf.begin() + buf.size());
 	delete pageStream;
 	pageStream = NULL;
+	return res;
+}
+
+Bytes	Response::exeCGI(std::string exe)
+{
+	Bytes	res;
+	const char	*args[3];
+	const char	*envs[6];
+	int		pipeFd[2];
+	int		pid;
+
+	if (pipe(pipeFd) < 0)
+	{
+		std::cout << "error creating pipe\n";
+		return res;
+	}
+	pid = fork();
+	if (pid < 0)
+	{
+		std::cout << "error forking\n";
+		return res;
+	}
+	if (!pid)
+	{
+		resourcePath = "/home/user/cpp/webserv/data/www/test.php";
+		close(pipeFd[0]);
+		dup2(pipeFd[1], STDOUT_FILENO);
+		args[0] = exe.c_str();
+		// args[1] = resourcePath.c_str();
+		args[1] = NULL;
+		args[2] = NULL;
+		envs[0] = "SCRIPT_FILENAME=/home/user/cpp/webserv/data/www/test.php";
+		envs[1] = "SCRIPT_NAME=/home/user/cpp/webserv/data/www/test.php";
+		envs[2] = "SERVER_PROTOCOL=HTTP/1.1";
+		envs[3] = "REQUEST_METHOD=GET";
+		envs[4] = "REDIRECT_STATUS=200";
+		envs[5] = NULL;
+		std::cerr << "exe par: " << args[0] << " " << args[1] << std::endl;
+		std::cerr << "going to execute..\n";
+		execve(exe.c_str(), (char **)args, (char **)envs);
+		std::cerr << "error executing\n";
+	}
+	else
+	{
+		int	status;
+
+		close(pipeFd[1]);
+		std::cout << "waiting child\n";
+		if (waitpid(pid, &status, WUNTRACED | WNOHANG) < 0)
+			std::cout << "error waiting\n";
+		std::cout << "finish waiting child\n";
+		unsigned char	buf[BUFFER_SIZE];
+		int				readSize;
+
+		while ((readSize = read(pipeFd[0], buf, BUFFER_SIZE)) > 0)
+			appendBuf(res, buf, readSize);
+	}
 	return res;
 }
 

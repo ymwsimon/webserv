@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/01 17:51:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/07 21:57:04 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -189,6 +189,23 @@ bool	fileWriteOK(const std::string &filePath)
 	return (access(filePath.c_str(), F_OK | W_OK) == 0);
 }
 
+bool	fileWithExt(const std::string &filePath, std::string ext)
+{
+	std::string::const_reverse_iterator	ri;
+
+	if (filePath.length() > ("." + ext).length())
+	{
+		ri = filePath.rbegin();
+		for (std::string::const_reverse_iterator r = ext.rbegin(); r != ext.rend(); ++r, ++ri)
+		{
+			if (*ri != *r)
+				return false;
+		}
+		return *ri == '.';
+	}
+	return false;
+}
+
 off_t	fileSize(const std::string &filePath)
 {
 	struct stat	fileInfo;
@@ -204,6 +221,19 @@ std::string	toString(int n)
 
 	ss << n;
 	return ss.str();
+}
+
+Bytes	&appendBuf(Bytes &bytes, unsigned char *buf, size_t size)
+{
+	for (size_t i = 0; i < size; ++i)
+		bytes.push_back(buf[i]);
+	return bytes;
+}
+
+void	printBytes(const Bytes &bytes)
+{
+	for (size_t i = 0; i < bytes.size(); ++i)
+		std::cout << bytes[i];
 }
 
 Bytes	stringToBytes(const std::string &str)

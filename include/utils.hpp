@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/01 17:50:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/07 21:56:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,6 +63,9 @@ bool		fileExist(const std::string &filePath);
 bool		fileReadOK(const std::string &filePath);
 bool		fileExeOK(const std::string &filePath);
 bool		fileWriteOK(const std::string &filePath);
+bool		fileWithExt(const std::string &filePath, std::string ext);
 off_t		fileSize(const std::string &filePath);
 std::string	toString(int n);
+Bytes		&appendBuf(Bytes &bytes, unsigned char *buf, size_t size);
+void		printBytes(const Bytes &bytes);
 Bytes		stringToBytes(const std::string &str);

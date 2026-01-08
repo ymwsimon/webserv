@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/01 18:21:57 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/07 21:35:09 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ Location::Location()
 	allowedMethod = GET | POST;
 	maxBodySize = 1024 * 1024 * 1024;
 	autoIndex = true;
-	cgi.insert(std::make_pair("php", "php-cgi"));
+	cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
 	// cgi.insert(std::make_pair("html", "aaa"));
 }
 
@@ -103,6 +103,11 @@ const std::string	&Location::getuploadDir() const
 bool	Location::getAutoIndex() const
 {
 	return autoIndex;
+}
+
+bool	Location::hasCGIConfig() const
+{
+	return !cgi.empty();
 }
 
 int	Location::getAllowedMethod() const
@@ -225,4 +230,16 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 	}
 	std::cout << "res page\n" << res << " \n\tsize:" << std::distance(res.begin(), res.end()) << std::endl;
 	return Bytes(res.begin(), res.end());
+}
+
+const std::map<std::string, std::string>	&Location::getCGIConfig() const
+{
+	return cgi;
+}
+
+bool	Location::isOneOfCGIConfig(std::string &filePath) const
+{
+	std::string	ext = extractFileExt(filePath);
+
+	return !ext.empty() && cgi.count(ext) > 0;
 }
