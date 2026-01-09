@@ -6,13 +6,14 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/07 21:21:20 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/09 17:29:09 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include <vector>
 #include <fstream>
+#include <string>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -22,6 +23,14 @@
 
 class Response
 {
+	enum e_resType
+	{
+		NONE,
+		CGI_EXE,
+		FILE,
+		LIST_FOLDER,
+		ERR_PAGE,
+	};
 	private:
 		Service			&service;
 		Request			&request;
@@ -30,6 +39,7 @@ class Response
 		std::ifstream	*pageStream;
 		Bytes			resultPage;
 		int				statusCode;
+		int				resultType;
 		Response();
 	public:
 		Response(Service &ser, Request &req);
@@ -44,6 +54,7 @@ class Response
 		const std::ifstream	*getPageStream() const;
 		void				printResponse() const;
 		Bytes				getPageStreamResponse();
+		Bytes				convertCGIResToResponse(const Bytes &cgiRes);
 		Bytes				exeCGI(std::string exe);
 		void				setStatusCode(int code);
 		void				setMatchLocation(const Location *location);

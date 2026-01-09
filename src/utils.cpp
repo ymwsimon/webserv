@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/07 21:57:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/09 15:32:49 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -223,10 +223,46 @@ std::string	toString(int n)
 	return ss.str();
 }
 
-Bytes	&appendBuf(Bytes &bytes, unsigned char *buf, size_t size)
+std::string	stringToLowerCase(std::string str)
+{
+	std::transform(str.begin(), str.end(), str.begin(), ::towlower);
+	return str;
+}
+
+int	toInt(std::string str)
+{
+	std::stringstream	ss(str);
+	int					res;
+
+	try
+	{
+		ss >> res;
+	}
+	catch(const std::exception& e)
+	{
+		return -1;
+	}
+	return res;
+}
+
+Bytes	&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size)
 {
 	for (size_t i = 0; i < size; ++i)
 		bytes.push_back(buf[i]);
+	return bytes;
+}
+
+Bytes	&appendBytes(Bytes &bytes, std::string toAppend)
+{
+	for (size_t i = 0; i < toAppend.length(); ++i)
+		bytes.push_back(toAppend[i]);
+	return bytes;
+}
+
+Bytes	&appendBytes(Bytes &bytes, Bytes::const_iterator start, Bytes::const_iterator end)
+{
+	for (; start != end; ++start)
+		bytes.push_back(*start);
 	return bytes;
 }
 
@@ -236,7 +272,25 @@ void	printBytes(const Bytes &bytes)
 		std::cout << bytes[i];
 }
 
-Bytes	stringToBytes(const std::string &str)
+Bytes	stringToBytes(std::string str)
 {
 	return Bytes(str.begin(), str.end());
+}
+
+std::string bytesToString(const Bytes &data)
+{
+	std::string	res;
+
+	for (Bytes::const_iterator it = data.begin(); it != data.end(); ++it)
+		res.push_back(*it);
+	return res;
+}
+
+std::string bytesToString(Bytes::const_iterator start, Bytes::const_iterator end)
+{
+	std::string	res;
+
+	for (; start != end; ++start)
+		res.push_back(*start);
+	return res;
 }

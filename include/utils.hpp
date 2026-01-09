@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/07 21:56:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/09 15:31:03 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,12 @@ bool		fileWriteOK(const std::string &filePath);
 bool		fileWithExt(const std::string &filePath, std::string ext);
 off_t		fileSize(const std::string &filePath);
 std::string	toString(int n);
-Bytes		&appendBuf(Bytes &bytes, unsigned char *buf, size_t size);
+std::string	stringToLowerCase(std::string str);
+int			toInt(std::string str);
+Bytes		&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size);
+Bytes		&appendBytes(Bytes &bytes, std::string toAppend);
+Bytes		&appendBytes(Bytes &bytes, Bytes::const_iterator start, Bytes::const_iterator end);
 void		printBytes(const Bytes &bytes);
-Bytes		stringToBytes(const std::string &str);
+Bytes		stringToBytes(std::string str);
+std::string bytesToString(const Bytes &data);
+std::string bytesToString(Bytes::const_iterator start, Bytes::const_iterator end);

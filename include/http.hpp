@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:46:32 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/03 22:51:30 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/09 15:30:18 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,15 @@
 #include "utils.hpp"
 
 const std::string	defaultHTTPVer = "HTTP/1.1";
-const std::string	CONTENTTYPE = "Content-Type";
-const std::string	CONTENTLENGTH = "Content-Length";
+const std::string	CONTENTTYPE = "content-type";
+const std::string	CONTENTLENGTH = "content-length";
+
+enum e_HTTPErrCode
+{
+	FORBIDDEN = 403,
+	NOT_FOUND = 404,
+	INTERNAL_ERROR = 500,
+};
 
 const std::string	&getStatusMessage(int code);
 const std::string	&getMediaType(std::string mType);

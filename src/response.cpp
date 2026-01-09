@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/08 18:31:32 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/09 17:30:39 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 	std::string	filePathStr;
 
 	matchLocation = ser.findMatchingRoute(req);
+	resultType = NONE;
 	pageStream = NULL;
 	if (statusOK() && matchLocation)
 	{
@@ -24,7 +25,7 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 			req.getPaths(), req.getFileName());
 		std::cout << "File path str: " << filePathStr << std::endl;
 		if (fileExist(filePathStr) && !fileReadOK(filePathStr))
-			statusCode = 403;
+			setStatusCode(FORBIDDEN);
 		else if (isRegularFile(filePathStr))
 		{
 			std::cout << "opening " << filePathStr << " as file\n";
@@ -45,35 +46,39 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 					resultPage = matchLocation->generateIndexPages(filePathStr,
 						mergeFullPath("", req.getPaths(), req.getFileName()));
 				else if (statusOK())
-					setStatusCode(404);
+					setStatusCode(NOT_FOUND);
 				if (resultPage.empty())
-					setStatusCode(404);
+					setStatusCode(NOT_FOUND);
 				std::cout << "result page size " << resultPage.size() << std::endl;
 			}
 		}
 		else
-			statusCode = 404;
+			setStatusCode(NOT_FOUND);
+	}
+	if (resultPage.empty() && matchLocation && !resourcePath.empty() && !((matchLocation->findCGIExecutable(extractFileExt(resourcePath))).empty()))
+	{
+		std::cout << "ext for file: " << extractFileExt(resourcePath) << std::endl;
+		std::cout << "cgi?: " << matchLocation->hasCGIConfig() << std::endl;
+		std::cout << "is one of cgi?: " << matchLocation->isOneOfCGIConfig(resourcePath) << std::endl;
+		std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
+		Bytes	cgiRes;
+		if (!((matchLocation->findCGIExecutable(extractFileExt(resourcePath))).empty()))
+			cgiRes = exeCGI(matchLocation->findCGIExecutable(extractFileExt(resourcePath)));
+		std::cout << "cgi res size: " << cgiRes.size() << std::endl;
+		std::cout << "cgi res content: ";
+		// printBytes(cgiRes);
+		std::cout << std::endl;
+		resultPage = convertCGIResToResponse(cgiRes);
 	}
 	if (resultPage.empty())
 	{
 		if (!resourcePath.empty())
 		{
-			std::cout << "ext for file: " << extractFileExt(resourcePath) << std::endl;
-			std::cout << "cgi?: " << matchLocation->hasCGIConfig() << std::endl;
-			std::cout << "is one of cgi?: " << matchLocation->isOneOfCGIConfig(resourcePath) << std::endl;
-			std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
-			Bytes	cgiRes;
-			if (!((matchLocation->findCGIExecutable(extractFileExt(resourcePath))).empty()))
-				cgiRes = exeCGI(matchLocation->findCGIExecutable(extractFileExt(resourcePath)));
-			std::cout << "cgi res size: " << cgiRes.size() << std::endl;
-			std::cout << "cgi res content: ";
-			printBytes(cgiRes);
-			std::cout << std::endl;
 			pageStream = new std::ifstream(resourcePath.c_str(), std::ios_base::in);
 			if (!pageStream->good())
 			{
 				std::cout << "can't open " << resourcePath << " as file\n";
-				setStatusCode(404);
+				setStatusCode(NOT_FOUND);
 				pageStream->close();
 				delete pageStream;
 				pageStream = NULL;
@@ -169,27 +174,98 @@ Bytes	Response::getPageStreamResponse()
 	return res;
 }
 
+Bytes	Response::convertCGIResToResponse(const Bytes &cgiRes)
+{
+	Bytes								res;
+	Bytes::const_iterator				start = cgiRes.begin();
+	Bytes::const_iterator				crlfPos;
+	Bytes::const_iterator				colonPos;
+	std::map<std::string, std::string>	headers;
+	std::string							fieldName;
+	std::string							fieldValue;
+	std::string							line;
+
+	while ((crlfPos = searchPattern(start, cgiRes.end(), CRLF)) != cgiRes.end())
+	{
+		if (start == crlfPos)
+			break ;
+		if ((colonPos = searchPattern(start, crlfPos, COLON)) == crlfPos)
+		{
+			std::cout << "no colon found\n";
+			setStatusCode(INTERNAL_ERROR);
+			return res;
+		}
+		fieldName = bytesToString(start, colonPos);
+		std::transform(fieldName.begin(), fieldName.end(), fieldName.begin(), ::tolower);
+		std::cout << "field name: " << fieldName << std::endl;
+		if (headers.count(fieldName) > 0)
+		{
+			std::cout << "duplicate field name\n";
+			setStatusCode(INTERNAL_ERROR);
+			return res;
+		}
+		fieldValue = bytesToString(colonPos + 1, crlfPos);
+		headers.insert(std::make_pair(fieldName, fieldValue));
+		start = crlfPos + 2;
+	}
+	if (headers.empty() || headers.count(CONTENTTYPE) == 0)
+	// if (headers.empty())
+	{
+		std::cout << "empty header\n";
+		setStatusCode(INTERNAL_ERROR);
+		return res;
+	}
+	if (headers.count("status") > 0 && headers.at("status") != "200")
+	{
+		// headers.at("status") >> statusCode;
+		statusCode = toInt(headers.at("status"));
+		if (statusCode == -1)
+			setStatusCode(INTERNAL_ERROR);
+		std::cout << "status is: " << headers.at("status") << std::endl;
+		return res;
+	}
+	line = genHttpResponseLine(200);
+	appendBytes(res, line);
+	for (std::map<std::string, std::string>::iterator headerIt = headers.begin(); headerIt != headers.end(); ++ headerIt)
+	{
+		fieldName = headerIt->first;
+		fieldValue = headerIt->second;
+		line = genHttpHeader(fieldName, fieldValue);
+		appendBytes(res, line);
+	}
+	int	size = std::distance(crlfPos + 2, cgiRes.end());
+	line = genHttpHeader(CONTENTLENGTH, toString(size));
+	appendBytes(res, line);
+	appendBytes(res, CRLFStr);
+	appendBytes(res, crlfPos + 2, cgiRes.end());
+	return res;
+}
+
 Bytes	Response::exeCGI(std::string exe)
 {
-	Bytes	res;
+	Bytes		res;
 	const char	*args[3];
 	const char	*envs[6];
-	int		pipeFd[2];
-	int		pid;
+	int			pipeFd[2];
+	int			pid;
 
 	if (pipe(pipeFd) < 0)
 	{
 		std::cout << "error creating pipe\n";
+		setStatusCode(INTERNAL_ERROR);
 		return res;
 	}
 	pid = fork();
 	if (pid < 0)
 	{
 		std::cout << "error forking\n";
+		setStatusCode(INTERNAL_ERROR);
 		return res;
 	}
 	if (!pid)
 	{
+		std::string	scriptFileName = "SCRIPT_FILENAME=";
+		scriptFileName += resourcePath;
 		resourcePath = "/home/user/cpp/webserv/data/www/test.php";
 		close(pipeFd[0]);
 		dup2(pipeFd[1], STDOUT_FILENO);
@@ -197,12 +273,14 @@ Bytes	Response::exeCGI(std::string exe)
 		// args[1] = resourcePath.c_str();
 		args[1] = NULL;
 		args[2] = NULL;
-		envs[0] = "SCRIPT_FILENAME=/home/user/cpp/webserv/data/www/test.php";
-		envs[1] = "SCRIPT_NAME=/home/user/cpp/webserv/data/www/test.php";
-		envs[2] = "SERVER_PROTOCOL=HTTP/1.1";
-		envs[3] = "REQUEST_METHOD=GET";
-		envs[4] = "REDIRECT_STATUS=200";
-		envs[5] = NULL;
+		// envs[0] = "SCRIPT_FILENAME=/home/user/cpp/webserv/data/www/test.php";
+		envs[0] = scriptFileName.c_str();
+		// envs[1] = NULL;
+		// envs[1] = "SCRIPT_NAME=/home/user/cpp/webserv/data/www/test.php";
+		envs[1] = "SERVER_PROTOCOL=HTTP/1.1";
+		envs[2] = "REQUEST_METHOD=GET";
+		envs[3] = "REDIRECT_STATUS=200";
+		envs[4] = NULL;
 		std::cerr << "exe par: " << args[0] << " " << args[1] << std::endl;
 		std::cerr << "going to execute..\n";
 		execve(exe.c_str(), (char **)args, (char **)envs);
@@ -222,6 +300,7 @@ Bytes	Response::exeCGI(std::string exe)
 
 		while ((readSize = read(pipeFd[0], buf, BUFFER_SIZE)) > 0)
 			appendBuf(res, buf, readSize);
+		close(pipeFd[0]);
 	}
 	return res;
 }
