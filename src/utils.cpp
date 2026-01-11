@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/09 15:32:49 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/11 22:49:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,10 +41,12 @@ std::string	extractFileExt(std::string fullPath)
 	size_t		pos;
 
 	pos = fullPath.find_last_of('/');
+	std::cout << "/ pos" << pos << std::endl;
 	if (pos != std::string::npos)
 	{
 		fileName = fullPath.substr(pos);
 		pos = fileName.find_last_of('.');
+		std::cout << ". pos" << pos << std::endl;
 		if (pos != std::string::npos)
 			return fileName.substr(pos + 1);
 	}
@@ -58,96 +60,32 @@ std::string	trim(std::string &str)
 	return str;
 }
 
-std::pair<std::vector<std::string>, std::string>	splitPath(const std::string &pathStr)
+std::vector<std::string>	splitPath(const std::string &pathStr)
 {
-	std::string					resFileName;
 	std::vector<std::string>	resPath;
 	std::string::const_iterator	it = pathStr.begin();
 	std::string::const_iterator	endIt;
 
-	try
+	while (it != pathStr.end())
 	{
-		if (!pathStr.empty() && *it == '/')
-			++it;
+		++it;
 		endIt = std::find(it, pathStr.end(), '/');
-		while (it != pathStr.end() && endIt != pathStr.end())
-		{
-			resPath.push_back(std::string(it, endIt));
-			it = endIt + 1;
-			endIt = std::find(endIt + 1, pathStr.end(), '/');
-		}
-		resFileName = std::string(pathStr.rbegin(), std::find(pathStr.rbegin(), pathStr.rend(), '/'));
-		std::reverse(resFileName.begin(), resFileName.end());
+		resPath.push_back(std::string(it, endIt));
+		it = endIt;
 	}
-	catch (std::exception &e)
-	{
-		std::cerr << e.what();
-	}
-	return std::make_pair(resPath, resFileName);
+	return resPath;
 }
 
-std::string	replaceDoubleSlash(std::string &input)
-{
-	std::string	res;
-
-	(void)input;
-	return res;
-}
-
-// Bytes	staticPage()
-// {
-// 	std::string			str;
-// 	std::string			content;
-// 	std::stringstream	strStream;
-
-// 	content = "<!DOCTYPE html>"
-// 					"<html>"
-// 					"<head>"
-// 					"<title>WebServer</title></head>"
-// 					"<body>"
-// 					"Testing"
-// 					"</body></html>";
-// 	str = "HTTP/1.1 200 OK\r\n"
-// 			"Content-Type: text/html\r\n"
-// 			"Content-Length: ";
-// 	strStream << content.length();
-// 	str += strStream.str();
-// 	str += "\r\n\r\n";
-// 	str += content;
-// 	return Bytes(str.begin(), str.end());
-// }
-
-// Bytes	defaultErrorPage()
-// {
-// 	std::string			str;
-// 	std::string			content;
-// 	std::stringstream	strStream;
-
-// 	content = "<!DOCTYPE html>"
-// 					"<html>"
-// 					"<head>"
-// 					"<title>WebServer</title></head>"
-// 					"<body>"
-// 					"404 Not Found"
-// 					"</body></html>";
-// 	str = "HTTP/1.1 404 Not Found\r\n"
-// 			"Content-Type: text/html\r\n"
-// 			"Content-Length: ";
-// 	strStream << content.length();
-// 	str += strStream.str();
-// 	str += "\r\n\r\n";
-// 	str += content;
-// 	std::cout << str << std::endl;
-// 	return Bytes(str.begin(), str.end());
-// }
-
-std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName)
+std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, bool splitPath)
 {
 	std::string	res = rootPath;
 
 	for (size_t i = 0; i < routePaths.size(); ++i)
+	{
 		res += "/" + routePaths[i];
-	res += "/" + fileName;
+		if (splitPath && isRegularFile(res))
+			break ;
+	}
 	return res;
 }
 
@@ -293,4 +231,9 @@ std::string bytesToString(Bytes::const_iterator start, Bytes::const_iterator end
 	for (; start != end; ++start)
 		res.push_back(*start);
 	return res;
+}
+
+void	logMessage(std::ostream &s, std::string msg)
+{
+	s << msg << std::endl;
 }

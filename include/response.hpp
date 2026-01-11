@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/09 17:29:09 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/11 22:47:14 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,4 +59,7 @@ class Response
 		void				setStatusCode(int code);
 		void				setMatchLocation(const Location *location);
 		void				setResourcePath(const std::string path);
+		void				setStatusCodeResType(int code, int rType);
+		void				handleCGIExe(void);
+		void				determineResType(void);
 };
