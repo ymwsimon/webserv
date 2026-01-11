@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/09 15:31:03 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/10 17:44:04 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,11 +52,11 @@ std::string	extractFileExt(std::string fullPath);
 
 std::string	trim(std::string &str);
 
-std::pair<std::vector<std::string>, std::string>	splitPath(const std::string &pathStr);
+std::vector<std::string>	splitPath(const std::string &pathStr);
 
 Bytes		staticPage();
 Bytes		defaultErrorPage();
-std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, const std::string &fileName);
+std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, bool splitPath);
 bool		isDir(const std::string &filePath);
 bool		isRegularFile(const std::string &filePath);
 bool		fileExist(const std::string &filePath);

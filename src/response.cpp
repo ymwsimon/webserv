@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/09 17:30:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/11 01:16:49 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,76 +19,101 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 	matchLocation = ser.findMatchingRoute(req);
 	resultType = NONE;
 	pageStream = NULL;
+	if (!statusOK())
+		resultType = ERR_PAGE;
+	if (statusOK() && !matchLocation)
+	{
+		resultType = ERR_PAGE;
+		setStatusCode(NOT_FOUND);
+		std::cout << "no route match\n";
+	}
 	if (statusOK() && matchLocation)
 	{
 		filePathStr = mergeFullPath(matchLocation->getRootFolder(),
-			req.getPaths(), req.getFileName());
-		std::cout << "File path str: " << filePathStr << std::endl;
-		if (fileExist(filePathStr) && !fileReadOK(filePathStr))
-			setStatusCode(FORBIDDEN);
-		else if (isRegularFile(filePathStr))
+			req.getPaths(), matchLocation->hasCGIConfig());
+		std::cout << "Resource path str: " << filePathStr << std::endl;
+		if (matchLocation->hasCGIConfig())
+			resultType = CGI_EXE;
+		if (isDir(filePathStr))
 		{
-			std::cout << "opening " << filePathStr << " as file\n";
-			resourcePath = filePathStr;
-		}
-		else if (isDir(filePathStr))
-		{
-			if (!req.getFileName().empty())
-				filePathStr.append("/");
+			filePathStr.push_back('/');
 			std::cout << "dir\n" << filePathStr << std::endl;
 			resourcePath = matchLocation->findValidIndexPage(filePathStr);
 			std::cout << "resourcePath: " << resourcePath << std::endl;
 			if (resourcePath.empty())
 			{
 				std::cout << "index page not found\n";
-				std::cout << "list folder content.." << filePathStr << std::endl;
+				resourcePath = filePathStr;
 				if (matchLocation->getAutoIndex())
-					resultPage = matchLocation->generateIndexPages(filePathStr,
-						mergeFullPath("", req.getPaths(), req.getFileName()));
-				else if (statusOK())
+				{
+					resultType = LIST_FOLDER;
+					std::cout << "list folder content.." << resourcePath << std::endl;
+				}
+				else
+				{
+					resultType = ERR_PAGE;
 					setStatusCode(NOT_FOUND);
-				if (resultPage.empty())
-					setStatusCode(NOT_FOUND);
-				std::cout << "result page size " << resultPage.size() << std::endl;
+				}
 			}
 		}
+		if (isRegularFile(filePathStr))
+			resourcePath = filePathStr;
+		if (resultType == NONE)
+			resultType = FILE;
+	}
+	if (!fileExist(resourcePath))
+	{
+		resultType = ERR_PAGE;
+		setStatusCode(NOT_FOUND);
+	}
+	if (fileExist(resourcePath) && !fileReadOK(resourcePath))
+	{
+		resultType = ERR_PAGE;
+		setStatusCode(FORBIDDEN);
+	}
+	if (resultType == LIST_FOLDER)
+		resultPage = matchLocation->generateIndexPages(resourcePath,
+			mergeFullPath("", req.getPaths(), false));
+	if (resultType == CGI_EXE)
+	{
+		std::cout << "resource path in cgi: " << resourcePath << std::endl;
+		if (isRegularFile(resourcePath) && !fileExeOK(resourcePath))
+			resultType = FILE;
 		else
-			setStatusCode(NOT_FOUND);
-	}
-	if (resultPage.empty() && matchLocation && !resourcePath.empty() && !((matchLocation->findCGIExecutable(extractFileExt(resourcePath))).empty()))
-	{
-		std::cout << "ext for file: " << extractFileExt(resourcePath) << std::endl;
-		std::cout << "cgi?: " << matchLocation->hasCGIConfig() << std::endl;
-		std::cout << "is one of cgi?: " << matchLocation->isOneOfCGIConfig(resourcePath) << std::endl;
-		std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
-		Bytes	cgiRes;
-		if (!((matchLocation->findCGIExecutable(extractFileExt(resourcePath))).empty()))
-			cgiRes = exeCGI(matchLocation->findCGIExecutable(extractFileExt(resourcePath)));
-		std::cout << "cgi res size: " << cgiRes.size() << std::endl;
-		std::cout << "cgi res content: ";
-		// printBytes(cgiRes);
-		std::cout << std::endl;
-		resultPage = convertCGIResToResponse(cgiRes);
-	}
-	if (resultPage.empty())
-	{
-		if (!resourcePath.empty())
 		{
-			pageStream = new std::ifstream(resourcePath.c_str(), std::ios_base::in);
-			if (!pageStream->good())
-			{
-				std::cout << "can't open " << resourcePath << " as file\n";
-				setStatusCode(NOT_FOUND);
-				pageStream->close();
-				delete pageStream;
-				pageStream = NULL;
-			}
+			std::cout << "ext for file: " << extractFileExt(resourcePath) << std::endl;
+			std::cout << "cgi?: " << matchLocation->hasCGIConfig() << std::endl;
+			std::cout << "is one of cgi?: " << matchLocation->isOneOfCGIConfig(resourcePath) << std::endl;
+			std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
+			Bytes	cgiRes;
+			if (!((matchLocation->findCGIExecutable(extractFileExt(resourcePath))).empty()))
+				cgiRes = exeCGI(matchLocation->findCGIExecutable(extractFileExt(resourcePath)));
+			std::cout << "cgi res size: " << cgiRes.size() << std::endl;
+			std::cout << "cgi res content: ";
+			// printBytes(cgiRes);
+			std::cout << std::endl;
+			resultPage = convertCGIResToResponse(cgiRes);
+			if (resultPage.empty())
+				resultType = ERR_PAGE;
 		}
-		if (pageStream)
-			resultPage = getPageStreamResponse();
-		else
-			resultPage = stringToBytes(genHttpResponse(statusCode));
 	}
+	if (resultType == FILE)
+	{
+		pageStream = new std::ifstream(resourcePath.c_str(), std::ios_base::in);
+		if (!pageStream->good())
+		{
+			std::cout << "can't open " << resourcePath << " as file\n";
+			resultType = ERR_PAGE;
+			setStatusCode(NOT_FOUND);
+			pageStream->close();
+			delete pageStream;
+			pageStream = NULL;
+		}
+		else
+			resultPage = getPageStreamResponse();
+	}
+	if (resultType == ERR_PAGE)
+		resultPage = stringToBytes(genHttpResponse(statusCode));
 }
 
 Response::Response(const Response &right) : service(right.service), request(right.request)
@@ -266,7 +291,7 @@ Bytes	Response::exeCGI(std::string exe)
 	{
 		std::string	scriptFileName = "SCRIPT_FILENAME=";
 		scriptFileName += resourcePath;
-		resourcePath = "/home/user/cpp/webserv/data/www/test.php";
+		// resourcePath = "/home/user/cpp/webserv/data/www/test.php";
 		close(pipeFd[0]);
 		dup2(pipeFd[1], STDOUT_FILENO);
 		args[0] = exe.c_str();

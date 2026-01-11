@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/07 21:35:09 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/11 01:12:33 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,11 +14,11 @@
 
 Location::Location()
 {
-	std::pair<std::vector<std::string>, std::string>	splitRes;
+	std::vector<std::string>	splitRes;
 
 	routeStr = "/";
 	splitRes = splitPath(routeStr);
-	route = splitRes.first;
+	route = splitRes;
 	rootFolder = "./data/www";
 	indexPages.push_back("index.html");
 	indexPages.push_back("b.html");
@@ -61,12 +61,8 @@ int	Location::getRouteMatchLength(const std::vector<std::string> &paths) const
 {
 	int	i = 0;
 
-	if (route.empty())
-		return 0;
-	while (i < (int)route.size() && i < (int)paths.size() && route[i] == paths[i])
+	while (i < (int)route.size() && i < (int)paths.size() && (route[i].empty() || route[i] == paths[i]))
 		++i;
-	if (!i)
-		return -1;
 	return i;
 }
 

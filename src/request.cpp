@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/17 16:32:40 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/10 14:41:29 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,6 @@ Request	&Request::operator=(const Request &right)
 		method = right.method;
 		route = right.route;
 		paths = right.paths;
-		fileName = right.fileName;
 		httpVer = right.httpVer;
 		headers = right.headers;
 		body = right.body;
@@ -89,10 +88,7 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 
 void	Request::splitRoute()
 {
-	std::pair<std::vector<std::string>, std::string>	splitRes;
-	splitRes = splitPath(route);
-	paths = splitRes.first;
-	fileName = splitRes.second;
+	paths = splitPath(route);
 }
 
 void	Request::parseRequestLine()
@@ -192,7 +188,6 @@ void	Request::printRequest() const
 	for (std::vector<std::string>::const_iterator it = paths.begin(); it != paths.end(); ++it)
 		std::cout << " ,"[it != paths.begin()] << *it;
 	std::cout << std::endl;
-	std::cout << "\tFile name: " << fileName << std::endl;
 	std::cout << "\tVersion:" << httpVer << std::endl;
 	std::cout << "\tHeader:" << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
@@ -256,11 +251,6 @@ size_t	Request::getBodyLength() const
 const std::vector<std::string>	&Request::getPaths() const
 {
 	return paths;
-}
-
-const std::string	&Request::getFileName() const
-{
-	return fileName;
 }
 
 Bytes::const_iterator	Request::getDataStart() const

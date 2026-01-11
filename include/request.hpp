@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/17 16:31:25 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/10 14:38:39 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,6 @@ class Request
 		std::string							method;
 		std::string							route;
 		std::vector<std::string>			paths;
-		std::string							fileName;
 		std::string							httpVer;
 		std::map<std::string, std::string>	headers;
 		Bytes								body;
@@ -74,7 +73,6 @@ class Request
 		const reqStatus								&getReqStatus() const;
 		size_t										getBodyLength() const;
 		const std::vector<std::string>				&getPaths() const;
-		const std::string							&getFileName() const;
 		Bytes::const_iterator						getDataStart() const;
 		Bytes::const_iterator						getDataEnd() const;
 		void										setDataStart(Bytes::const_iterator s);
