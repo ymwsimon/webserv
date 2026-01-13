@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/07 17:41:02 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/12 22:30:02 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,6 @@ class Location
 		int								getRouteMatchLength(const std::vector<std::string> &paths) const;
 		std::string						findValidIndexPage(std::string &folderPathStr) const;
 		std::string						findCGIExecutable(std::string ext) const;
-		std::ifstream					*tryOpenIndexPages(std::string &folderPathStr) const;
 		Bytes							generateIndexPages(std::string &folderPathStr, std::string routePath) const;
 		const std::map<std::string, std::string>	&getCGIConfig() const;
 		bool							isOneOfCGIConfig(std::string &filePath) const;

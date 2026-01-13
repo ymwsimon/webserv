@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/11 22:49:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/12 11:45:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,12 +41,10 @@ std::string	extractFileExt(std::string fullPath)
 	size_t		pos;
 
 	pos = fullPath.find_last_of('/');
-	std::cout << "/ pos" << pos << std::endl;
 	if (pos != std::string::npos)
 	{
 		fileName = fullPath.substr(pos);
 		pos = fileName.find_last_of('.');
-		std::cout << ". pos" << pos << std::endl;
 		if (pos != std::string::npos)
 			return fileName.substr(pos + 1);
 	}

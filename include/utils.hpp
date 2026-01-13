@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/11 22:49:18 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/12 14:39:38 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ const Byte doubleSlash[] = {'/', '/'};
 const Bytes DOUBLESLASH = Bytes(doubleSlash, doubleSlash + 2);
 const Byte doubleCrlf[] = {'\r', '\n', '\r', '\n'};
 const Bytes DOUBLECRLF = Bytes(doubleCrlf, doubleCrlf + 4);
+const std::string	defaultExeBin = "/usr/bin/bash";
 
 Bytes::const_iterator	searchPattern(Bytes::const_iterator dataStart,
 	Bytes::const_iterator dataEnd, Bytes::const_iterator patternStart, Bytes::const_iterator patternEnd);

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/11 01:12:33 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/12 22:29:48 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -159,37 +159,6 @@ std::string	Location::findCGIExecutable(std::string ext) const
 	if (cgi.count(ext) > 0)
 		return cgi.at(ext);
 	return "";
-}
-
-std::ifstream	*Location::tryOpenIndexPages(std::string &folderPathStr) const
-{
-	std::ifstream	*file = NULL;
-	std::string		fullPath;
-
-	for (size_t i = 0; i < indexPages.size() && !file; ++i)
-	{
-		fullPath = folderPathStr + indexPages[i];
-		try
-		{
-			std::cout << "try opening " << fullPath << std::endl;
-			file = new std::ifstream(fullPath.c_str(), std::ios_base::in);
-			if (!file)
-			{
-				std::cout << "file stream pointer is null\n";
-			}
-			else if (!file->good())
-			{
-				std::cout << "open fail\n";
-				file = NULL;
-			}
-		}
-		catch (std::exception &e)
-		{
-			std::cout << "can't open " << fullPath << std::endl;
-			file = NULL;
-		}
-	}
-	return file;
 }
 
 Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string routePath) const

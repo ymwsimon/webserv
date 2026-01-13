@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/11 22:51:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/12 23:18:27 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,22 +106,8 @@ Bytes	Response::getPageStreamResponse()
 	std::string			head;
 	std::stringstream	strStream;
 
-	try
-	{
-		pageStream = new std::ifstream(resourcePath.c_str(), std::ios_base::in);
-	}
-	catch (std::exception &e)
-	{
-		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+	if (!openPageStream())
 		return res;
-	}
-	if (!pageStream->good())
-	{
-		std::cout << "can't open " << resourcePath << " as file\n";
-		setStatusCodeResType(NOT_FOUND, ERR_PAGE);
-		pageStream->close();
-		return res;
-	}
 	pageStream->read((char *)buf.data(), BUFFER_SIZE);
 	pageStream->close();
 	buf.resize(pageStream->gcount());
@@ -136,16 +122,67 @@ Bytes	Response::getPageStreamResponse()
 	return res;
 }
 
+bool	Response::openPageStream()
+{
+	try
+	{
+		pageStream = new std::ifstream(resourcePath.c_str(), std::ios_base::in);
+	}
+	catch (std::exception &e)
+	{
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		return false;
+	}
+	if (!pageStream->good())
+	{
+		std::cout << "can't open " << resourcePath << " as file\n";
+		setStatusCodeResType(NOT_FOUND, ERR_PAGE);
+		pageStream->close();
+		delete pageStream;
+		pageStream = NULL;
+		return false;
+	}
+	return true;
+}
+
 Bytes	Response::convertCGIResToResponse(const Bytes &cgiRes)
 {
 	Bytes								res;
-	Bytes::const_iterator				start = cgiRes.begin();
 	Bytes::const_iterator				crlfPos;
-	Bytes::const_iterator				colonPos;
 	std::map<std::string, std::string>	headers;
+	int									size;
+
+	extractHeader(cgiRes, headers, crlfPos);
+	if (headers.empty() || headers.count(CONTENTTYPE) == 0)
+	{
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		return res;
+	}
+	if (headers.count("status") > 0 && headers.at("status") != "200")
+	{
+		statusCode = toInt(headers.at("status"));
+		if (statusCode == -1)
+			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		return res;
+	}
+	appendBytes(res, genHttpResponseLine(200));
+	for (std::map<std::string, std::string>::iterator headerIt = headers.begin();
+		headerIt != headers.end(); ++headerIt)
+		appendBytes(res, genHttpHeader(headerIt->first, headerIt->second));
+	size = std::distance(crlfPos + 2, cgiRes.end());
+	appendBytes(res, genHttpHeader(CONTENTLENGTH, toString(size)));
+	appendBytes(res, CRLFStr);
+	appendBytes(res, crlfPos + 2, cgiRes.end());
+	return res;
+}
+
+void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers,
+	Bytes::const_iterator &crlfPos)
+{
+	Bytes::const_iterator				start = cgiRes.begin();
+	Bytes::const_iterator				colonPos;
 	std::string							fieldName;
 	std::string							fieldValue;
-	std::string							line;
 
 	while ((crlfPos = searchPattern(start, cgiRes.end(), CRLF)) != cgiRes.end())
 	{
@@ -155,7 +192,7 @@ Bytes	Response::convertCGIResToResponse(const Bytes &cgiRes)
 		{
 			std::cout << "no colon found\n";
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-			return res;
+			return ;
 		}
 		fieldName = bytesToString(start, colonPos);
 		std::transform(fieldName.begin(), fieldName.end(), fieldName.begin(), ::tolower);
@@ -164,107 +201,114 @@ Bytes	Response::convertCGIResToResponse(const Bytes &cgiRes)
 		{
 			std::cout << "duplicate field name\n";
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-			return res;
+			return ;
 		}
 		fieldValue = bytesToString(colonPos + 1, crlfPos);
 		headers.insert(std::make_pair(fieldName, fieldValue));
 		start = crlfPos + 2;
 	}
-	if (headers.empty() || headers.count(CONTENTTYPE) == 0)
-	// if (headers.empty())
-	{
-		std::cout << "empty header\n";
-		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		return res;
-	}
-	if (headers.count("status") > 0 && headers.at("status") != "200")
-	{
-		// headers.at("status") >> statusCode;
-		statusCode = toInt(headers.at("status"));
-		if (statusCode == -1)
-			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		std::cout << "status is: " << headers.at("status") << std::endl;
-		return res;
-	}
-	line = genHttpResponseLine(200);
-	appendBytes(res, line);
-	for (std::map<std::string, std::string>::iterator headerIt = headers.begin(); headerIt != headers.end(); ++ headerIt)
-	{
-		fieldName = headerIt->first;
-		fieldValue = headerIt->second;
-		line = genHttpHeader(fieldName, fieldValue);
-		appendBytes(res, line);
-	}
-	int	size = std::distance(crlfPos + 2, cgiRes.end());
-	line = genHttpHeader(CONTENTLENGTH, toString(size));
-	appendBytes(res, line);
-	appendBytes(res, CRLFStr);
-	appendBytes(res, crlfPos + 2, cgiRes.end());
-	return res;
 }
 
-Bytes	Response::exeCGI(std::string exe)
+void	Response::exeCGI(std::string exe, Bytes &res)
 {
-	Bytes		res;
-	const char	*args[3];
-	const char	*envs[6];
-	int			pipeFd[2];
-	int			pid;
+	std::vector<std::string>	strs(5);
+	std::vector<char *>			args(2);
+	std::vector<char *>			env(6);
+	int							pipeFd[2];
+	int							pid;
 
+	if (exe.empty())
+		return ;
 	if (pipe(pipeFd) < 0)
 	{
-		std::cout << "error creating pipe\n";
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		return res;
+		return ;
 	}
 	pid = fork();
 	if (pid < 0)
 	{
-		std::cout << "error forking\n";
+		close(pipeFd[0]);
+		close(pipeFd[1]);
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		return res;
+		return ;
 	}
 	if (!pid)
 	{
-		std::string	scriptFileName = "SCRIPT_FILENAME=";
-		scriptFileName += resourcePath;
-		// resourcePath = "/home/user/cpp/webserv/data/www/test.php";
+		prepareArgEnv(exe, strs, args, env);
 		close(pipeFd[0]);
 		dup2(pipeFd[1], STDOUT_FILENO);
-		args[0] = exe.c_str();
-		// args[1] = resourcePath.c_str();
-		args[1] = NULL;
-		args[2] = NULL;
-		// envs[0] = "SCRIPT_FILENAME=/home/user/cpp/webserv/data/www/test.php";
-		envs[0] = scriptFileName.c_str();
-		// envs[1] = NULL;
-		// envs[1] = "SCRIPT_NAME=/home/user/cpp/webserv/data/www/test.php";
-		envs[1] = "SERVER_PROTOCOL=HTTP/1.1";
-		envs[2] = "REQUEST_METHOD=GET";
-		envs[3] = "REDIRECT_STATUS=200";
-		envs[4] = NULL;
-		std::cerr << "exe par: " << args[0] << " " << args[1] << std::endl;
-		std::cerr << "going to execute..\n";
-		execve(exe.c_str(), (char **)args, (char **)envs);
-		std::cerr << "error executing\n";
+		close(STDIN_FILENO);
+		execve(exe.c_str(), (char *const*)args.data(), (char *const*)env.data());
 	}
 	else
 	{
-		int	status;
-
-		close(pipeFd[1]);
-		std::cout << "waiting child\n";
-		if (waitpid(pid, &status, WUNTRACED | WNOHANG) < 0)
-			std::cout << "error waiting\n";
-		std::cout << "finish waiting child\n";
-		unsigned char	buf[BUFFER_SIZE];
-		int				readSize;
-
-		while ((readSize = read(pipeFd[0], buf, BUFFER_SIZE)) > 0)
-			appendBuf(res, buf, readSize);
-		close(pipeFd[0]);
+		cgiParent(pid, pipeFd);
+		cgiExtractResult(res, pipeFd);
 	}
-	return res;
+}
+
+bool	Response::cgiParent(pid_t pid, int *pipeFd)
+{
+	int			status;
+	pid_t		waitRes;
+	std::time_t start = std::time(NULL);
+
+	close(pipeFd[1]);
+	while (std::difftime(std::time(NULL), start) < cgiWaitTime)
+	{
+		if ((waitRes = waitpid(pid, &status, WUNTRACED | WNOHANG)) < 0)
+		{
+			close(pipeFd[0]);
+			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+			return false;
+		}
+		if (waitRes == pid)
+			break ;
+	}
+	if (!waitRes)
+	{
+		kill(pid, SIGKILL);
+		waitpid(pid, &status, 0);
+	}
+	return true;
+}
+
+void	Response::cgiExtractResult(Bytes &res, int *pipeFd)
+{
+	unsigned char	buf[BUFFER_SIZE];
+	int				readSize;
+
+	while ((readSize = read(pipeFd[0], buf, BUFFER_SIZE)) > 0)
+		appendBuf(res, buf, readSize);
+	close(pipeFd[0]);
+	if (readSize < 0)
+	{
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		res.clear();
+	}
+}
+
+void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
+	std::vector<char *> &args, std::vector<char *> &env)
+{
+	strs[0] = "SCRIPT_FILENAME=";
+	strs[1] = "PATH_INFO=";
+	strs[2] = "SERVER_PROTOCOL=";
+	strs[3] = "REQUEST_METHOD=";
+	strs[4] = "REDIRECT_STATUS=";
+	strs[0] += resourcePath;
+	strs[1] += "/";
+	strs[2] += request.getHttpVer();
+	strs[3] += request.getMethod();
+	strs[4] += "200";
+	args[0] = (char *) exe.c_str();
+	args[1] = NULL;
+	env[0] = (char *) strs[0].c_str();
+	env[1] = (char *) strs[1].c_str();
+	env[2] = (char *) strs[2].c_str();
+	env[3] = (char *) strs[3].c_str();
+	env[4] = (char *) strs[4].c_str();
+	env[5] = NULL;
 }
 
 void	Response::setStatusCode(int code)
@@ -290,18 +334,22 @@ void	Response::setStatusCodeResType(int code, int rType)
 
 void	Response::handleCGIExe(void)
 {
+	Bytes		cgiRes;
+	std::string	exeBin;
+
 	std::cout << "resource path in cgi: " << resourcePath << std::endl;
 	if (isRegularFile(resourcePath) && !fileExeOK(resourcePath))
 		resultType = FILE;
 	else
 	{
-		std::cout << "ext for file: " << extractFileExt(resourcePath) << std::endl;
-		std::cout << "cgi?: " << matchLocation->hasCGIConfig() << std::endl;
-		std::cout << "is one of cgi?: " << matchLocation->isOneOfCGIConfig(resourcePath) << std::endl;
-		std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
-		Bytes	cgiRes;
-		if (!((matchLocation->findCGIExecutable(extractFileExt(resourcePath))).empty()))
-			cgiRes = exeCGI(matchLocation->findCGIExecutable(extractFileExt(resourcePath)));
+		// std::cout << "ext for file: " << extractFileExt(resourcePath) << std::endl;
+		// std::cout << "cgi?: " << matchLocation->hasCGIConfig() << std::endl;
+		// std::cout << "is one of cgi?: " << matchLocation->isOneOfCGIConfig(resourcePath) << std::endl;
+		// std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
+		exeBin = matchLocation->findCGIExecutable(extractFileExt(resourcePath));
+		if (exeBin.empty() && fileExeOK(resourcePath))
+			exeBin = resourcePath;
+		exeCGI(exeBin, cgiRes);
 		std::cout << "cgi res size: " << cgiRes.size() << std::endl;
 		std::cout << "cgi res content: ";
 		// printBytes(cgiRes);
