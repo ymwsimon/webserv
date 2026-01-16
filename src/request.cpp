@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/16 00:22:57 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/16 01:04:32 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -151,13 +151,24 @@ void	Request::parseRequestHeader()
 	{
 		key = std::string(newDataStart, colonIt);
 		key = stringToLowerCase(key);
-		key = trim(key);
+		if (key.empty() || headers.count(key) > 0)
+		{
+			requestStatus = COMPLETE;
+			setStatusCode(BAD_REQUEST);
+			return ;
+		}
 		crlfIt = searchPattern(colonIt + COLON.size(), newDataEnd, CRLF);
 		if (colonIt != newDataEnd)
 		{
 			value = std::string(colonIt + COLON.size(), crlfIt);
 			value = trim(value);
-			if (key == CONTENTLENGTH)
+			if (value.empty())
+			{
+				requestStatus = COMPLETE;
+				setStatusCode(BAD_REQUEST);
+				return ;
+			}
+			if (key == CONTENTLENGTH && (isPostMethod() || isPutMethod()))
 				extractContentLength(value);
 			headers.insert(std::make_pair(key, value));
 			newDataStart = crlfIt + CRLF.size();
