@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:46:32 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/09 15:30:18 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/13 18:15:16 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,10 @@ const std::string	defaultHTTPVer = "HTTP/1.1";
 const std::string	CONTENTTYPE = "content-type";
 const std::string	CONTENTLENGTH = "content-length";
 
-enum e_HTTPErrCode
+enum e_HTTPStatusCode
 {
+	HTTP_OK = 200,
+	BAD_REQUEST = 400,
 	FORBIDDEN = 403,
 	NOT_FOUND = 404,
 	INTERNAL_ERROR = 500,

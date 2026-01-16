@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/12 23:18:27 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/15 23:43:48 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,18 +20,20 @@ Response::Response(Service &ser, Request &req) : service(ser), request(req), sta
 		resultType = ERR_PAGE;
 	if (statusOK() && !matchLocation)
 		(logMessage(std::cout, "no route match"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
+	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
+		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
 	if (statusOK() && matchLocation)
 		determineResType();
-	if (!fileExist(resourcePath))
+	if (statusOK() && !fileExist(resourcePath))
 		setStatusCodeResType(NOT_FOUND, ERR_PAGE);
-	if (fileExist(resourcePath) && !fileReadOK(resourcePath))
+	if (statusOK() && fileExist(resourcePath) && !fileReadOK(resourcePath))
 		setStatusCodeResType(FORBIDDEN, ERR_PAGE);
-	if (resultType == LIST_FOLDER)
+	if (statusOK() && resultType == LIST_FOLDER)
 		resultPage = matchLocation->generateIndexPages(resourcePath,
 			mergeFullPath("", req.getPaths(), false));
-	if (resultType == CGI_EXE)
+	if (statusOK() && resultType == CGI_EXE)
 		handleCGIExe();
-	if (resultType == FILE)
+	if (statusOK() && resultType == FILE)
 		resultPage = getPageStreamResponse();
 	if (resultType == ERR_PAGE)
 		resultPage = stringToBytes(genHttpResponse(statusCode));

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/12 22:30:02 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/15 23:39:09 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ class Location
 			GET = 1,
 			POST = 2,
 			DELETE = 4,
+			PUT = 8,
 		};
 		Location();
 		Location(const Location &right);
@@ -61,6 +62,7 @@ class Location
 		Bytes							generateIndexPages(std::string &folderPathStr, std::string routePath) const;
 		const std::map<std::string, std::string>	&getCGIConfig() const;
 		bool							isOneOfCGIConfig(std::string &filePath) const;
+		bool							isMethodAllowed(std::string method) const;
 		bool							isResourceReachable(const std::string &rootPath,
 			const std::vector<std::string> &routePaths, const std::string &fileName) const;
 };

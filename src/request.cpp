@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/10 14:41:29 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/16 00:22:57 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ std::vector<std::string>	Request::validHttpVersion = std::vector<std::string>(Re
 Request::Request(Bytes::const_iterator start, Bytes::const_iterator end) : newDataStart(start), newDataEnd(end)
 {
 	requestStatus = METHOD;
-	statusCode = 200;
+	statusCode = HTTP_OK;
 	bodyLength = 0;
 }
 
@@ -57,8 +57,9 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 {
 	Bytes::const_iterator	it;
 	std::string				res;
-	int						err = 200;
 
+	if (complete())
+		return res;
 	it = searchPattern(newDataStart, newDataEnd, delimiter);
 	if (it != newDataEnd)
 	{
@@ -66,22 +67,32 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 		if (requestStatus == METHOD)
 		{
 			if (std::find(validMethod.begin(), validMethod.end(), res) == validMethod.end())
-				err = 400;
+			{
+				setStatusCode(BAD_REQUEST);
+				requestStatus = COMPLETE;
+			}
 		}
 		else if (requestStatus == ROUTE)
 		{
 			if (res.empty() || res[0] != '/')
-				err = 400;
+			{
+				setStatusCode(BAD_REQUEST);
+				requestStatus = COMPLETE;
+			}
 		}
 		else if (requestStatus == HTTPVERSION)
 		{
 			if (std::find(validHttpVersion.begin(), validHttpVersion.end(), res) == validHttpVersion.end())
-				err = 400;
+			{
+				setStatusCode(BAD_REQUEST);
+				requestStatus = COMPLETE;
+			}
 		}
 		newDataStart = it + delimiter.size();
-		++requestStatus;
-		if (statusOK())
-			setStatusCode(err);
+		if (requestStatus != COMPLETE)
+			++requestStatus;
+		// if (statusOK())
+			// setStatusCode(statusCode);
 	}
 	return res;
 }
@@ -109,10 +120,23 @@ void	Request::extractContentLength(std::string &len)
 	}
 	catch (std::exception &e)
 	{
-		(void)e;
 		if (statusOK())
-			setStatusCode(400);
+		{
+			bodyLength = 0;
+			setStatusCode(BAD_REQUEST);
+			requestStatus = COMPLETE;
+		}
 	}
+}
+
+bool	Request::isPostMethod() const
+{
+	return method == "POST";
+}
+
+bool	Request::isPutMethod() const
+{
+	return method == "PUT";
 }
 
 void	Request::parseRequestHeader()
@@ -126,43 +150,64 @@ void	Request::parseRequestHeader()
 	if (colonIt != newDataEnd && (colonIt != newDataStart))
 	{
 		key = std::string(newDataStart, colonIt);
+		key = stringToLowerCase(key);
 		key = trim(key);
 		crlfIt = searchPattern(colonIt + COLON.size(), newDataEnd, CRLF);
 		if (colonIt != newDataEnd)
 		{
 			value = std::string(colonIt + COLON.size(), crlfIt);
 			value = trim(value);
-			if (key == "Content-Length")
+			if (key == CONTENTLENGTH)
 				extractContentLength(value);
 			headers.insert(std::make_pair(key, value));
 			newDataStart = crlfIt + CRLF.size();
 		}
-		else if (statusOK())
-			setStatusCode(400);
+		else
+		{
+			requestStatus = COMPLETE;
+			setStatusCode(BAD_REQUEST);
+		}
 	}
-	else if (statusOK())
-		setStatusCode(400);
+	else
+	{
+		requestStatus = COMPLETE;
+		setStatusCode(BAD_REQUEST);
+	}
 }
 
 void	Request::parseBody()
 {
-	body.insert(body.end(), newDataStart, newDataEnd);
-	if (body.size() >= bodyLength)
-		++requestStatus;
+	Bytes::const_iterator	copyUpTo;
+
+	if (isPostMethod() || isPutMethod())
+	{
+		if (std::distance(newDataStart, newDataEnd) + body.size() < bodyLength)
+			copyUpTo = newDataEnd;
+		else
+			copyUpTo = newDataStart + (bodyLength - body.size());
+		body.insert(body.end(), newDataStart, copyUpTo);
+	}
+	if (body.size() >= bodyLength || !(isPostMethod() || isPutMethod()))
+		requestStatus = COMPLETE;
 }
 
 void	Request::parseRequest()
 {
 	Bytes::const_iterator	it;
 
-	while (!complete() && (it = searchPattern(newDataStart, newDataEnd, CRLF)) != newDataEnd)
+	while (!complete() && ((it = searchPattern(newDataStart, newDataEnd, CRLF)) != newDataEnd || requestStatus == BODY))
 	{
-		if (it == newDataStart && (newDataStart != newDataEnd))
-			++requestStatus;
+		if (it == newDataStart && (newDataStart != newDataEnd) && requestStatus == HEADERS)
+			requestStatus = BODY;
+		if (requestStatus == BODY && headers.count("host") == 0)
+		{
+			setStatusCode(BAD_REQUEST);
+			requestStatus = COMPLETE;
+		}
 		if (requestStatus == METHOD)
 			{std::cout << "parse request line" << std::endl; parseRequestLine();}
 		else if (requestStatus == HEADERS)
-			{std::cout << "parse header" << std::endl;; parseRequestHeader();}
+			{std::cout << "parse header" << std::endl; parseRequestHeader();}
 		else if (requestStatus == BODY)
 			parseBody();
 		newDataStart = it + CRLF.size();
@@ -176,7 +221,7 @@ bool	Request::complete() const
 
 bool	Request::statusOK() const
 {
-	return statusCode == 200;
+	return statusCode == HTTP_OK;
 }
 
 void	Request::printRequest() const

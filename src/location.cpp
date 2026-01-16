@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/12 22:29:48 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/15 23:53:37 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,4 +207,12 @@ bool	Location::isOneOfCGIConfig(std::string &filePath) const
 	std::string	ext = extractFileExt(filePath);
 
 	return !ext.empty() && cgi.count(ext) > 0;
+}
+
+bool	Location::isMethodAllowed(std::string method) const
+{
+	return ((method == "GET" && (allowedMethod & GET))
+		|| (method == "POST" && (allowedMethod & POST))
+		|| (method == "DELETE" && (allowedMethod & DELETE))
+		|| (method == "PUT" && (allowedMethod & PUT)));
 }

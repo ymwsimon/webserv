@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/10 14:38:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/15 23:45:49 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ class Request
 		HTTPVERSION,
 		HEADERS,
 		BODY,
-		COMPLETE
+		COMPLETE,
 	};
 
 	private:
@@ -51,6 +51,8 @@ class Request
 		void								splitRoute();
 		void								parseBody();
 		void								extractContentLength(std::string &len);
+		bool								isPostMethod() const;
+		bool								isPutMethod() const;
 	public:
 		static std::string	valMet[3];
 		static std::vector<std::string>	validMethod;
