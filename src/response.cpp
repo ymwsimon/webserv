@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/15 23:43:48 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/18 23:03:39 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,7 +198,6 @@ void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::str
 		}
 		fieldName = bytesToString(start, colonPos);
 		std::transform(fieldName.begin(), fieldName.end(), fieldName.begin(), ::tolower);
-		std::cout << "field name: " << fieldName << std::endl;
 		if (headers.count(fieldName) > 0)
 		{
 			std::cout << "duplicate field name\n";
@@ -213,10 +212,11 @@ void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::str
 
 void	Response::exeCGI(std::string exe, Bytes &res)
 {
-	std::vector<std::string>	strs(5);
+	std::vector<std::string>	strs(8);
 	std::vector<char *>			args(2);
-	std::vector<char *>			env(6);
+	std::vector<char *>			env(9);
 	int							pipeFd[2];
+	int							bodyPipeFd[2];
 	int							pid;
 
 	if (exe.empty())
@@ -226,11 +226,18 @@ void	Response::exeCGI(std::string exe, Bytes &res)
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return ;
 	}
+	if (pipe(bodyPipeFd) < 0)
+	{
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		return ;
+	}
 	pid = fork();
 	if (pid < 0)
 	{
 		close(pipeFd[0]);
 		close(pipeFd[1]);
+		close(bodyPipeFd[0]);
+		close(bodyPipeFd[1]);
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return ;
 	}
@@ -239,23 +246,26 @@ void	Response::exeCGI(std::string exe, Bytes &res)
 		prepareArgEnv(exe, strs, args, env);
 		close(pipeFd[0]);
 		dup2(pipeFd[1], STDOUT_FILENO);
-		close(STDIN_FILENO);
+		dup2(bodyPipeFd[0], STDIN_FILENO);
 		execve(exe.c_str(), (char *const*)args.data(), (char *const*)env.data());
 	}
 	else
 	{
-		cgiParent(pid, pipeFd);
+		cgiParent(pid, pipeFd, bodyPipeFd);
 		cgiExtractResult(res, pipeFd);
 	}
 }
 
-bool	Response::cgiParent(pid_t pid, int *pipeFd)
+bool	Response::cgiParent(pid_t pid, int *pipeFd, int *bodyPipeFd)
 {
 	int			status;
 	pid_t		waitRes;
 	std::time_t start = std::time(NULL);
 
 	close(pipeFd[1]);
+	close(bodyPipeFd[0]);
+	write(bodyPipeFd[1], request.getBody().data(), request.getBody().size());
+	close(bodyPipeFd[1]);
 	while (std::difftime(std::time(NULL), start) < cgiWaitTime)
 	{
 		if ((waitRes = waitpid(pid, &status, WUNTRACED | WNOHANG)) < 0)
@@ -298,11 +308,19 @@ void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
 	strs[2] = "SERVER_PROTOCOL=";
 	strs[3] = "REQUEST_METHOD=";
 	strs[4] = "REDIRECT_STATUS=";
+	strs[5] = "CONTENT_LENGTH=";
+	strs[6] = "CONTENT_TYPE=";
+	strs[7] = "GATEWAY_INTERFACE=CGI/1.1";
 	strs[0] += resourcePath;
 	strs[1] += "/";
 	strs[2] += request.getHttpVer();
 	strs[3] += request.getMethod();
 	strs[4] += "200";
+	strs[5] += toString(request.getBodyLength());
+	if (request.getHeaders().count(CONTENTTYPE) > 0)
+		strs[6] += request.getHeaders().at(CONTENTTYPE);
+	else
+		strs[6] = "";
 	args[0] = (char *) exe.c_str();
 	args[1] = NULL;
 	env[0] = (char *) strs[0].c_str();
@@ -310,7 +328,10 @@ void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
 	env[2] = (char *) strs[2].c_str();
 	env[3] = (char *) strs[3].c_str();
 	env[4] = (char *) strs[4].c_str();
-	env[5] = NULL;
+	env[5] = (char *) strs[5].c_str();
+	env[6] = (char *) strs[6].c_str();
+	env[7] = (char *) strs[7].c_str();
+	env[8] = NULL;
 }
 
 void	Response::setStatusCode(int code)

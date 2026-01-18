@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/17 16:31:37 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/18 22:28:46 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,12 +74,7 @@ int Client::recvData(struct epoll_event *evt)
 	if (readSize)
 		std::cout << readSize << std::endl;
 	if (readSize > 0)
-	{
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
-		// for (size_t i = 0; i < incomingData.size(); ++i)
-		// 	std::cout << incomingData[i];
-		// std::cout << std::endl;
-	}
 	processData();
 	return readSize;
 }
@@ -96,22 +91,15 @@ void	Client::processData()
 
 	while (searchForNewLine(it) != incomingData.end())
 	{
-		try
+		if (requests.empty() || requests.back().complete())
+			requests.push_back(Request(incomingData.begin(), incomingData.end()));
+		else
 		{
-			if (requests.empty() || requests.back().complete())
-				requests.push_back(Request(incomingData.begin(), incomingData.end()));
-			else
-			{
-				requests.back().setDataStart(incomingData.begin());
-				requests.back().setDataEnd(incomingData.end());
-			}
-			requests.back().parseRequest();
-			incomingData = Bytes(requests.back().getDataStart(), requests.back().getDataEnd());
+			requests.back().setDataStart(incomingData.begin());
+			requests.back().setDataEnd(incomingData.end());
 		}
-		catch(const std::exception& e)
-		{
-			std::cerr << e.what() << '\n';
-		}
+		requests.back().parseRequest();
+		incomingData = Bytes(requests.back().getDataStart(), requests.back().getDataEnd());
 	}
 }
 

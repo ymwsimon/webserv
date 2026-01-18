@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/12 23:14:03 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/18 23:03:57 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ class Response
 		Bytes				convertCGIResToResponse(const Bytes &cgiRes);
 		void				extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers, Bytes::const_iterator &crlfPos);
 		void				exeCGI(std::string exe, Bytes &res);
-		bool				cgiParent(pid_t pid, int *pipeFd);
+		bool				cgiParent(pid_t pid, int *pipeFd, int *bodyPipeFd);
 		void				cgiExtractResult(Bytes &res, int *pipeFd);
 		void				prepareArgEnv(std::string exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);
 		void				setStatusCode(int code);

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/16 01:04:32 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/18 22:52:57 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -192,11 +192,14 @@ void	Request::parseBody()
 
 	if (isPostMethod() || isPutMethod())
 	{
+		size_t	d = std::distance(newDataStart, newDataEnd);
+		std::cout << "distance: " << d << std::endl;
 		if (std::distance(newDataStart, newDataEnd) + body.size() < bodyLength)
 			copyUpTo = newDataEnd;
 		else
 			copyUpTo = newDataStart + (bodyLength - body.size());
 		body.insert(body.end(), newDataStart, copyUpTo);
+		newDataStart = copyUpTo;
 	}
 	if (body.size() >= bodyLength || !(isPostMethod() || isPutMethod()))
 		requestStatus = COMPLETE;
@@ -206,22 +209,35 @@ void	Request::parseRequest()
 {
 	Bytes::const_iterator	it;
 
-	while (!complete() && ((it = searchPattern(newDataStart, newDataEnd, CRLF)) != newDataEnd || requestStatus == BODY))
+	while (!complete() &&
+		((requestStatus != BODY && (it = searchPattern(newDataStart, newDataEnd, CRLF)) != newDataEnd)
+			|| (requestStatus == BODY && newDataStart != newDataEnd)))
 	{
 		if (it == newDataStart && (newDataStart != newDataEnd) && requestStatus == HEADERS)
+		{
 			requestStatus = BODY;
+			newDataStart = it + CRLF.size();
+			// std::cout << "body length:" << bodyLength << std::endl;
+		}
 		if (requestStatus == BODY && headers.count("host") == 0)
 		{
 			setStatusCode(BAD_REQUEST);
 			requestStatus = COMPLETE;
 		}
 		if (requestStatus == METHOD)
-			{std::cout << "parse request line" << std::endl; parseRequestLine();}
+		{
+			std::cout << "parse request line" << std::endl;
+			parseRequestLine();
+			newDataStart = it + CRLF.size();
+		}
 		else if (requestStatus == HEADERS)
-			{std::cout << "parse header" << std::endl; parseRequestHeader();}
+		{
+			std::cout << "parse header" << std::endl;
+			parseRequestHeader();
+			newDataStart = it + CRLF.size();
+		}
 		else if (requestStatus == BODY)
 			parseBody();
-		newDataStart = it + CRLF.size();
 	}
 }
 
@@ -249,8 +265,8 @@ void	Request::printRequest() const
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
 		std::cout << "\t\t" << it->first << " : " << it->second << std::endl;
 	std::cout << std::endl;
-	for (size_t i = 0; i < body.size(); ++i)
-		std::cout << body[i];
+	// for (size_t i = 0; i < body.size(); ++i)
+		// std::cout << body[i];
 	std::cout << std::endl;
 }
 
