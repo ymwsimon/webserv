@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/18 23:03:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/19 12:58:30 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,24 +103,30 @@ void	Response::printResponse() const
 
 Bytes	Response::getPageStreamResponse()
 {
-	Bytes				buf(BUFFER_SIZE);
+	unsigned char		buf[BUFFER_SIZE];
 	Bytes				res;
 	std::string			head;
-	std::stringstream	strStream;
+	int					fd;
+	int					readSize;
 
-	if (!openPageStream())
+	fd = open(resourcePath.c_str(), O_RDONLY);
+	if (fd == -1)
+	{
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return res;
-	pageStream->read((char *)buf.data(), BUFFER_SIZE);
-	pageStream->close();
-	buf.resize(pageStream->gcount());
-	delete pageStream;
-	pageStream = NULL;
+	}
+	while ((readSize = read(fd, buf, BUFFER_SIZE)) > 0)
+		appendBuf(res, buf, readSize);
+	if (readSize < 0)
+	{
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		return res;
+	}
 	head = genHttpResponseLine(statusCode);
-	head += genHttpHeader(CONTENTTYPE, getMediaType("html"));
-	head += genHttpHeader(CONTENTLENGTH, toString(buf.size()));
+	head += genHttpHeader(CONTENTTYPE, getMediaType(extractFileExt(resourcePath)));
+	head += genHttpHeader(CONTENTLENGTH, toString(res.size()));
 	head += CRLFStr;
-	res.insert(res.end(), head.begin(), head.end());
-	res.insert(res.end(), buf.begin(), buf.begin() + buf.size());
+	res.insert(res.begin(), head.begin(), head.end());
 	return res;
 }
 
@@ -171,10 +177,10 @@ Bytes	Response::convertCGIResToResponse(const Bytes &cgiRes)
 	for (std::map<std::string, std::string>::iterator headerIt = headers.begin();
 		headerIt != headers.end(); ++headerIt)
 		appendBytes(res, genHttpHeader(headerIt->first, headerIt->second));
-	size = std::distance(crlfPos + 2, cgiRes.end());
+	size = std::distance(crlfPos + CRLF.size(), cgiRes.end());
 	appendBytes(res, genHttpHeader(CONTENTLENGTH, toString(size)));
 	appendBytes(res, CRLFStr);
-	appendBytes(res, crlfPos + 2, cgiRes.end());
+	appendBytes(res, crlfPos + CRLF.size(), cgiRes.end());
 	return res;
 }
 
@@ -216,7 +222,7 @@ void	Response::exeCGI(std::string exe, Bytes &res)
 	std::vector<char *>			args(2);
 	std::vector<char *>			env(9);
 	int							pipeFd[2];
-	int							bodyPipeFd[2];
+	int							fd;
 	int							pid;
 
 	if (exe.empty())
@@ -226,18 +232,11 @@ void	Response::exeCGI(std::string exe, Bytes &res)
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return ;
 	}
-	if (pipe(bodyPipeFd) < 0)
-	{
-		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		return ;
-	}
 	pid = fork();
 	if (pid < 0)
 	{
 		close(pipeFd[0]);
 		close(pipeFd[1]);
-		close(bodyPipeFd[0]);
-		close(bodyPipeFd[1]);
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return ;
 	}
@@ -245,27 +244,35 @@ void	Response::exeCGI(std::string exe, Bytes &res)
 	{
 		prepareArgEnv(exe, strs, args, env);
 		close(pipeFd[0]);
+		fd = open("tmp", O_WRONLY | O_CREAT | O_TRUNC, 0700);
+		if (fd < 0)
+			std::exit(1);
+		if (write(fd, request.getBody().data(), request.getBody().size()) == -1)
+			std::exit(1);
+		close(fd);
+		fd = open("tmp", O_RDONLY, 0700);
+		if (fd < 0)
+			std::exit(1);
 		dup2(pipeFd[1], STDOUT_FILENO);
-		dup2(bodyPipeFd[0], STDIN_FILENO);
+		dup2(fd, STDIN_FILENO);
+		close(fd);
 		execve(exe.c_str(), (char *const*)args.data(), (char *const*)env.data());
+		std::exit(1);
 	}
 	else
 	{
-		cgiParent(pid, pipeFd, bodyPipeFd);
+		cgiParent(pid, pipeFd);
 		cgiExtractResult(res, pipeFd);
 	}
 }
 
-bool	Response::cgiParent(pid_t pid, int *pipeFd, int *bodyPipeFd)
+bool	Response::cgiParent(pid_t pid, int *pipeFd)
 {
 	int			status;
 	pid_t		waitRes;
 	std::time_t start = std::time(NULL);
 
 	close(pipeFd[1]);
-	close(bodyPipeFd[0]);
-	write(bodyPipeFd[1], request.getBody().data(), request.getBody().size());
-	close(bodyPipeFd[1]);
 	while (std::difftime(std::time(NULL), start) < cgiWaitTime)
 	{
 		if ((waitRes = waitpid(pid, &status, WUNTRACED | WNOHANG)) < 0)
