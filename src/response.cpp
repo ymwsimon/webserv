@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/21 17:16:42 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/21 19:18:22 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -469,7 +469,7 @@ void	Response::handleCGIExe()
 		// std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
 		exeBin = matchLocation->findCGIExecutable(extractFileExt(resourcePath));
 		if (exeBin.empty() && fileExeOK(resourcePath))
-			exeBin = defaultExeBin;
+			exeBin = resourcePath;
 		exeCGI(exeBin);
 	}
 }
