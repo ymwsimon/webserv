@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/18 22:52:57 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/21 17:11:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,8 +91,6 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 		newDataStart = it + delimiter.size();
 		if (requestStatus != COMPLETE)
 			++requestStatus;
-		// if (statusOK())
-			// setStatusCode(statusCode);
 	}
 	return res;
 }
@@ -192,8 +190,6 @@ void	Request::parseBody()
 
 	if (isPostMethod() || isPutMethod())
 	{
-		size_t	d = std::distance(newDataStart, newDataEnd);
-		std::cout << "distance: " << d << std::endl;
 		if (std::distance(newDataStart, newDataEnd) + body.size() < bodyLength)
 			copyUpTo = newDataEnd;
 		else
@@ -217,7 +213,6 @@ void	Request::parseRequest()
 		{
 			requestStatus = BODY;
 			newDataStart = it + CRLF.size();
-			// std::cout << "body length:" << bodyLength << std::endl;
 		}
 		if (requestStatus == BODY && headers.count("host") == 0)
 		{
@@ -264,9 +259,6 @@ void	Request::printRequest() const
 	std::cout << "\tHeader:" << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
 		std::cout << "\t\t" << it->first << " : " << it->second << std::endl;
-	std::cout << std::endl;
-	// for (size_t i = 0; i < body.size(); ++i)
-		// std::cout << body[i];
 	std::cout << std::endl;
 }
 

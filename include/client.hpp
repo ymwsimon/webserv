@@ -6,15 +6,15 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:35:04 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:53:10 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/19 22:45:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-#include "../include/utils.hpp"
-#include "../include/service.hpp"
-#include "../include/request.hpp"
-#include "../include/response.hpp"
+#include "utils.hpp"
+#include "service.hpp"
+#include "request.hpp"
+#include "response.hpp"
 #include <string>
 #include <iostream>
 #include <algorithm>
@@ -40,6 +40,7 @@ class Client
 		Client						&operator=(const Client &right);
 		int							sendData(struct epoll_event *evt);
 		int 						recvData(struct epoll_event *evt);
+		void						processResponseCgi(int evt);
 		const Bytes					&getIncomingData() const;
 		const std::deque<Request>	&getRequests() const;
 		const std::deque<Response>	&getResponses() const;

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/18 22:28:46 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/21 17:27:14 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,21 +46,31 @@ int	Client::sendData(struct epoll_event *evt)
 
 	if (!requests.empty() && requests.front().complete())
 	{
-		requests.front().printRequest();
-		responses.push_back(Response(service, requests.front()));
-		std::cout << responses.front().getStatusCode() << std::endl;;
-		std::cout << responses.front().getPageStream() << std::endl;
-		std::cout << responses.front().getResultPage().size() << std::endl;
-		content = responses.front().getResultPage();
-		std::cout << "sending out data" << std::endl;
-		std::cout << "content\n";
-		for (size_t i = 0; i < content.size(); ++i)
-			std::cout << content[i];
-		std::cout << std::endl;
-		if (send(evt->data.fd, content.data(), content.size(), 0) < 0)
-			std::cout << "error send data out" << std::endl;
-		requests.pop_front();
-		responses.pop_front();
+		// requests.front().printRequest();
+		if (!responses.empty() && responses.back().isCGI() && responses.back().isAddFdStage())
+			processResponseCgi(PROCESS_DATA);
+		if (responses.empty())
+		{
+			responses.push_back(Response(service, requests.front()));
+			responses.back().processResponse();
+		}
+		if (!responses.empty()
+			&& (!responses.front().isCGI() || responses.front().isFinishWaitingStage()))
+		{
+			std::cout << responses.front().getStatusCode() << std::endl;;
+			std::cout << responses.front().getPageStream() << std::endl;
+			std::cout << responses.front().getResultPage().size() << std::endl;
+			content = responses.front().getResultPage();
+			std::cout << "sending out data" << std::endl;
+			std::cout << "content\n";
+			for (size_t i = 0; i < content.size(); ++i)
+				std::cout << content[i];
+			std::cout << std::endl;
+			if (send(evt->data.fd, content.data(), content.size(), 0) < 0)
+				std::cout << "error send data out" << std::endl;
+			requests.pop_front();
+			responses.pop_front();
+		}
 	}
 	return 1;
 }
@@ -75,8 +85,17 @@ int Client::recvData(struct epoll_event *evt)
 		std::cout << readSize << std::endl;
 	if (readSize > 0)
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
+	if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
+		return 0;
 	processData();
 	return readSize;
+}
+
+void	Client::processResponseCgi(int evt)
+{
+	Response	&response = responses.front();
+
+	response.cgiParent(evt);
 }
 
 Bytes::const_iterator	&Client::searchForNewLine(Bytes::const_iterator &it)

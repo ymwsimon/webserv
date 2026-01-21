@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/19 12:58:30 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/21 17:16:42 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,29 +14,8 @@
 
 Response::Response(Service &ser, Request &req) : service(ser), request(req), statusCode(req.getStatusCode())
 {
-	matchLocation = ser.findMatchingRoute(req);
 	resultType = NONE;
-	if (!statusOK())
-		resultType = ERR_PAGE;
-	if (statusOK() && !matchLocation)
-		(logMessage(std::cout, "no route match"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
-	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
-		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
-	if (statusOK() && matchLocation)
-		determineResType();
-	if (statusOK() && !fileExist(resourcePath))
-		setStatusCodeResType(NOT_FOUND, ERR_PAGE);
-	if (statusOK() && fileExist(resourcePath) && !fileReadOK(resourcePath))
-		setStatusCodeResType(FORBIDDEN, ERR_PAGE);
-	if (statusOK() && resultType == LIST_FOLDER)
-		resultPage = matchLocation->generateIndexPages(resourcePath,
-			mergeFullPath("", req.getPaths(), false));
-	if (statusOK() && resultType == CGI_EXE)
-		handleCGIExe();
-	if (statusOK() && resultType == FILE)
-		resultPage = getPageStreamResponse();
-	if (resultType == ERR_PAGE)
-		resultPage = stringToBytes(genHttpResponse(statusCode));
+	cgiStage = INIT;
 }
 
 Response::Response(const Response &right) : service(right.service), request(right.request)
@@ -55,10 +34,19 @@ Response	&Response::operator=(const Response &right)
 	{
 		service = right.service;
 		request = right.request;
-		pageStream = right.pageStream;
 		matchLocation = right.matchLocation;
-		statusCode = right.statusCode;
+		resourcePath = right.resourcePath;
+		pageStream = right.pageStream;
+		cgiResFd = right.cgiResFd;
+		cgiStage = right.cgiStage;
 		resultPage = right.resultPage;
+		cgiRes = right.cgiRes;
+		statusCode = right.statusCode;
+		resultType = right.resultType;
+		cgiPid = right.cgiPid;
+		pipeFd[0] = right.pipeFd[0];
+		pipeFd[1] = right.pipeFd[1];
+		cgiStartTime = right.cgiStartTime;
 	}
 	return *this;
 }
@@ -66,6 +54,36 @@ Response	&Response::operator=(const Response &right)
 bool	Response::statusOK() const
 {
 	return statusCode == 200;
+}
+
+bool	Response::isNoneType() const
+{
+	return resultType == NONE;
+}
+
+bool	Response::isCGI() const
+{
+	return resultType == CGI_EXE;
+}
+
+bool	Response::isINITStage() const
+{
+	return cgiStage == INIT;
+}
+
+bool	Response::isAddFdStage() const
+{
+	return cgiStage == ADD_FD_POLL;
+}
+
+bool	Response::isWaitingStage() const
+{
+	return cgiStage == WAITING_CGI;
+}
+
+bool	Response::isFinishWaitingStage() const
+{
+	return cgiStage == FINISH_WAITING;
 }
 
 int	Response::getStatusCode() const
@@ -76,6 +94,21 @@ int	Response::getStatusCode() const
 const std::ifstream	*Response::getPageStream() const
 {
 	return pageStream;
+}
+
+int	Response::getResultType() const
+{
+	return resultType;
+}
+
+int	Response::getCgiResFd() const
+{
+	return cgiResFd;
+}
+
+int	Response::getCgiStage() const
+{
+	return cgiStage;
 }
 
 const Bytes	&Response::getResultPage() const
@@ -98,7 +131,7 @@ void	Response::printResponse() const
 	std::cout << "Response: " << std::endl;
 	if (!matchLocation)
 		std::cout << "No match location" << std::endl;
-	std::cout << "Error code: " << statusCode << std::endl;
+	std::cout << "Status code: " << statusCode << std::endl;
 }
 
 Bytes	Response::getPageStreamResponse()
@@ -117,6 +150,11 @@ Bytes	Response::getPageStreamResponse()
 	}
 	while ((readSize = read(fd, buf, BUFFER_SIZE)) > 0)
 		appendBuf(res, buf, readSize);
+	if (close(fd) < 0)
+	{
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		return res;
+	}
 	if (readSize < 0)
 	{
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
@@ -216,14 +254,12 @@ void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::str
 	}
 }
 
-void	Response::exeCGI(std::string exe, Bytes &res)
+void	Response::exeCGI(std::string exe)
 {
 	std::vector<std::string>	strs(8);
 	std::vector<char *>			args(2);
 	std::vector<char *>			env(9);
-	int							pipeFd[2];
 	int							fd;
-	int							pid;
 
 	if (exe.empty())
 		return ;
@@ -232,62 +268,113 @@ void	Response::exeCGI(std::string exe, Bytes &res)
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return ;
 	}
-	pid = fork();
-	if (pid < 0)
+	cgiPid = fork();
+	if (cgiPid < 0)
 	{
 		close(pipeFd[0]);
 		close(pipeFd[1]);
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return ;
 	}
-	if (!pid)
+	if (!cgiPid)
 	{
 		prepareArgEnv(exe, strs, args, env);
 		close(pipeFd[0]);
-		fd = open("tmp", O_WRONLY | O_CREAT | O_TRUNC, 0700);
+		fd = open(toString(pipeFd[0]).c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0700);
+		std::cout << "write fd for cgi input " << fd << std::endl;
 		if (fd < 0)
 			std::exit(1);
 		if (write(fd, request.getBody().data(), request.getBody().size()) == -1)
 			std::exit(1);
-		close(fd);
-		fd = open("tmp", O_RDONLY, 0700);
+		if (close(fd) < 0)
+			std::exit(1);
+		fd = open(toString(pipeFd[0]).c_str(), O_RDONLY, 0700);
+		std::cout << "read fd for cgi input " << fd << std::endl;
 		if (fd < 0)
 			std::exit(1);
-		dup2(pipeFd[1], STDOUT_FILENO);
-		dup2(fd, STDIN_FILENO);
-		close(fd);
+		std::cout << "fd for cgi input " << fd << std::endl;
+		if (dup2(pipeFd[1], STDOUT_FILENO) < 0)
+			std::exit(1);
+		if (dup2(fd, STDIN_FILENO) < 0)
+			std::exit(1);
+		if (close(fd) < 0)
+		{
+			std::cout << "can't close fd " << fd << " for cgi input"<< std::endl;
+			std::exit(1);
+		}
 		execve(exe.c_str(), (char *const*)args.data(), (char *const*)env.data());
 		std::exit(1);
 	}
 	else
 	{
-		cgiParent(pid, pipeFd);
-		cgiExtractResult(res, pipeFd);
+		cgiParent(-1);
 	}
 }
 
-bool	Response::cgiParent(pid_t pid, int *pipeFd)
+bool	Response::cgiParent(int evt)
 {
-	int			status;
-	pid_t		waitRes;
-	std::time_t start = std::time(NULL);
+	int				status;
+	pid_t			waitRes;
+	unsigned char	buf[BUFFER_SIZE];
+	int				readSize = 0;
 
-	close(pipeFd[1]);
-	while (std::difftime(std::time(NULL), start) < cgiWaitTime)
+	if (cgiStage == INIT)
 	{
-		if ((waitRes = waitpid(pid, &status, WUNTRACED | WNOHANG)) < 0)
+		std::cout << "cgi init\n";
+		close(pipeFd[1]);
+		cgiStartTime = std::time(NULL);
+		cgiResFd = pipeFd[0];
+		cgiStage = ADD_FD_POLL;
+	}
+	else if (cgiStage == WAITING_CGI || cgiStage == ADD_FD_POLL)
+	{
+		if (cgiStage == ADD_FD_POLL)
+			cgiStage = WAITING_CGI;
+		if (evt == EXTRACT_PIPE && (readSize = read(pipeFd[0], buf, BUFFER_SIZE)) > 0)
 		{
-			close(pipeFd[0]);
+			std::cout << "extracting data from cgi pipe" << std::endl;
+			appendBuf(cgiRes, buf, readSize);
+			cgiStartTime = std::time(NULL);
+		}
+		if (readSize < 0)
+		{
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+			cgiRes.clear();
+			cgiStage = FINISH_WAITING;
+			resultType = ERR_PAGE;
+			resultPage = stringToBytes(genHttpResponse(statusCode));
 			return false;
 		}
-		if (waitRes == pid)
-			break ;
-	}
-	if (!waitRes)
-	{
-		kill(pid, SIGKILL);
-		waitpid(pid, &status, 0);
+		waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG);
+		if (waitRes < 0)
+		{
+			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+			cgiStage = FINISH_WAITING;
+			resultType = ERR_PAGE;
+			resultPage = stringToBytes(genHttpResponse(statusCode));
+			return false;
+		}
+		if (!waitRes && std::difftime(std::time(NULL), cgiStartTime) > cgiWaitTime)
+		{
+			kill(cgiPid, SIGKILL);
+			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+			std::cout << "time to kill cgiPid: " << cgiPid << std::endl;
+		}
+		if (waitRes == cgiPid || (!waitRes && std::difftime(std::time(NULL), cgiStartTime) > cgiWaitTime))
+		{
+			waitpid(cgiPid, &status, 0);
+			cgiStage = FINISH_WAITING;
+			std::cout << "cgi res size: " << cgiRes.size() << std::endl;
+			std::cout << "cgi res content: ";
+			// printBytes(cgiRes);
+			std::cout << std::endl;
+			resultPage = convertCGIResToResponse(cgiRes);
+			if (resultPage.empty())
+			{
+				resultType = ERR_PAGE;
+				resultPage = stringToBytes(genHttpResponse(statusCode));
+			}
+		}
 	}
 	return true;
 }
@@ -362,31 +449,28 @@ void	Response::setStatusCodeResType(int code, int rType)
 	resultType = rType;
 }
 
-void	Response::handleCGIExe(void)
+void	Response::setCgiStage(int stage)
 {
-	Bytes		cgiRes;
+	cgiStage = stage;
+}
+
+void	Response::handleCGIExe()
+{
 	std::string	exeBin;
 
-	std::cout << "resource path in cgi: " << resourcePath << std::endl;
 	if (isRegularFile(resourcePath) && !fileExeOK(resourcePath))
 		resultType = FILE;
 	else
 	{
+		std::cout << "resource path in cgi: " << resourcePath << std::endl;
 		// std::cout << "ext for file: " << extractFileExt(resourcePath) << std::endl;
 		// std::cout << "cgi?: " << matchLocation->hasCGIConfig() << std::endl;
 		// std::cout << "is one of cgi?: " << matchLocation->isOneOfCGIConfig(resourcePath) << std::endl;
 		// std::cout << "cgi exe path: " << matchLocation->findCGIExecutable(extractFileExt(resourcePath)) << std::endl;
 		exeBin = matchLocation->findCGIExecutable(extractFileExt(resourcePath));
 		if (exeBin.empty() && fileExeOK(resourcePath))
-			exeBin = resourcePath;
-		exeCGI(exeBin, cgiRes);
-		std::cout << "cgi res size: " << cgiRes.size() << std::endl;
-		std::cout << "cgi res content: ";
-		// printBytes(cgiRes);
-		std::cout << std::endl;
-		resultPage = convertCGIResToResponse(cgiRes);
-		if (resultPage.empty())
-			resultType = ERR_PAGE;
+			exeBin = defaultExeBin;
+		exeCGI(exeBin);
 	}
 }
 
@@ -396,12 +480,13 @@ void	Response::determineResType(void)
 	
 	filePathStr = mergeFullPath(matchLocation->getRootFolder(),
 		request.getPaths(), matchLocation->hasCGIConfig());
-	logMessage(std::cout, "Resource path str: " + filePathStr);
+	logMessage(std::cout, "FilePath str: " + filePathStr);
 	if (matchLocation->hasCGIConfig())
 		resultType = CGI_EXE;
 	if (isDir(filePathStr))
 	{
-		filePathStr.push_back('/');
+		if (*filePathStr.rbegin() != '/')
+			filePathStr.push_back('/');
 		logMessage(std::cout, "dir: " + filePathStr);
 		resourcePath = matchLocation->findValidIndexPage(filePathStr);
 		logMessage(std::cout, "Resource path str: " + resourcePath);
@@ -419,4 +504,30 @@ void	Response::determineResType(void)
 		resourcePath = filePathStr;
 	if (resultType == NONE)
 		resultType = FILE;
+}
+
+void	Response::processResponse()
+{
+	matchLocation = service.findMatchingRoute(request);
+	if (!statusOK())
+		resultType = ERR_PAGE;
+	if (statusOK() && !matchLocation)
+		(logMessage(std::cout, "no route match"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
+	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
+		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
+	if (statusOK() && matchLocation)
+		determineResType();
+	if (statusOK() && !fileExist(resourcePath))
+		setStatusCodeResType(NOT_FOUND, ERR_PAGE);
+	if (statusOK() && fileExist(resourcePath) && !fileReadOK(resourcePath))
+		setStatusCodeResType(FORBIDDEN, ERR_PAGE);
+	if (statusOK() && resultType == LIST_FOLDER)
+		resultPage = matchLocation->generateIndexPages(resourcePath,
+			mergeFullPath("", request.getPaths(), false));
+	if (statusOK() && resultType == CGI_EXE)
+		handleCGIExe();
+	if (statusOK() && resultType == FILE)
+		resultPage = getPageStreamResponse();
+	if (resultType == ERR_PAGE)
+		resultPage = stringToBytes(genHttpResponse(statusCode));
 }

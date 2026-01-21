@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 17:31:55 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:55:08 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/19 21:28:10 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ class Server
 		std::vector<Config>		configs;
 		std::map<int, Service>	services;
 		std::map<int, Client *>	clients;
+		std::map<int, Client *>	cgiPipeFd;
 		int						epollFd;
 		bool					addNewConn(struct epoll_event evt, struct addrinfo addr);
 	public:

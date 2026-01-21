@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/19 01:01:41 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/20 21:48:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,21 @@
 
 const int	cgiWaitTime = 2;
 
+enum e_cgiStage
+{
+	INIT,
+	ADD_FD_POLL,
+	WAITING_CGI,
+	FINISH_WAITING,
+};
+
+enum e_cgiEvent
+{
+	EXTRACT_PIPE,
+	CLOSE_PIPE,
+	PROCESS_DATA,
+};
+
 class Response
 {
 	enum e_resType
@@ -41,34 +56,51 @@ class Response
 		const Location	*matchLocation;
 		std::string		resourcePath;
 		std::ifstream	*pageStream;
+		int				cgiResFd;
+		int				cgiStage;
 		Bytes			resultPage;
+		Bytes			cgiRes;
 		int				statusCode;
 		int				resultType;
+		pid_t			cgiPid;
+		int				pipeFd[2];
+		std::time_t		cgiStartTime;
 		Response();
+		void			determineResType();
 	public:
 		Response(Service &ser, Request &req);
 		Response(const Response &right);
 		~Response();
 		Response			&operator=(const Response &right);
 		bool				statusOK() const;
+		bool				isNoneType() const;
+		bool				isCGI() const;
+		bool				isINITStage() const;
+		bool				isAddFdStage() const;
+		bool				isWaitingStage() const;
+		bool				isFinishWaitingStage() const;
 		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
 		const Location		*getMatchLocation() const;
 		const std::string	getResourcePath() const;
 		const std::ifstream	*getPageStream() const;
+		int					getResultType() const;
+		int					getCgiResFd() const;
+		int					getCgiStage() const;
 		void				printResponse() const;
 		Bytes				getPageStreamResponse();
 		bool				openPageStream();
 		Bytes				convertCGIResToResponse(const Bytes &cgiRes);
 		void				extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers, Bytes::const_iterator &crlfPos);
-		void				exeCGI(std::string exe, Bytes &res);
-		bool				cgiParent(pid_t pid, int *pipeFd);
+		void				exeCGI(std::string exe);
+		bool				cgiParent(int evt);
 		void				cgiExtractResult(Bytes &res, int *pipeFd);
 		void				prepareArgEnv(std::string exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);
 		void				setStatusCode(int code);
 		void				setMatchLocation(const Location *location);
 		void				setResourcePath(const std::string path);
 		void				setStatusCodeResType(int code, int rType);
-		void				handleCGIExe(void);
-		void				determineResType(void);
+		void				setCgiStage(int stage);
+		void				handleCGIExe();
+		void				processResponse();
 };
