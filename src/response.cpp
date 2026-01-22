@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/21 19:18:22 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/22 14:38:51 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -168,32 +168,8 @@ Bytes	Response::getPageStreamResponse()
 	return res;
 }
 
-bool	Response::openPageStream()
+bool	Response::convertCGIResToResponse()
 {
-	try
-	{
-		pageStream = new std::ifstream(resourcePath.c_str(), std::ios_base::in);
-	}
-	catch (std::exception &e)
-	{
-		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		return false;
-	}
-	if (!pageStream->good())
-	{
-		std::cout << "can't open " << resourcePath << " as file\n";
-		setStatusCodeResType(NOT_FOUND, ERR_PAGE);
-		pageStream->close();
-		delete pageStream;
-		pageStream = NULL;
-		return false;
-	}
-	return true;
-}
-
-Bytes	Response::convertCGIResToResponse(const Bytes &cgiRes)
-{
-	Bytes								res;
 	Bytes::const_iterator				crlfPos;
 	std::map<std::string, std::string>	headers;
 	int									size;
@@ -202,24 +178,27 @@ Bytes	Response::convertCGIResToResponse(const Bytes &cgiRes)
 	if (headers.empty() || headers.count(CONTENTTYPE) == 0)
 	{
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		return res;
+		resultPage.clear();
+		return false;
 	}
 	if (headers.count("status") > 0 && headers.at("status") != "200")
 	{
 		statusCode = toInt(headers.at("status"));
 		if (statusCode == -1)
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		return res;
+		// std::cout << "status code not ok" << std::endl;
+		resultPage.clear();
+		return false;
 	}
-	appendBytes(res, genHttpResponseLine(200));
+	appendBytes(resultPage, genHttpResponseLine(200));
 	for (std::map<std::string, std::string>::iterator headerIt = headers.begin();
 		headerIt != headers.end(); ++headerIt)
-		appendBytes(res, genHttpHeader(headerIt->first, headerIt->second));
-	size = std::distance(crlfPos + CRLF.size(), cgiRes.end());
-	appendBytes(res, genHttpHeader(CONTENTLENGTH, toString(size)));
-	appendBytes(res, CRLFStr);
-	appendBytes(res, crlfPos + CRLF.size(), cgiRes.end());
-	return res;
+		appendBytes(resultPage, genHttpHeader(headerIt->first, headerIt->second));
+	size = std::distance(crlfPos + CRLF.size(), static_cast<Bytes::const_iterator> (cgiRes.end()));
+	appendBytes(resultPage, genHttpHeader(CONTENTLENGTH, toString(size)));
+	appendBytes(resultPage, CRLFStr);
+	appendBytes(resultPage, crlfPos + CRLF.size(), cgiRes.end());
+	return true;
 }
 
 void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers,
@@ -236,7 +215,7 @@ void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::str
 			break ;
 		if ((colonPos = searchPattern(start, crlfPos, COLON)) == crlfPos)
 		{
-			std::cout << "no colon found\n";
+			std::cout << "no colon found" << std::endl;
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			return ;
 		}
@@ -244,7 +223,7 @@ void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::str
 		std::transform(fieldName.begin(), fieldName.end(), fieldName.begin(), ::tolower);
 		if (headers.count(fieldName) > 0)
 		{
-			std::cout << "duplicate field name\n";
+			std::cout << "duplicate field name" << std::endl;
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			return ;
 		}
@@ -265,15 +244,19 @@ void	Response::exeCGI(std::string exe)
 		return ;
 	if (pipe(pipeFd) < 0)
 	{
+		std::cout << "create pipe fail" << std::endl;
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		cgiStage = FINISH_WAITING;
 		return ;
 	}
+	cgiResFd = pipeFd[0];
 	cgiPid = fork();
 	if (cgiPid < 0)
 	{
 		close(pipeFd[0]);
 		close(pipeFd[1]);
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		cgiStage = FINISH_WAITING;
 		return ;
 	}
 	if (!cgiPid)
@@ -281,7 +264,6 @@ void	Response::exeCGI(std::string exe)
 		prepareArgEnv(exe, strs, args, env);
 		close(pipeFd[0]);
 		fd = open(toString(pipeFd[0]).c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0700);
-		std::cout << "write fd for cgi input " << fd << std::endl;
 		if (fd < 0)
 			std::exit(1);
 		if (write(fd, request.getBody().data(), request.getBody().size()) == -1)
@@ -289,19 +271,14 @@ void	Response::exeCGI(std::string exe)
 		if (close(fd) < 0)
 			std::exit(1);
 		fd = open(toString(pipeFd[0]).c_str(), O_RDONLY, 0700);
-		std::cout << "read fd for cgi input " << fd << std::endl;
 		if (fd < 0)
 			std::exit(1);
-		std::cout << "fd for cgi input " << fd << std::endl;
 		if (dup2(pipeFd[1], STDOUT_FILENO) < 0)
 			std::exit(1);
 		if (dup2(fd, STDIN_FILENO) < 0)
 			std::exit(1);
 		if (close(fd) < 0)
-		{
-			std::cout << "can't close fd " << fd << " for cgi input"<< std::endl;
 			std::exit(1);
-		}
 		execve(exe.c_str(), (char *const*)args.data(), (char *const*)env.data());
 		std::exit(1);
 	}
@@ -320,20 +297,23 @@ bool	Response::cgiParent(int evt)
 
 	if (cgiStage == INIT)
 	{
-		std::cout << "cgi init\n";
+		// std::cout << "cgi init" << std::endl;
 		close(pipeFd[1]);
-		cgiStartTime = std::time(NULL);
+		std::time(&cgiStartTime);
 		cgiResFd = pipeFd[0];
 		cgiStage = ADD_FD_POLL;
+		// std::cout << "init start time: " << cgiStartTime << std::endl;
 	}
 	else if (cgiStage == WAITING_CGI || cgiStage == ADD_FD_POLL)
 	{
+		// std::cout << "start waiting cgi" << std::endl;
 		if (cgiStage == ADD_FD_POLL)
 			cgiStage = WAITING_CGI;
-		if (evt == EXTRACT_PIPE && (readSize = read(pipeFd[0], buf, BUFFER_SIZE)) > 0)
+		if (evt == EXTRACT_PIPE && (readSize = read(cgiResFd, buf, BUFFER_SIZE)) > 0)
 		{
 			std::cout << "extracting data from cgi pipe" << std::endl;
 			appendBuf(cgiRes, buf, readSize);
+			std::cout << "read size: " << readSize << std::endl;
 			cgiStartTime = std::time(NULL);
 		}
 		if (readSize < 0)
@@ -356,25 +336,35 @@ bool	Response::cgiParent(int evt)
 		}
 		if (!waitRes && std::difftime(std::time(NULL), cgiStartTime) > cgiWaitTime)
 		{
+			std::cout << "time to kill cgiPid: " << cgiPid << std::endl;
 			kill(cgiPid, SIGKILL);
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-			std::cout << "time to kill cgiPid: " << cgiPid << std::endl;
+			// resultType = ERR_PAGE;
+			// resultPage = stringToBytes(genHttpResponse(statusCode));
+			std::cout << "finish kill cgiPid: " << cgiPid << std::endl;
 		}
-		if (waitRes == cgiPid || (!waitRes && std::difftime(std::time(NULL), cgiStartTime) > cgiWaitTime))
+		if (waitRes == cgiPid || (!waitRes && difftime(std::time(NULL), cgiStartTime) > cgiWaitTime))
 		{
 			waitpid(cgiPid, &status, 0);
 			cgiStage = FINISH_WAITING;
-			std::cout << "cgi res size: " << cgiRes.size() << std::endl;
-			std::cout << "cgi res content: ";
+			// std::cout << "cgi res size: " << cgiRes.size() << std::endl;
+			// std::cout << "cgi res content: ";
 			// printBytes(cgiRes);
-			std::cout << std::endl;
-			resultPage = convertCGIResToResponse(cgiRes);
-			if (resultPage.empty())
+			// std::cout << "cgi res fin" << std::endl;
+		}
+	}
+	if (isFinishWaitingStage())
+	{
+		if (resultPage.empty())
+		{
+			if (!cgiRes.empty() && !convertCGIResToResponse())
 			{
+				std::cout << "res page empty" << std::endl;
 				resultType = ERR_PAGE;
-				resultPage = stringToBytes(genHttpResponse(statusCode));
 			}
 		}
+		if (resultPage.empty() && resultType == ERR_PAGE)
+			resultPage = stringToBytes(genHttpResponse(statusCode));
 	}
 	return true;
 }
@@ -445,6 +435,8 @@ void	Response::setResourcePath(const std::string path)
 
 void	Response::setStatusCodeResType(int code, int rType)
 {
+	if (isCGI() && rType == ERR_PAGE)
+		cgiStage = FINISH_WAITING;
 	statusCode = code;
 	resultType = rType;
 }

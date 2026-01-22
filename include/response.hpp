@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/20 21:48:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/22 12:22:32 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,8 +89,7 @@ class Response
 		int					getCgiStage() const;
 		void				printResponse() const;
 		Bytes				getPageStreamResponse();
-		bool				openPageStream();
-		Bytes				convertCGIResToResponse(const Bytes &cgiRes);
+		bool				convertCGIResToResponse();
 		void				extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers, Bytes::const_iterator &crlfPos);
 		void				exeCGI(std::string exe);
 		bool				cgiParent(int evt);

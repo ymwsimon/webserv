@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/21 17:23:10 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/21 23:47:49 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,7 @@ void	Server::run()
 				{
 					std::cout << "extract data from pipe fd: " << evt.data.fd << std::endl;
 					cgiPipeFd[evt.data.fd]->processResponseCgi(EXTRACT_PIPE);
+					std::cout << "finish extract from pipe" << std::endl;
 				}
 				else if (clients.count(evt.data.fd) == 0)
 				{
@@ -95,16 +96,17 @@ void	Server::run()
 						newEvt.data.fd = evt.data.fd;
 						newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 						if (epoll_ctl(epollFd, EPOLL_CTL_DEL, evt.data.fd, &newEvt) < 0)
-							std::cout << "delete client fd " << evt.data.fd << " from epoll fail\n";
+							std::cout << "delete client fd " << evt.data.fd << " from epoll fail" << std::endl;
 						if (close(evt.data.fd) < 0)
-							std::cout << "close client fd " << evt.data.fd << " fail\n";
+							std::cout << "close client fd " << evt.data.fd << " fail" << std::endl;
 					}
 				}
 			}
 			else if (evt.events & EPOLLOUT)
 			{
 				clients[evt.data.fd]->sendData(&evt);
-				if (clients[evt.data.fd]->getResponses().front().isAddFdStage())
+				if (clients[evt.data.fd]->getResponses().front().isAddFdStage()
+					&& clients[evt.data.fd]->getResponses().front().statusOK())
 				{
 					struct epoll_event 	newEvt;
 					const Response		&response = clients[evt.data.fd]->getResponses().front();
@@ -113,9 +115,10 @@ void	Server::run()
 					newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 					std::cout << "pipe id to add to epoll:" << newEvt.data.fd << std::endl;
 					if (epoll_ctl(epollFd, EPOLL_CTL_ADD, newEvt.data.fd, &newEvt) < 0)
-						std::cout << "add pipe to epoll fail\n";
+						std::cout << "add pipe to epoll fail" << std::endl;
 					cgiPipeFd.insert(std::make_pair(newEvt.data.fd, clients[evt.data.fd]));
 					clients[evt.data.fd]->processResponseCgi(PROCESS_DATA);
+					std::cout << "finish add pipe to epoll" << std::endl;
 				}
 			}
 			else if ((evt.events & EPOLLRDHUP) || (evt.events & EPOLLHUP))
@@ -131,9 +134,9 @@ void	Server::run()
 					newEvt.data.fd = evt.data.fd;
 					newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 					if (epoll_ctl(epollFd, EPOLL_CTL_DEL, evt.data.fd, &newEvt) < 0)
-						std::cout << "delete pipe fd " << evt.data.fd << " from epoll fail.\n";
+						std::cout << "delete pipe fd " << evt.data.fd << " from epoll fail." << std::endl;
 					if (close(evt.data.fd) < 0)
-						std::cout << "close pipe fd " << evt.data.fd << " fail\n";
+						std::cout << "close pipe fd " << evt.data.fd << " fail" << std::endl;
 				}
 				else
 				{
@@ -144,15 +147,15 @@ void	Server::run()
 					newEvt.data.fd = evt.data.fd;
 					newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 					if (epoll_ctl(epollFd, EPOLL_CTL_DEL, evt.data.fd, &newEvt) < 0)
-						std::cout << "delete client fd " << evt.data.fd << " from epoll fail\n";
+						std::cout << "delete client fd " << evt.data.fd << " from epoll fail" << std::endl;
 					if (close(evt.data.fd) < 0)
-						std::cout << "close client fd " << evt.data.fd << " fail\n";
+						std::cout << "close client fd " << evt.data.fd << " fail" << std::endl;
 					std::cout << "connection ended for fd " << evt.data.fd << std::endl;
 				}
 			}
 			else if (evt.events & EPOLLERR)
 			{
-				std::cout << "error\n";
+				std::cout << "error" << std::endl;
 			}
 		}
 	}

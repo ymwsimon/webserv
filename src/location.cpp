@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/15 23:53:37 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/22 14:41:54 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -149,7 +149,7 @@ std::string	Location::findValidIndexPage(std::string &folderPathStr) const
 		std::cout << "try opening " << fullPath << std::endl;
 		if (isRegularFile(fullPath) || fileExist(fullPath))
 			return fullPath;
-		std::cout << "open fail\n";
+		std::cout << "open fail" << std::endl;
 	}
 	return "";
 }
@@ -173,7 +173,7 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 	dir = opendir(folderPathStr.c_str());
 	if (dir)
 	{
-		std::cout << "generating index page..\n";
+		std::cout << "generating index page.." << std::endl;
 		for (dirEntry = readdir(dir); dirEntry; dirEntry = readdir(dir))
 		{
 			std::cout << "reading .. path: ";
@@ -193,7 +193,8 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 		res += genHtmlTagStart(DOCTYPE + " " + HTML);
 		res = genHttpResponse(200, res);
 	}
-	std::cout << "res page\n" << res << " \n\tsize:" << std::distance(res.begin(), res.end()) << std::endl;
+	// std::cout << "res page" << std::endl << res << std::endl
+		// << "\tsize:" << std::distance(res.begin(), res.end()) << std::endl;
 	return Bytes(res.begin(), res.end());
 }
 

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/21 17:27:14 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/22 14:13:47 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,12 +47,14 @@ int	Client::sendData(struct epoll_event *evt)
 	if (!requests.empty() && requests.front().complete())
 	{
 		// requests.front().printRequest();
-		if (!responses.empty() && responses.back().isCGI() && responses.back().isAddFdStage())
+		if (!responses.empty())
 			processResponseCgi(PROCESS_DATA);
 		if (responses.empty())
 		{
 			responses.push_back(Response(service, requests.front()));
-			responses.back().processResponse();
+			responses.front().processResponse();
+			if (responses.front().isINITStage()) //??
+				processResponseCgi(PROCESS_DATA);
 		}
 		if (!responses.empty()
 			&& (!responses.front().isCGI() || responses.front().isFinishWaitingStage()))
@@ -62,7 +64,7 @@ int	Client::sendData(struct epoll_event *evt)
 			std::cout << responses.front().getResultPage().size() << std::endl;
 			content = responses.front().getResultPage();
 			std::cout << "sending out data" << std::endl;
-			std::cout << "content\n";
+			std::cout << "content" << std::endl;
 			for (size_t i = 0; i < content.size(); ++i)
 				std::cout << content[i];
 			std::cout << std::endl;
