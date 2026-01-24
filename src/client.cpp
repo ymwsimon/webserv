@@ -6,14 +6,14 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/22 14:13:47 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/24 22:49:05 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/client.hpp"
 #include "../include/utils.hpp"
 
-Client::Client(Service &ser) : service(ser)
+Client::Client(Service *ser) : service(ser)
 {
 
 }
@@ -46,17 +46,10 @@ int	Client::sendData(struct epoll_event *evt)
 
 	if (!requests.empty() && requests.front().complete())
 	{
-		// requests.front().printRequest();
-		if (!responses.empty())
-			processResponseCgi(PROCESS_DATA);
 		if (responses.empty())
-		{
 			responses.push_back(Response(service, requests.front()));
-			responses.front().processResponse();
-			if (responses.front().isINITStage()) //??
-				processResponseCgi(PROCESS_DATA);
-		}
-		if (!responses.empty()
+		responses.front().processResponse();
+		if (!responses.empty() && !responses.front().getResultPage().empty()
 			&& (!responses.front().isCGI() || responses.front().isFinishWaitingStage()))
 		{
 			std::cout << responses.front().getStatusCode() << std::endl;;
@@ -83,8 +76,7 @@ int Client::recvData(struct epoll_event *evt)
 	int		readSize = 0;
 
 	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, 0);
-	if (readSize)
-		std::cout << readSize << std::endl;
+	std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
 	if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
@@ -93,11 +85,11 @@ int Client::recvData(struct epoll_event *evt)
 	return readSize;
 }
 
-void	Client::processResponseCgi(int evt)
+void	Client::processResponseCgi(int op)
 {
 	Response	&response = responses.front();
 
-	response.cgiParent(evt);
+	response.processCgi(op);
 }
 
 Bytes::const_iterator	&Client::searchForNewLine(Bytes::const_iterator &it)

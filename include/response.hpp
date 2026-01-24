@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/22 12:22:32 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/24 22:48:07 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ enum e_cgiStage
 enum e_cgiEvent
 {
 	EXTRACT_PIPE,
-	CLOSE_PIPE,
+	KILL_PROCESS,
 	PROCESS_DATA,
 };
 
@@ -51,7 +51,7 @@ class Response
 		ERR_PAGE,
 	};
 	private:
-		Service			&service;
+		Service			*service;
 		Request			&request;
 		const Location	*matchLocation;
 		std::string		resourcePath;
@@ -68,7 +68,7 @@ class Response
 		Response();
 		void			determineResType();
 	public:
-		Response(Service &ser, Request &req);
+		Response(Service *ser, Request &req);
 		Response(const Response &right);
 		~Response();
 		Response			&operator=(const Response &right);
@@ -88,18 +88,16 @@ class Response
 		int					getCgiResFd() const;
 		int					getCgiStage() const;
 		void				printResponse() const;
-		Bytes				getPageStreamResponse();
+		void				getPageStreamResponse();
 		bool				convertCGIResToResponse();
 		void				extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers, Bytes::const_iterator &crlfPos);
-		void				exeCGI(std::string exe);
-		bool				cgiParent(int evt);
-		void				cgiExtractResult(Bytes &res, int *pipeFd);
+		void				startCgi();
+		void				processCgi(int op);
 		void				prepareArgEnv(std::string exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);
 		void				setStatusCode(int code);
 		void				setMatchLocation(const Location *location);
 		void				setResourcePath(const std::string path);
 		void				setStatusCodeResType(int code, int rType);
 		void				setCgiStage(int stage);
-		void				handleCGIExe();
 		void				processResponse();
 };

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/15 23:39:09 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/24 22:47:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,6 +63,4 @@ class Location
 		const std::map<std::string, std::string>	&getCGIConfig() const;
 		bool							isOneOfCGIConfig(std::string &filePath) const;
 		bool							isMethodAllowed(std::string method) const;
-		bool							isResourceReachable(const std::string &rootPath,
-			const std::vector<std::string> &routePaths, const std::string &fileName) const;
 };
