@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 17:31:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 22:32:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/24 23:54:51 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,8 +29,7 @@ class Server
 		std::map<int, Client>	clientsConnection;
 		std::map<int, Client *>	cgiPipeFd;
 		int						epollFd;
-		bool					addNewConn(struct epoll_event evt, struct addrinfo addr);
-		bool					epollOperation(struct epoll_event evt, int op);
+		bool					epollOperation(int fd, int op, bool needToStop);
 	public:
 		Server();
 		Server(const Server &right);

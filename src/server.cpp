@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 22:51:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/24 23:55:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,25 +81,13 @@ void	Server::run()
 				else if (clientsConnection.count(evt.data.fd) == 0)
 				{
 					std::cout << "incoming fd " << evt.data.fd << std::endl;
-					if (!addNewConn(evt, *services.at(evt.data.fd).getAddrInfo()))
+					if (!epollOperation(evt.data.fd, EPOLL_CTL_ADD, false))
 						std::cout << "error accept new socket to epoll" << std::endl;
 				}
 				else
 				{
 					if (clientsConnection.at(evt.data.fd).recvData(&evt) == 0)
-					{
-						std::cout << "time to close client fd: " << evt.data.fd << std::endl;
-						struct epoll_event 	newEvt;
-
-						clientsConnection.at(evt.data.fd).processResponseCgi(KILL_PROCESS);
-						clientsConnection.erase(evt.data.fd);
-						newEvt.data.fd = evt.data.fd;
-						newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
-						if (epoll_ctl(epollFd, EPOLL_CTL_DEL, evt.data.fd, &newEvt) < 0)
-							std::cout << "delete client fd " << evt.data.fd << " from epoll fail" << std::endl;
-						if (close(evt.data.fd) < 0)
-							std::cout << "close client fd " << evt.data.fd << " fail" << std::endl;
-					}
+						epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
 				}
 			}
 			else if (evt.events & EPOLLOUT)
@@ -107,49 +95,10 @@ void	Server::run()
 				clientsConnection.at(evt.data.fd).sendData(&evt);
 				if (clientsConnection.at(evt.data.fd).getResponses().front().isAddFdStage()
 					&& clientsConnection.at(evt.data.fd).getResponses().front().statusOK())
-				{
-					struct epoll_event 	newEvt;
-					const Response		&response = clientsConnection.at(evt.data.fd).getResponses().front();
-
-					newEvt.data.fd = response.getCgiResFd();
-					newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
-					std::cout << "pipe id to add to epoll:" << newEvt.data.fd << std::endl;
-					if (epoll_ctl(epollFd, EPOLL_CTL_ADD, newEvt.data.fd, &newEvt) < 0)
-						std::cout << "add pipe to epoll fail" << std::endl;
-					cgiPipeFd.insert(std::make_pair(newEvt.data.fd, &clientsConnection.at(evt.data.fd)));
-					std::cout << "finish add pipe to epoll" << std::endl;
-				}
+					epollOperation(evt.data.fd, EPOLL_CTL_ADD, false);
 			}
 			else if ((evt.events & EPOLLRDHUP) || (evt.events & EPOLLHUP))
-			{
-				std::cout << "fd for epollhup: " << evt.data.fd << std::endl;
-				if (cgiPipeFd.count(evt.data.fd) > 0)
-				{
-					std::cout << "time to close pipe fd: " << evt.data.fd << std::endl;
-					struct epoll_event 	newEvt;
-
-					cgiPipeFd.erase(evt.data.fd);
-					newEvt.data.fd = evt.data.fd;
-					newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
-					if (epoll_ctl(epollFd, EPOLL_CTL_DEL, evt.data.fd, &newEvt) < 0)
-						std::cout << "delete pipe fd " << evt.data.fd << " from epoll fail." << std::endl;
-					if (close(evt.data.fd) < 0)
-						std::cout << "close pipe fd " << evt.data.fd << " fail" << std::endl;
-				}
-				else
-				{
-					struct epoll_event 	newEvt;
-
-					clientsConnection.erase(evt.data.fd);
-					newEvt.data.fd = evt.data.fd;
-					newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
-					if (epoll_ctl(epollFd, EPOLL_CTL_DEL, evt.data.fd, &newEvt) < 0)
-						std::cout << "delete client fd " << evt.data.fd << " from epoll fail" << std::endl;
-					if (close(evt.data.fd) < 0)
-						std::cout << "close client fd " << evt.data.fd << " fail" << std::endl;
-					std::cout << "connection ended for fd " << evt.data.fd << std::endl;
-				}
-			}
+				epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
 			else if (evt.events & EPOLLERR)
 			{
 				std::cout << "error" << std::endl;
@@ -158,59 +107,60 @@ void	Server::run()
 	}
 }
 
-bool	Server::addNewConn(struct epoll_event evt, struct addrinfo addr)
+bool	Server::epollOperation(int fd, int op, bool needToStop)
 {
 	struct epoll_event 	newEvt;
-	int					newFd;
-
-	newFd = accept(evt.data.fd, addr.ai_addr, &addr.ai_addrlen);
-	if (newFd < 0)
-	{
-		std::cout << "error accept new connection" << std::endl;
-		return false;
-	}
-	std::cout << "new connection fd " << newFd << std::endl;
-	clientsConnection.insert(std::make_pair(newFd, Client(&services.at(evt.data.fd))));
-	newEvt.data.fd = newFd;
-	newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
-	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, newFd, &newEvt) < 0)
-	{
-		std::cout << "error add new connection to epoll" << std::endl;
-		return false;
-	}
-	return true;
-}
-
-bool	Server::epollOperation(struct epoll_event evt, int op)
-{
-	struct epoll_event 	newEvt;
-
 
 	if (op == EPOLL_CTL_ADD)
 	{
+		if (clientsConnection.count(fd) == 0)
+		{
+			struct addrinfo addr = *services.at(fd).getAddrInfo();
 
+			newEvt.data.fd = accept(fd, addr.ai_addr, &addr.ai_addrlen);
+			if (newEvt.data.fd < 0)
+			{
+				std::cout << "error accept new connection" << std::endl;
+				return false;
+			}
+			newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
+			clientsConnection.insert(std::make_pair(newEvt.data.fd, Client(&services.at(fd))));
+		}
+		else
+		{
+			newEvt.data.fd = clientsConnection.at(fd).getResponses().front().getCgiResFd();
+			newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
+			cgiPipeFd.insert(std::make_pair(newEvt.data.fd, &clientsConnection.at(fd)));
+		}
+		if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)
+		{
+			std::cout << "error add new connection/pipe to epoll" << std::endl;
+			return false;
+		}
 	}
 	else if (op == EPOLL_CTL_DEL)
 	{
-		if (cgiPipeFd.count(evt.data.fd) > 0)
+		if (cgiPipeFd.count(fd) > 0)
 		{
-			cgiPipeFd.erase(evt.data.fd);
+			cgiPipeFd.erase(fd);
 			newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;	
 		}
 		else
 		{
-			clientsConnection.erase(evt.data.fd);
+			if (needToStop)
+				clientsConnection.at(fd).processResponseCgi(KILL_PROCESS);
+			clientsConnection.erase(fd);
 			newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 		}
-		newEvt.data.fd = evt.data.fd;
-		if (epoll_ctl(epollFd, EPOLL_CTL_DEL, evt.data.fd, &newEvt) < 0)
+		newEvt.data.fd = fd;
+		if (epoll_ctl(epollFd, op, fd, &newEvt) < 0)
 		{
-			std::cout << "delete fd " << evt.data.fd << " from epoll fail" << std::endl;
+			std::cout << "delete fd " << fd << " from epoll fail" << std::endl;
 			return false;
 		}
-		if (close(evt.data.fd) < 0)
+		if (close(fd) < 0)
 		{
-			std::cout << "close fd " << evt.data.fd << " fail" << std::endl;
+			std::cout << "close fd " << fd << " fail" << std::endl;
 			return false;
 		}
 	}
