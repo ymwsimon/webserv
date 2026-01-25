@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 18:40:13 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 18:51:17 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -478,8 +478,6 @@ void	Response::processResponse()
 
 void	Response::deleteResource()
 {
-	std::cout <<"res is dir " << isDir(resourcePath)<<std::endl;
-	std::cout <<"res is file " << isRegularFile(resourcePath)<<std::endl;
 	if (!request.getRoute().empty() &&
 		((*request.getRoute().rbegin() == '/' && isRegularFile(resourcePath))
 		 || (*request.getRoute().rbegin() != '/' && isDir(resourcePath))))
