@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 18:45:40 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 21:44:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,9 +93,11 @@ void	Server::run()
 			}
 			else if (evt.events & EPOLLOUT)
 			{
-				if (clientsConnection.count(evt.data.fd) > 0
-					&& !clientsConnection.at(evt.data.fd).sendData(&evt))
-					epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
+				// if (clientsConnection.count(evt.data.fd) > 0
+				// 	&& !clientsConnection.at(evt.data.fd).sendData(&evt))
+				// 	{}
+					// epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
+				clientsConnection.at(evt.data.fd).sendData(&evt);
 				if (clientsConnection.count(evt.data.fd) > 0
 					&& !clientsConnection.at(evt.data.fd).getResponses().empty()
 					&& clientsConnection.at(evt.data.fd).getResponses().front().isAddFdStage()

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 16:35:11 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/02 23:48:47 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 19:28:48 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 const std::string	DOCTYPE = "!DOCTYPE";
 const std::string	HTML = "html";
-const std::string	HEAD = "head";
+const std::string	HEADTag = "head";
 const std::string	TITLE = "title";
 const std::string	BODY = "body";
 

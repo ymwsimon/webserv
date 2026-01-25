@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 18:16:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:53:12 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,13 +46,14 @@ int	Client::sendData(struct epoll_event *evt)
 
 	if (!requests.empty() && requests.front().complete())
 	{
+		// requests.front().printRequest();
 		if (responses.empty())
 			responses.push_back(Response(service, requests.front()));
 		responses.front().processResponse();
 		if (!responses.empty() && !responses.front().getResultPage().empty()
 			&& (!responses.front().isCGI() || responses.front().isFinishWaitingStage()))
 		{
-			int	statusCode = responses.front().getStatusCode();
+			// int	statusCode = responses.front().getStatusCode();
 
 			std::cout << responses.front().getStatusCode() << std::endl;;
 			std::cout << responses.front().getPageStream() << std::endl;
@@ -67,8 +68,8 @@ int	Client::sendData(struct epoll_event *evt)
 				std::cout << "error send data out" << std::endl;
 			requests.pop_front();
 			responses.pop_front();
-			if (statusCode == BAD_REQUEST)
-				return 0;
+			// if (statusCode == BAD_REQUEST)
+				// return 0;
 		}
 	}
 	return 1;
@@ -83,8 +84,8 @@ int Client::recvData(struct epoll_event *evt)
 	std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
-	if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
-		return 0;
+	// if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
+		// return 0;
 	processData();
 	return readSize;
 }

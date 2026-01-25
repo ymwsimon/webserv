@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:46:32 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 17:50:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 19:23:13 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ enum e_HTTPStatusCode
 	BAD_REQUEST = 400,
 	FORBIDDEN = 403,
 	NOT_FOUND = 404,
+	NOT_ALLOWED = 405,
 	CONFLICT = 409,
 	INTERNAL_ERROR = 500,
 };

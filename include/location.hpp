@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 22:47:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:30:20 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ class Location
 		std::string							uploadDir;
 		std::string							redirect;
 		int									allowedMethod;
-		int									maxBodySize;
+		size_t								maxBodySize;
 		bool								autoIndex;
 	public:
 		enum method
@@ -38,8 +38,10 @@ class Location
 			POST = 2,
 			DELETE = 4,
 			PUT = 8,
+			HEAD = 16,
 		};
 		Location();
+		Location(int i);
 		Location(const Location &right);
 		~Location();
 		Location						&operator=(const Location &right);

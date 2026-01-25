@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 16:41:15 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/02 23:47:56 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 19:50:51 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,7 @@ std::string	genHtmlPage(std::string title, std::string content)
 	std::string	res;
 
 	appendHtmlTag(TITLE, title);
-	appendHtmlTag(HEAD, title);
+	appendHtmlTag(HEADTag, title);
 	appendHtmlTag(BODY, content);
 	res = title + content;
 	appendHtmlTag(HTML, res);

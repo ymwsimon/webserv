@@ -6,14 +6,14 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 16:21:25 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 19:24:58 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/request.hpp"
 
-std::string Request::valMet[3] = {"POST", "GET", "DELETE"};
-std::vector<std::string>	Request::validMethod = std::vector<std::string>(Request::valMet, Request::valMet + 3);
+std::string Request::valMet[4] = {"POST", "GET", "DELETE", "HEAD"};
+std::vector<std::string>	Request::validMethod = std::vector<std::string>(Request::valMet, Request::valMet + 4);
 std::string Request::valVer[1] = {"HTTP/1.1"};
 std::vector<std::string>	Request::validHttpVersion = std::vector<std::string>(Request::valVer, Request::valVer + 1);
 

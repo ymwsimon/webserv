@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:12:27 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/10 15:26:44 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:14:23 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,14 +16,18 @@ Config::Config()
 {
 	Location	l;
 	Location	l2;
+	Location	l3;
 	std::vector<std::string>	splitRes;
 
-	locations.push_back(l);
+	// locations.push_back(l);
 	l2.setRouteStr("/test/");
 	splitRes = splitPath(l2.getRouteStr());
 	l2.setRoutePaths(splitRes);
 	l2.setRootFolder("/folderb/");
-	locations.push_back(l2);
+	// locations.push_back(l2);
+	locations.push_back(Location(1));
+	locations.push_back(Location(2));
+	locations.push_back(Location(3));
 	listenAddress = "127.0.0.1";
 	serverName = "localhost";
 	port = 8080;
@@ -80,8 +84,8 @@ const int	&Config::getPort() const
 const Location	*Config::getLocationMatch(const std::vector<std::string> &paths) const
 {
 	const Location	*res = NULL;
-	int			matchLength = 0;
-	int			tmpRes;
+	int				matchLength = 0;
+	int				tmpRes;
 
 	for (size_t i = 0; i < getLocations().size(); ++i)
 	{

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/12 11:45:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:24:17 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,11 +74,12 @@ std::vector<std::string>	splitPath(const std::string &pathStr)
 	return resPath;
 }
 
-std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, bool splitPath)
+std::string	mergeFullPath(const std::string rootPath,
+	const std::vector<std::string> &routePaths, size_t startPos, bool splitPath)
 {
 	std::string	res = rootPath;
 
-	for (size_t i = 0; i < routePaths.size(); ++i)
+	for (size_t i = startPos; i < routePaths.size(); ++i)
 	{
 		res += "/" + routePaths[i];
 		if (splitPath && isRegularFile(res))

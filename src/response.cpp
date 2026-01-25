@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 18:51:17 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:59:40 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,8 @@ Response	&Response::operator=(const Response &right)
 		pipeFd[0] = right.pipeFd[0];
 		pipeFd[1] = right.pipeFd[1];
 		cgiStartTime = right.cgiStartTime;
+		headers = right.headers;
+		locationMatchLength = right.locationMatchLength;
 	}
 	return *this;
 }
@@ -169,14 +171,19 @@ bool	Response::convertCGIResToResponse()
 	extractHeader(cgiRes, headers, crlfPos);
 	if (headers.empty() || headers.count(CONTENTTYPE) == 0)
 	{
+		std::cout<<"empty header"<<std::endl;
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return false;
 	}
-	if (headers.count("status") > 0 && headers.at("status") != "200")
+	if (headers.count("status") > 0 && headers.at("status") != "200 OK")
 	{
-		statusCode = toInt(headers.at("status"));
-		if (statusCode == -1)
-			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		std::cout<<"status err"<<std::endl;
+		std::cout<<"status: "<<headers.at("status") <<std::endl;
+
+		// statusCode = toInt(headers.at("status"));
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		// if (statusCode == -1)
+		// 	statusCode = INTERNAL_ERROR;
 		return false;
 	}
 	appendBytes(resultPage, genHttpResponseLine(200));
@@ -217,6 +224,7 @@ void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::str
 			return ;
 		}
 		fieldValue = bytesToString(colonPos + COLON.size(), crlfPos);
+		trim(fieldValue);
 		headers.insert(std::make_pair(fieldName, fieldValue));
 		start = crlfPos + CRLF.size();
 	}
@@ -304,8 +312,8 @@ void	Response::processCgi(int op)
 			cgiStartTime = std::time(NULL);
 		}
 		if (readSize < 0
-			|| (waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG)) < 0
-			|| (WIFEXITED(status) && WEXITSTATUS(status) != 0))
+			|| (waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG)) < 0)
+			// || (WIFEXITED(status) && WEXITSTATUS(status) != 0))
 		{
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			return ;
@@ -315,7 +323,7 @@ void	Response::processCgi(int op)
 		{
 			std::cout << "time to kill cgiPid: " << cgiPid << std::endl;
 			kill(cgiPid, SIGKILL);
-			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+			// setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			std::cout << "finish kill cgiPid: " << cgiPid << std::endl;
 		}
 		if (waitRes == cgiPid
@@ -325,14 +333,16 @@ void	Response::processCgi(int op)
 			waitpid(cgiPid, &status, WUNTRACED | WNOHANG);
 			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 				setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-			cgiStage = FINISH_WAITING;
 			// std::cout << "cgi res size: " << cgiRes.size() << std::endl;
 			// std::cout << "cgi res content: ";
 			// printBytes(cgiRes);
+			// std::cout << std::endl;
+			cgiStage = FINISH_WAITING;
 		}
 	}
 	if (isFinishWaitingStage() && resultPage.empty() && !cgiRes.empty())
-		convertCGIResToResponse();
+		if (!convertCGIResToResponse())
+			std::cout<<"convert cgi res fail"<<std::endl;
 }
 
 void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
@@ -411,7 +421,7 @@ void	Response::determineResType(void)
 	std::string	filePathStr;
 	
 	filePathStr = mergeFullPath(matchLocation->getRootFolder(),
-		request.getPaths(), matchLocation->hasCGIConfig());
+		request.getPaths(), locationMatchLength, matchLocation->hasCGIConfig());
 	logMessage(std::cout, "FilePath str: " + filePathStr);
 	if (request.isMethod("DELETE"))
 	{
@@ -454,8 +464,16 @@ void	Response::processResponse()
 		matchLocation = service->findMatchingRoute(request);
 	if (statusOK() && !matchLocation)
 		(logMessage(std::cout, "no route match"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
+	if (statusOK() && matchLocation)
+	{
+		std::cout<<"route str:"<<matchLocation->getRouteStr()<<std::endl;
+		locationMatchLength = matchLocation->getRouteMatchLength(request.getPaths()) - 1;
+		std::cout<<"match length:"<<locationMatchLength<<std::endl;
+	}
 	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
-		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
+		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
+	if (statusOK() && matchLocation && (size_t)matchLocation->getMaxBodySize() < request.getBodyLength())
+		(logMessage(std::cout, "body too large"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
 	if (statusOK() && matchLocation && resultType == NONE)
 		determineResType();
 	if (statusOK() && !fileExist(resourcePath))
@@ -466,7 +484,7 @@ void	Response::processResponse()
 		deleteResource();
 	if (statusOK() && resultType == LIST_FOLDER)
 		resultPage = matchLocation->generateIndexPages(resourcePath,
-			mergeFullPath("", request.getPaths(), false));
+			mergeFullPath("", request.getPaths(), locationMatchLength, false));
 	if (statusOK() && resultType == CGI_EXE
 		&& isRegularFile(resourcePath) && !fileExeOK(resourcePath))
 		resultType = FILE;

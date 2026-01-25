@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/12 14:39:38 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:12:50 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,8 @@ std::vector<std::string>	splitPath(const std::string &pathStr);
 
 Bytes		staticPage();
 Bytes		defaultErrorPage();
-std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths, bool splitPath);
+std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths,
+	size_t startPos, bool splitPath);
 bool		isDir(const std::string &filePath);
 bool		isRegularFile(const std::string &filePath);
 bool		fileExist(const std::string &filePath);

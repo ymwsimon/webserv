@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 18:19:18 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:31:18 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,19 +14,78 @@
 
 Location::Location()
 {
-	std::vector<std::string>	splitRes;
+	autoIndex = false;
+	// std::vector<std::string>	splitRes;
 
-	routeStr = "/";
-	splitRes = splitPath(routeStr);
-	route = splitRes;
-	rootFolder = "./data/www";
-	indexPages.push_back("index.html");
-	indexPages.push_back("b.html");
-	allowedMethod = GET | POST | DELETE;
-	maxBodySize = 1024 * 1024 * 1024;
-	autoIndex = true;
-	cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
+	// routeStr = "/";
+	// splitRes = splitPath(routeStr);
+	// route = splitRes;
+	// rootFolder = "./data/www";
+	// indexPages.push_back("index.html");
+	// indexPages.push_back("b.html");
+	// allowedMethod = GET;
+	// // allowedMethod = GET | POST | DELETE;
+	// maxBodySize = 1024 * 1024 * 1024;
+	// autoIndex = true;
+	// cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
+	// cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
 	// cgi.insert(std::make_pair("html", "aaa"));
+}
+
+Location::Location(int i)
+{
+	if (i == 1)
+	{
+		std::vector<std::string>	splitRes;
+
+		routeStr = "/";
+		splitRes = splitPath(routeStr);
+		route = splitRes;
+		rootFolder = "./data/www";
+		// indexPages.push_back("index.html");
+		// indexPages.push_back("b.html");
+		allowedMethod = GET;
+		// allowedMethod = GET | POST | DELETE;
+		maxBodySize = 1024 * 1024 * 1024;
+		autoIndex = true;
+		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
+		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("html", "aaa"));
+	}
+	else if (i == 2)
+	{
+		std::vector<std::string>	splitRes;
+
+		routeStr = "/post_body/";
+		splitRes = splitPath(routeStr);
+		route = splitRes;
+		rootFolder = "./data/www";
+		indexPages.push_back("index.html");
+		indexPages.push_back("b.html");
+		allowedMethod = POST;
+		// allowedMethod = GET | POST | DELETE;
+		maxBodySize = 100;
+		autoIndex = false;
+		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
+		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("html", "aaa"));
+	}
+	else if (i == 3)
+	{
+		std::vector<std::string>	splitRes;
+
+		routeStr = "/directory/";
+		splitRes = splitPath(routeStr);
+		route = splitRes;
+		rootFolder = "./data/www/YoupiBanane";
+		indexPages.push_back("youpi.bad_extension");
+		allowedMethod = GET | POST;
+		maxBodySize = (size_t)1024 * 1024 * 1024 * 2;
+		autoIndex = false;
+		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
+		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("html", "aaa"));
+	}
 }
 
 Location::Location(const Location &right)
@@ -187,7 +246,7 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 		appendHtmlTag(BODY, body);
 		tmp = "Index of " + routePath;
 		appendHtmlTag(TITLE, tmp);
-		appendHtmlTag(HEAD, tmp);
+		appendHtmlTag(HEADTag, tmp);
 		res = tmp + body;
 		appendHtmlTag(HTML, res);
 		res += genHtmlTagStart(DOCTYPE + " " + HTML);
@@ -215,5 +274,6 @@ bool	Location::isMethodAllowed(std::string method) const
 	return ((method == "GET" && (allowedMethod & GET))
 		|| (method == "POST" && (allowedMethod & POST))
 		|| (method == "DELETE" && (allowedMethod & DELETE))
-		|| (method == "PUT" && (allowedMethod & PUT)));
+		|| (method == "PUT" && (allowedMethod & PUT))
+		|| (method == "HEAD" && (allowedMethod & HEAD)));
 }

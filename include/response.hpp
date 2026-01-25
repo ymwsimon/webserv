@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 18:44:11 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:20:29 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,7 @@ class Response
 		int									pipeFd[2];
 		std::time_t							cgiStartTime;
 		std::map<std::string, std::string>	headers;
+		size_t								locationMatchLength;
 		Response();
 		void			determineResType();
 	public:
