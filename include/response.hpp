@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 22:48:07 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 18:44:11 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <fstream>
 #include <string>
 #include <ctime>
+#include <cstdio>
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -48,23 +49,25 @@ class Response
 		CGI_EXE,
 		FILE,
 		LIST_FOLDER,
+		DELETE_RESOURCE,
 		ERR_PAGE,
 	};
 	private:
-		Service			*service;
-		Request			&request;
-		const Location	*matchLocation;
-		std::string		resourcePath;
-		std::ifstream	*pageStream;
-		int				cgiResFd;
-		int				cgiStage;
-		Bytes			resultPage;
-		Bytes			cgiRes;
-		int				statusCode;
-		int				resultType;
-		pid_t			cgiPid;
-		int				pipeFd[2];
-		std::time_t		cgiStartTime;
+		Service								*service;
+		Request								&request;
+		const Location						*matchLocation;
+		std::string							resourcePath;
+		std::ifstream						*pageStream;
+		int									cgiResFd;
+		int									cgiStage;
+		Bytes								resultPage;
+		Bytes								cgiRes;
+		int									statusCode;
+		int									resultType;
+		pid_t								cgiPid;
+		int									pipeFd[2];
+		std::time_t							cgiStartTime;
+		std::map<std::string, std::string>	headers;
 		Response();
 		void			determineResType();
 	public:
@@ -88,7 +91,7 @@ class Response
 		int					getCgiResFd() const;
 		int					getCgiStage() const;
 		void				printResponse() const;
-		void				getPageStreamResponse();
+		void				getFileResponse();
 		bool				convertCGIResToResponse();
 		void				extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers, Bytes::const_iterator &crlfPos);
 		void				startCgi();
@@ -100,4 +103,5 @@ class Response
 		void				setStatusCodeResType(int code, int rType);
 		void				setCgiStage(int stage);
 		void				processResponse();
+		void				deleteResource();
 };

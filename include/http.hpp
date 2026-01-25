@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:46:32 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/20 16:56:14 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 17:50:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,9 +24,11 @@ const std::string	CONTENTLENGTH = "content-length";
 enum e_HTTPStatusCode
 {
 	HTTP_OK = 200,
+	NO_CONTENT = 204,
 	BAD_REQUEST = 400,
 	FORBIDDEN = 403,
 	NOT_FOUND = 404,
+	CONFLICT = 409,
 	INTERNAL_ERROR = 500,
 };
 
@@ -38,4 +40,6 @@ std::string			genHttpResponseLine(int code);
 std::string			genHtmlPage(std::string title, std::string content);
 std::string			genHttpResponse(int code);
 std::string			genHttpResponse(int code, const std::string &content);
-std::string			genHttpResponse(int code, const std::string mediaType, const std::string &content);
+std::string			genHttpResponse(int code, std::string mediaType, const std::string &content);
+std::string			genHttpResponse(int code, const std::string &content,
+	std::map<std::string, std::string> headers);

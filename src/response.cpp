@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 22:36:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 18:40:13 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ Response	&Response::operator=(const Response &right)
 
 bool	Response::statusOK() const
 {
-	return statusCode == 200;
+	return (statusCode / 100) == 2;
 }
 
 bool	Response::isNoneType() const
@@ -136,7 +136,7 @@ void	Response::printResponse() const
 	std::cout << "Status code: " << statusCode << std::endl;
 }
 
-void	Response::getPageStreamResponse()
+void	Response::getFileResponse()
 {
 	unsigned char		buf[BUFFER_SIZE];
 	std::string			head;
@@ -322,7 +322,7 @@ void	Response::processCgi(int op)
 			|| (!waitRes && difftime(std::time(NULL), cgiStartTime) > cgiWaitTime)
 			|| op == KILL_PROCESS)
 		{
-			waitpid(cgiPid, &status, 0);
+			waitpid(cgiPid, &status, WUNTRACED | WNOHANG);
 			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 				setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			cgiStage = FINISH_WAITING;
@@ -413,6 +413,12 @@ void	Response::determineResType(void)
 	filePathStr = mergeFullPath(matchLocation->getRootFolder(),
 		request.getPaths(), matchLocation->hasCGIConfig());
 	logMessage(std::cout, "FilePath str: " + filePathStr);
+	if (request.isMethod("DELETE"))
+	{
+		resultType = DELETE_RESOURCE;
+		resourcePath = filePathStr;
+		return ;
+	}
 	if (matchLocation->hasCGIConfig())
 		resultType = CGI_EXE;
 	if (isDir(filePathStr))
@@ -456,6 +462,8 @@ void	Response::processResponse()
 		(logMessage(std::cout, "file not found"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
 	if (statusOK() && fileExist(resourcePath) && !fileReadOK(resourcePath))
 		(logMessage(std::cout, "file not readable"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
+	if (statusOK() && resultType == DELETE_RESOURCE)
+		deleteResource();
 	if (statusOK() && resultType == LIST_FOLDER)
 		resultPage = matchLocation->generateIndexPages(resourcePath,
 			mergeFullPath("", request.getPaths(), false));
@@ -465,5 +473,22 @@ void	Response::processResponse()
 	if (statusOK() && resultType == CGI_EXE)
 		processCgi(PROCESS_DATA);
 	if (statusOK() && resultType == FILE)
-		getPageStreamResponse();
+		getFileResponse();
+}
+
+void	Response::deleteResource()
+{
+	std::cout <<"res is dir " << isDir(resourcePath)<<std::endl;
+	std::cout <<"res is file " << isRegularFile(resourcePath)<<std::endl;
+	if (!request.getRoute().empty() &&
+		((*request.getRoute().rbegin() == '/' && isRegularFile(resourcePath))
+		 || (*request.getRoute().rbegin() != '/' && isDir(resourcePath))))
+		setStatusCodeResType(CONFLICT, ERR_PAGE);
+	else if (std::remove(resourcePath.c_str()))
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+	else
+	{
+		setStatusCode(NO_CONTENT);
+		resultPage = stringToBytes(genHttpResponse(statusCode));
+	}
 }

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/15 23:45:49 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 16:21:17 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,7 @@ class Request
 		void										parseRequest();
 		bool										complete() const;
 		bool										statusOK() const;
+		bool										isMethod(std::string query) const;
 		void										printRequest() const;
 		const std::string							&getMethod() const;
 		const std::string							&getRoute() const;

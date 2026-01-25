@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 23:55:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 18:45:40 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,14 +86,19 @@ void	Server::run()
 				}
 				else
 				{
-					if (clientsConnection.at(evt.data.fd).recvData(&evt) == 0)
+					if (clientsConnection.count(evt.data.fd) > 0
+						&& clientsConnection.at(evt.data.fd).recvData(&evt) == 0)
 						epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
 				}
 			}
 			else if (evt.events & EPOLLOUT)
 			{
-				clientsConnection.at(evt.data.fd).sendData(&evt);
-				if (clientsConnection.at(evt.data.fd).getResponses().front().isAddFdStage()
+				if (clientsConnection.count(evt.data.fd) > 0
+					&& !clientsConnection.at(evt.data.fd).sendData(&evt))
+					epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
+				if (clientsConnection.count(evt.data.fd) > 0
+					&& !clientsConnection.at(evt.data.fd).getResponses().empty()
+					&& clientsConnection.at(evt.data.fd).getResponses().front().isAddFdStage()
 					&& clientsConnection.at(evt.data.fd).getResponses().front().statusOK())
 					epollOperation(evt.data.fd, EPOLL_CTL_ADD, false);
 			}
@@ -147,7 +152,7 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 		}
 		else
 		{
-			if (needToStop)
+			if (clientsConnection.count(fd) > 0 && needToStop)
 				clientsConnection.at(fd).processResponseCgi(KILL_PROCESS);
 			clientsConnection.erase(fd);
 			newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:48:00 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/03 22:51:02 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 18:44:45 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -194,13 +194,20 @@ std::string	genHttpResponseLine(int code)
 
 std::string	genHttpResponse(int code)
 {
-	std::string	res;
-	std::string	body;
+	std::string							res;
+	std::string							body;
+	std::map<std::string, std::string>	headers;
 
 	if (!code)
 		code = 200;
 	body = genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code));
-	return genHttpResponse(code, body);
+	if (code == BAD_REQUEST)
+	{
+		headers.insert(std::make_pair("Connection", "close"));
+		return genHttpResponse(code, body, headers);
+	}
+	else
+		return genHttpResponse(code, body);
 }
 
 std::string	genHttpResponse(int code, const std::string &content)
@@ -212,31 +219,29 @@ std::string	genHttpResponse(int code, const std::string &content)
 	return genHttpResponse(code, HTML, content);
 }
 
-std::string	genHttpResponse(int code, const std::string mediaType, const std::string &content)
+std::string	genHttpResponse(int code, std::string mediaType, const std::string &content)
+{
+	std::string							res;
+	std::map<std::string, std::string>	headers;
+
+	if (!code)
+		code = 200;
+	res = genHttpResponseLine(code);
+	headers.insert(std::make_pair(CONTENTTYPE, getMediaType(mediaType)));
+	headers.insert(std::make_pair(CONTENTLENGTH, toString(content.size())));
+	return genHttpResponse(code, content, headers);
+}
+
+std::string	genHttpResponse(int code, const std::string &content,
+	std::map<std::string, std::string> headers)
 {
 	std::string	res;
 
 	if (!code)
 		code = 200;
 	res = genHttpResponseLine(code);
-	res += genHttpHeader(CONTENTTYPE, getMediaType(mediaType));
-	res += genHttpHeader(CONTENTLENGTH, toString(content.size()));
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+		res += genHttpHeader(it->first, it->second);	
 	res += CRLFStr;
 	return res + content;
-}
-
-Bytes	genHttpResponse(int code, const std::string mediaType, const Bytes &content)
-{
-	Bytes	res;
-
-	if (!code)
-		code = 200;
-	(void)mediaType;
-	(void)content;
-	// res = genHttpResponseLine(code);
-	// res += genHttpHeader(CONTENTTYPE, getMediaType(mediaType));
-	// res += genHttpHeader(CONTENTLENGTH, toString(content.size()));
-	// res += CRLFStr;
-	// return res + content;
-	return res;
 }

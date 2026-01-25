@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/21 17:11:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 16:21:25 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -244,6 +244,11 @@ bool	Request::complete() const
 bool	Request::statusOK() const
 {
 	return statusCode == HTTP_OK;
+}
+
+bool	Request::isMethod(std::string query) const
+{
+	return method == query;
 }
 
 void	Request::printRequest() const

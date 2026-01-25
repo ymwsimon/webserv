@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/22 14:41:54 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 18:19:18 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ Location::Location()
 	rootFolder = "./data/www";
 	indexPages.push_back("index.html");
 	indexPages.push_back("b.html");
-	allowedMethod = GET | POST;
+	allowedMethod = GET | POST | DELETE;
 	maxBodySize = 1024 * 1024 * 1024;
 	autoIndex = true;
 	cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));

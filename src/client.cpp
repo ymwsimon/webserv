@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 22:49:05 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/25 18:16:39 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,8 @@ int	Client::sendData(struct epoll_event *evt)
 		if (!responses.empty() && !responses.front().getResultPage().empty()
 			&& (!responses.front().isCGI() || responses.front().isFinishWaitingStage()))
 		{
+			int	statusCode = responses.front().getStatusCode();
+
 			std::cout << responses.front().getStatusCode() << std::endl;;
 			std::cout << responses.front().getPageStream() << std::endl;
 			std::cout << responses.front().getResultPage().size() << std::endl;
@@ -65,6 +67,8 @@ int	Client::sendData(struct epoll_event *evt)
 				std::cout << "error send data out" << std::endl;
 			requests.pop_front();
 			responses.pop_front();
+			if (statusCode == BAD_REQUEST)
+				return 0;
 		}
 	}
 	return 1;
@@ -87,6 +91,8 @@ int Client::recvData(struct epoll_event *evt)
 
 void	Client::processResponseCgi(int op)
 {
+	if (responses.empty())
+		return ;
 	Response	&response = responses.front();
 
 	response.processCgi(op);
