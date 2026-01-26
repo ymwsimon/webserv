@@ -15,6 +15,7 @@
 Location::Location()
 {
 	autoIndex = false;
+	allowedMethod = 0;
 	// std::vector<std::string>	splitRes;
 
 	// routeStr = "/";
@@ -49,7 +50,8 @@ Location::Location(int i)
 		maxBodySize = 1024 * 1024 * 1024;
 		autoIndex = true;
 		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
-		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
 		// cgi.insert(std::make_pair("html", "aaa"));
 	}
 	else if (i == 2)
@@ -67,7 +69,8 @@ Location::Location(int i)
 		maxBodySize = 100;
 		autoIndex = false;
 		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
-		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
 		// cgi.insert(std::make_pair("html", "aaa"));
 	}
 	else if (i == 3)
@@ -83,7 +86,8 @@ Location::Location(int i)
 		maxBodySize = (size_t)1024 * 1024 * 1024 * 2;
 		autoIndex = false;
 		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
-		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
 		// cgi.insert(std::make_pair("html", "aaa"));
 	}
 }
@@ -120,7 +124,9 @@ int	Location::getRouteMatchLength(const std::vector<std::string> &paths) const
 {
 	int	i = 0;
 
-	while (i < (int)route.size() && i < (int)paths.size() && (route[i].empty() || route[i] == paths[i]))
+	if (route.size() == 1 && route[0].empty())
+		return 0;
+	while (i < (int)route.size() && i < (int)paths.size() && route[i] == paths[i])
 		++i;
 	return i;
 }

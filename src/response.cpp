@@ -467,9 +467,11 @@ void	Response::processResponse()
 	if (statusOK() && matchLocation)
 	{
 		std::cout<<"route str:"<<matchLocation->getRouteStr()<<std::endl;
-		locationMatchLength = matchLocation->getRouteMatchLength(request.getPaths()) - 1;
+		locationMatchLength = matchLocation->getRouteMatchLength(request.getPaths());
 		std::cout<<"match length:"<<locationMatchLength<<std::endl;
 	}
+	if (statusOK() && request.getMethod() == "HEAD")
+		(logMessage(std::cout, "head not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
 	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
 		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
 	if (statusOK() && matchLocation && (size_t)matchLocation->getMaxBodySize() < request.getBodyLength())

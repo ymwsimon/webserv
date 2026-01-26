@@ -82,11 +82,13 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 		}
 		else if (requestStatus == HTTPVERSION)
 		{
-			if (std::find(validHttpVersion.begin(), validHttpVersion.end(), res) == validHttpVersion.end())
-			{
-				setStatusCode(BAD_REQUEST);
-				requestStatus = COMPLETE;
-			}
+			std::cout << "http version: " << res << std::endl;
+			// if (std::find(validHttpVersion.begin(), validHttpVersion.end(), res) == validHttpVersion.end())
+			// if (res.empty())
+			// {
+			// 	setStatusCode(BAD_REQUEST);
+			// 	requestStatus = COMPLETE;
+			// }
 		}
 		newDataStart = it + delimiter.size();
 		if (requestStatus != COMPLETE)
@@ -214,7 +216,8 @@ void	Request::parseRequest()
 			requestStatus = BODY;
 			newDataStart = it + CRLF.size();
 		}
-		if (requestStatus == BODY && headers.count("host") == 0)
+		if ((requestStatus == BODY && headers.count("host") == 0))
+			// || std::find(validHttpVersion.begin(), validHttpVersion.end(), method) == validHttpVersion.end())
 		{
 			setStatusCode(BAD_REQUEST);
 			requestStatus = COMPLETE;
@@ -234,6 +237,8 @@ void	Request::parseRequest()
 		else if (requestStatus == BODY)
 			parseBody();
 	}
+	if (requestStatus == COMPLETE && std::find(validHttpVersion.begin(), validHttpVersion.end(), httpVer) == validHttpVersion.end())
+		setStatusCode(BAD_REQUEST);
 }
 
 bool	Request::complete() const

@@ -46,9 +46,11 @@ int	Client::sendData(struct epoll_event *evt)
 
 	if (!requests.empty() && requests.front().complete())
 	{
-		// requests.front().printRequest();
 		if (responses.empty())
+		{
 			responses.push_back(Response(service, requests.front()));
+			requests.front().printRequest();
+		}
 		responses.front().processResponse();
 		if (!responses.empty() && !responses.front().getResultPage().empty()
 			&& (!responses.front().isCGI() || responses.front().isFinishWaitingStage()))
@@ -79,11 +81,16 @@ int Client::recvData(struct epoll_event *evt)
 {
 	Byte	buf[BUFFER_SIZE];
 	int		readSize = 0;
+	int		fd;
 
 	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, 0);
 	std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)
+	{
+		fd = open("indata", O_WRONLY | O_CREAT | O_APPEND, 0755);
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
+		write(fd, buf, readSize);
+	}
 	// if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
 		// return 0;
 	processData();

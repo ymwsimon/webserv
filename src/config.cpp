@@ -84,7 +84,7 @@ const int	&Config::getPort() const
 const Location	*Config::getLocationMatch(const std::vector<std::string> &paths) const
 {
 	const Location	*res = NULL;
-	int				matchLength = 0;
+	int				matchLength = -1;
 	int				tmpRes;
 
 	for (size_t i = 0; i < getLocations().size(); ++i)
