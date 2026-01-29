@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 22:12:50 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/29 16:55:28 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,8 +21,8 @@
 #include <unistd.h>
 #include "html.hpp"
 #include "http.hpp"
-#define BUFFER_SIZE 50000
-#define TRANSFER_SIZE 50000
+#define BUFFER_SIZE 5000000
+#define TRANSFER_SIZE 5000000
 
 typedef unsigned char Byte;
 typedef std::vector<Byte> Bytes;
@@ -59,6 +59,8 @@ Bytes		staticPage();
 Bytes		defaultErrorPage();
 std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths,
 	size_t startPos, bool splitPath);
+std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths,
+	size_t startPos, const std::map<std::string, std::string> &cgi);
 bool		isDir(const std::string &filePath);
 bool		isRegularFile(const std::string &filePath);
 bool		fileExist(const std::string &filePath);
@@ -67,9 +69,11 @@ bool		fileExeOK(const std::string &filePath);
 bool		fileWriteOK(const std::string &filePath);
 bool		fileWithExt(const std::string &filePath, std::string ext);
 off_t		fileSize(const std::string &filePath);
-std::string	toString(int n);
+std::string	toString(long long n);
 std::string	stringToLowerCase(std::string str);
 int			toInt(std::string str);
+unsigned long	hexToUL(std::string str);
+long long	hexToLL(std::string str);
 Bytes		&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size);
 Bytes		&appendBytes(Bytes &bytes, std::string toAppend);
 Bytes		&appendBytes(Bytes &bytes, Bytes::const_iterator start, Bytes::const_iterator end);

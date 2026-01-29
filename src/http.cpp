@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:48:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 18:44:45 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/28 21:17:13 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -227,8 +227,8 @@ std::string	genHttpResponse(int code, std::string mediaType, const std::string &
 	if (!code)
 		code = 200;
 	res = genHttpResponseLine(code);
-	headers.insert(std::make_pair(CONTENTTYPE, getMediaType(mediaType)));
-	headers.insert(std::make_pair(CONTENTLENGTH, toString(content.size())));
+	headers.insert(std::make_pair(CONTENT_TYPE, getMediaType(mediaType)));
+	headers.insert(std::make_pair(CONTENT_LENGTH, toString(content.size())));
 	return genHttpResponse(code, content, headers);
 }
 
@@ -244,4 +244,19 @@ std::string	genHttpResponse(int code, const std::string &content,
 		res += genHttpHeader(it->first, it->second);	
 	res += CRLFStr;
 	return res + content;
+}
+
+std::string	genHttpResponse(int code, std::map<std::string, std::string> headers)
+{
+	std::string							res;
+	std::string							body;
+
+	if (!code)
+		code = 200;
+	body = genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code));
+	headers.insert(std::make_pair(CONTENT_TYPE, getMediaType(HTML)));
+	headers.insert(std::make_pair(CONTENT_LENGTH, toString(body.size())));
+	if (code == BAD_REQUEST)
+		headers.insert(std::make_pair("Connection", "close"));
+	return genHttpResponse(code, body, headers);
 }

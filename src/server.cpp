@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 21:44:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/29 17:02:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,16 +71,17 @@ void	Server::run()
 			evt = incomingEvt[i];
 			if (evt.events & EPOLLIN)
 			{
-				std::cout << "fd for epollin: " << evt.data.fd << std::endl;
+				// std::cout << "fd for epollin: " << evt.data.fd << std::endl;
 				if (cgiPipeFd.count(evt.data.fd) > 0)
 				{
-					std::cout << "extract data from pipe fd: " << evt.data.fd << std::endl;
+					// std::cout << "extract data from pipe fd: " << evt.data.fd << std::endl;
+					std::cout<<"extract from pipe(should not happened)"<<std::endl;
 					cgiPipeFd[evt.data.fd]->processResponseCgi(EXTRACT_PIPE);
-					std::cout << "finish extract from pipe" << std::endl;
+					// std::cout << "finish extract from pipe" << std::endl;
 				}
 				else if (clientsConnection.count(evt.data.fd) == 0)
 				{
-					std::cout << "incoming fd " << evt.data.fd << std::endl;
+					// std::cout << "incoming fd " << evt.data.fd << std::endl;
 					if (!epollOperation(evt.data.fd, EPOLL_CTL_ADD, false))
 						std::cout << "error accept new socket to epoll" << std::endl;
 				}
@@ -97,12 +98,16 @@ void	Server::run()
 				// 	&& !clientsConnection.at(evt.data.fd).sendData(&evt))
 				// 	{}
 					// epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
+				// if (clientsConnection.count(evt.data.fd) > 0)
 				clientsConnection.at(evt.data.fd).sendData(&evt);
 				if (clientsConnection.count(evt.data.fd) > 0
 					&& !clientsConnection.at(evt.data.fd).getResponses().empty()
 					&& clientsConnection.at(evt.data.fd).getResponses().front().isAddFdStage()
 					&& clientsConnection.at(evt.data.fd).getResponses().front().statusOK())
-					epollOperation(evt.data.fd, EPOLL_CTL_ADD, false);
+					{
+						std::cout<<"add pipe to epoll(should not happened)"<<std::endl;
+						epollOperation(evt.data.fd, EPOLL_CTL_ADD, false);
+					}
 			}
 			else if ((evt.events & EPOLLRDHUP) || (evt.events & EPOLLHUP))
 				epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);

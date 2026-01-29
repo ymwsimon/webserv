@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 22:53:12 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/29 17:28:49 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,24 +49,29 @@ int	Client::sendData(struct epoll_event *evt)
 		if (responses.empty())
 		{
 			responses.push_back(Response(service, requests.front()));
+			std::cout<<"new response"<<std::endl;
 			requests.front().printRequest();
 		}
 		responses.front().processResponse();
 		if (!responses.empty() && !responses.front().getResultPage().empty()
 			&& (!responses.front().isCGI() || responses.front().isFinishWaitingStage()))
 		{
-			// int	statusCode = responses.front().getStatusCode();
-
+			if (!requests.front().getBodyFilePath().empty()
+				&& fileExist(requests.front().getBodyFilePath()))
+				std::remove(requests.front().getBodyFilePath().c_str());
+			if (!responses.front().getBodyFilePath().empty()
+				&& fileExist(responses.front().getBodyFilePath()))
+				std::remove(responses.front().getBodyFilePath().c_str());
 			std::cout << responses.front().getStatusCode() << std::endl;;
-			std::cout << responses.front().getPageStream() << std::endl;
 			std::cout << responses.front().getResultPage().size() << std::endl;
 			content = responses.front().getResultPage();
 			std::cout << "sending out data" << std::endl;
 			std::cout << "content" << std::endl;
-			for (size_t i = 0; i < content.size(); ++i)
-				std::cout << content[i];
+			for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
+				std::cout << responses.front().getResultPage()[i];
 			std::cout << std::endl;
-			if (send(evt->data.fd, content.data(), content.size(), 0) < 0)
+			if (send(evt->data.fd, responses.front().getResultPage().data(),
+				responses.front().getResultPage().size(), 0) < 0)
 				std::cout << "error send data out" << std::endl;
 			requests.pop_front();
 			responses.pop_front();
@@ -84,12 +89,14 @@ int Client::recvData(struct epoll_event *evt)
 	int		fd;
 
 	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, 0);
-	std::cout << "read size from socket: " << readSize << std::endl;
+	// std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)
 	{
-		fd = open("indata", O_WRONLY | O_CREAT | O_APPEND, 0755);
+		(void)fd;
+		// fd = open("indata", O_WRONLY | O_CREAT | O_APPEND, 0755);
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
-		write(fd, buf, readSize);
+		// write(fd, buf, readSize);
+		// close(fd);
 	}
 	// if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
 		// return 0;

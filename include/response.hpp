@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 22:20:29 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/29 17:29:55 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@
 #include "request.hpp"
 #include "utils.hpp"
 
-const int	cgiWaitTime = 2;
+const int	cgiWaitTime = 10;
 
 enum e_cgiStage
 {
@@ -69,6 +69,7 @@ class Response
 		std::time_t							cgiStartTime;
 		std::map<std::string, std::string>	headers;
 		size_t								locationMatchLength;
+		std::string							bodyFilePath;
 		Response();
 		void			determineResType();
 	public:
@@ -93,8 +94,9 @@ class Response
 		int					getCgiStage() const;
 		void				printResponse() const;
 		void				getFileResponse();
+		std::string			getBodyFilePath() const;
 		bool				convertCGIResToResponse();
-		void				extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers, Bytes::const_iterator &crlfPos);
+		void				extractHeader(const Bytes &cgiRes, Bytes::const_iterator &crlfPos);
 		void				startCgi();
 		void				processCgi(int op);
 		void				prepareArgEnv(std::string exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);

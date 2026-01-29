@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 22:31:18 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/29 12:01:36 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,13 +45,14 @@ Location::Location(int i)
 		rootFolder = "./data/www";
 		// indexPages.push_back("index.html");
 		// indexPages.push_back("b.html");
+		// allowedMethod = GET | POST;
 		allowedMethod = GET;
 		// allowedMethod = GET | POST | DELETE;
 		maxBodySize = 1024 * 1024 * 1024;
 		autoIndex = true;
 		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
-		// cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
-		cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
+		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
 		// cgi.insert(std::make_pair("html", "aaa"));
 	}
 	else if (i == 2)
@@ -69,8 +70,8 @@ Location::Location(int i)
 		maxBodySize = 100;
 		autoIndex = false;
 		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
-		// cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
-		cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
+		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
 		// cgi.insert(std::make_pair("html", "aaa"));
 	}
 	else if (i == 3)
@@ -86,8 +87,8 @@ Location::Location(int i)
 		maxBodySize = (size_t)1024 * 1024 * 1024 * 2;
 		autoIndex = false;
 		cgi.insert(std::make_pair("php", "/usr/bin/php-cgi"));
-		// cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
-		cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
+		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
+		// cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
 		// cgi.insert(std::make_pair("html", "aaa"));
 	}
 }
@@ -212,7 +213,7 @@ std::string	Location::findValidIndexPage(std::string &folderPathStr) const
 	{
 		fullPath = folderPathStr + indexPages[i];
 		std::cout << "try opening " << fullPath << std::endl;
-		if (isRegularFile(fullPath) || fileExist(fullPath))
+		if (isRegularFile(fullPath) || fileExist(fullPath) || isOneOfCGIConfig(fullPath))
 			return fullPath;
 		std::cout << "open fail" << std::endl;
 	}
@@ -241,8 +242,8 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 		std::cout << "generating index page.." << std::endl;
 		for (dirEntry = readdir(dir); dirEntry; dirEntry = readdir(dir))
 		{
-			std::cout << "reading .. path: ";
-			std::cout << dirEntry->d_name << std::endl;
+			// std::cout << "reading .. path: ";
+			// std::cout << dirEntry->d_name << std::endl;
 			tmp = std::string(dirEntry->d_name);
 			body += appendHtmlTag("p", tmp);
 		}

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 19:25:18 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/29 11:33:48 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,13 @@
 #include <map>
 #include <utility>
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <cstdlib>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "location.hpp"
 #include "utils.hpp"
 
@@ -30,6 +37,7 @@ class Request
 		HEADERS,
 		BODY,
 		COMPLETE,
+		WAITING_CHUNK,
 	};
 
 	private:
@@ -44,15 +52,19 @@ class Request
 		int									statusCode;
 		int									requestStatus;
 		size_t								bodyLength;
+		std::string							bodyFilePath;
+		long long							expectedChunkSize;
 		Request();
 		std::string							parseReqLineSegment(const Bytes &delimiter);
 		void								parseRequestLine();
 		void								parseRequestHeader();
 		void								splitRoute();
 		void								parseBody();
+		void								parseChunk();
 		void								extractContentLength(std::string &len);
 		bool								isPostMethod() const;
 		bool								isPutMethod() const;
+		bool								switchToChunkMode();
 	public:
 		static std::string	valMet[4];
 		static std::vector<std::string>	validMethod;
@@ -66,6 +78,7 @@ class Request
 		bool										complete() const;
 		bool										statusOK() const;
 		bool										isMethod(std::string query) const;
+		bool										isWaitingChunk() const;
 		void										printRequest() const;
 		const std::string							&getMethod() const;
 		const std::string							&getRoute() const;
@@ -75,6 +88,7 @@ class Request
 		int											getStatusCode() const;
 		const reqStatus								&getReqStatus() const;
 		size_t										getBodyLength() const;
+		std::string									getBodyFilePath() const;
 		const std::vector<std::string>				&getPaths() const;
 		Bytes::const_iterator						getDataStart() const;
 		Bytes::const_iterator						getDataEnd() const;

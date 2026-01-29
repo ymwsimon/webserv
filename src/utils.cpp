@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 22:24:17 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/29 15:29:07 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,8 +74,8 @@ std::vector<std::string>	splitPath(const std::string &pathStr)
 	return resPath;
 }
 
-std::string	mergeFullPath(const std::string rootPath,
-	const std::vector<std::string> &routePaths, size_t startPos, bool splitPath)
+std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths,
+	size_t startPos, bool splitPath)
 {
 	std::string	res = rootPath;
 
@@ -83,6 +83,19 @@ std::string	mergeFullPath(const std::string rootPath,
 	{
 		res += "/" + routePaths[i];
 		if (splitPath && isRegularFile(res))
+			break ;
+	}
+	return res;
+}
+std::string	mergeFullPath(const std::string rootPath, const std::vector<std::string> &routePaths,
+	size_t startPos, const std::map<std::string, std::string> &cgi)
+{
+	std::string	res = rootPath;
+
+	for (size_t i = startPos; i < routePaths.size(); ++i)
+	{
+		res += "/" + routePaths[i];
+		if (cgi.count(extractFileExt(res)) > 0)
 			break ;
 	}
 	return res;
@@ -147,12 +160,12 @@ off_t	fileSize(const std::string &filePath)
 {
 	struct stat	fileInfo;
 
-	if (stat(filePath.c_str(), & fileInfo) == 0)
+	if (stat(filePath.c_str(), &fileInfo) == 0)
 		return fileInfo.st_size;
 	return 0;
 }
 
-std::string	toString(int n)
+std::string	toString(long long n)
 {
 	std::stringstream	ss;
 
@@ -171,6 +184,44 @@ int	toInt(std::string str)
 	std::stringstream	ss(str);
 	int					res;
 
+	try
+	{
+		ss >> res;
+	}
+	catch(const std::exception& e)
+	{
+		return -1;
+	}
+	return res;
+}
+
+unsigned long	hexToUL(std::string str)
+{
+	std::stringstream	ss;
+	unsigned long		res;
+
+	if (str.empty())
+		return -1;
+	ss << std::hex << str;
+	try
+	{
+		ss >> res;
+	}
+	catch(const std::exception& e)
+	{
+		return -1;
+	}
+	return res;
+}
+
+long long	hexToLL(std::string str)
+{
+	std::stringstream	ss;
+	long long			res;
+
+	if (str.empty())
+		return -1;
+	ss << std::hex << str;
 	try
 	{
 		ss >> res;
@@ -205,7 +256,7 @@ Bytes	&appendBytes(Bytes &bytes, Bytes::const_iterator start, Bytes::const_itera
 
 void	printBytes(const Bytes &bytes)
 {
-	for (size_t i = 0; i < bytes.size(); ++i)
+	for (size_t i = 0; i < bytes.size() && i < 100; ++i)
 		std::cout << bytes[i];
 }
 

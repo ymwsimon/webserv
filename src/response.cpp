@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 22:59:40 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/29 17:31:07 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ Response	&Response::operator=(const Response &right)
 		cgiStartTime = right.cgiStartTime;
 		headers = right.headers;
 		locationMatchLength = right.locationMatchLength;
+		bodyFilePath = right.bodyFilePath;
 	}
 	return *this;
 }
@@ -156,20 +157,29 @@ void	Response::getFileResponse()
 		return ;
 	}
 	head = genHttpResponseLine(statusCode);
-	head += genHttpHeader(CONTENTTYPE, getMediaType(extractFileExt(resourcePath)));
-	head += genHttpHeader(CONTENTLENGTH, toString(resultPage.size()));
+	head += genHttpHeader(CONTENT_TYPE, getMediaType(extractFileExt(resourcePath)));
+	head += genHttpHeader(CONTENT_LENGTH, toString(resultPage.size()));
 	head += CRLFStr;
 	resultPage.insert(resultPage.begin(), head.begin(), head.end());
+}
+
+std::string	Response::getBodyFilePath() const
+{
+	return bodyFilePath;
 }
 
 bool	Response::convertCGIResToResponse()
 {
 	Bytes::const_iterator				crlfPos;
-	std::map<std::string, std::string>	headers;
 	int									size;
+	int									fd;
+	Byte								buf[BUFFER_SIZE];
 
-	extractHeader(cgiRes, headers, crlfPos);
-	if (headers.empty() || headers.count(CONTENTTYPE) == 0)
+	fd = open(bodyFilePath.c_str(), O_RDONLY, 0700);
+	while ((size = read(fd, buf, BUFFER_SIZE)) > 0)
+		appendBuf(cgiRes, buf, size);
+	extractHeader(cgiRes, crlfPos);
+	if (headers.empty() || headers.count(CONTENT_TYPE) == 0)
 	{
 		std::cout<<"empty header"<<std::endl;
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
@@ -191,14 +201,13 @@ bool	Response::convertCGIResToResponse()
 		headerIt != headers.end(); ++headerIt)
 		appendBytes(resultPage, genHttpHeader(headerIt->first, headerIt->second));
 	size = std::distance(crlfPos + CRLF.size(), static_cast<Bytes::const_iterator> (cgiRes.end()));
-	appendBytes(resultPage, genHttpHeader(CONTENTLENGTH, toString(size)));
+	appendBytes(resultPage, genHttpHeader(CONTENT_LENGTH, toString(size)));
 	appendBytes(resultPage, CRLFStr);
 	appendBytes(resultPage, crlfPos + CRLF.size(), cgiRes.end());
 	return true;
 }
 
-void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::string> &headers,
-	Bytes::const_iterator &crlfPos)
+void	Response::extractHeader(const Bytes &cgiRes, Bytes::const_iterator &crlfPos)
 {
 	Bytes::const_iterator				start = cgiRes.begin();
 	Bytes::const_iterator				colonPos;
@@ -232,46 +241,69 @@ void	Response::extractHeader(const Bytes &cgiRes, std::map<std::string, std::str
 
 void	Response::startCgi()
 {
-	std::vector<std::string>	strs(9);
+	std::vector<std::string>	strs(10);
 	std::vector<char *>			args(2);
-	std::vector<char *>			env(10);
+	std::vector<char *>			env(11);
 	int							fd;
 	std::string					exe;
 
 	exe = matchLocation->findCGIExecutable(extractFileExt(resourcePath));
-	if (exe.empty() && fileExeOK(resourcePath))
-		exe = resourcePath;
-	if (pipe(pipeFd) < 0)
+	std::cout<<"resource path:"<<resourcePath<<std::endl;
+	std::cout<<"exe path:"<<exe<<std::endl;
+	std::srand(std::time(NULL));
+	bodyFilePath = "tmp/" + toString(std::rand());
+	while (fileExist(bodyFilePath))
+		bodyFilePath = "tmp/" + toString(std::rand());
+	fd = open(bodyFilePath.c_str(), O_CREAT | O_TRUNC, 0700);
+	if (fd < 0)
 	{
-		std::cout << "create pipe fail" << std::endl;
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		cgiStage = FINISH_WAITING;
 		return ;
 	}
-	cgiResFd = pipeFd[0];
+	if (exe.empty() && fileExeOK(resourcePath))
+		exe = resourcePath;
+	// if (pipe(pipeFd) < 0)
+	// {
+	// 	std::cout << "create pipe fail" << std::endl;
+	// 	setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+	// 	cgiStage = FINISH_WAITING;
+	// 	return ;
+	// }
+	// cgiResFd = pipeFd[0];
 	cgiPid = fork();
 	if (cgiPid < 0)
 	{
-		close(pipeFd[0]);
-		close(pipeFd[1]);
+		// close(pipeFd[0]);
+		// close(pipeFd[1]);
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		cgiStage = FINISH_WAITING;
 		return ;
 	}
 	if (!cgiPid)
 	{
+		std::string	inBodyPath = request.getBodyFilePath();
+
 		prepareArgEnv(exe, strs, args, env);
-		if (close(pipeFd[0]) < 0)
-			std::exit(1);
-		fd = open(toString(pipeFd[0]).c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0700);
+		// if (close(pipeFd[0]) < 0)
+		// 	std::exit(1);
+		// if (bodyPath.empty())
+		// {
+		// 	bodyPath = toString(pipeFd[0]);
+		// 	fd = open(bodyPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0700);
+		// 	if (fd < 0
+		// 		|| write(fd, request.getBody().data(), request.getBody().size()) < 0
+		// 		|| close(fd) < 0)
+		// 		std::exit(1);
+		// }
+		// std::cerr<<"bodyPath:"<<bodyPath<<std::endl;
+		fd = open(inBodyPath.c_str(), O_RDONLY, 0700);
 		if (fd < 0
-			|| write(fd, request.getBody().data(), request.getBody().size()) < 0
+			|| dup2(fd, STDIN_FILENO) < 0
 			|| close(fd) < 0)
 			std::exit(1);
-		fd = open(toString(pipeFd[0]).c_str(), O_RDONLY, 0700);
+		fd = open(bodyFilePath.c_str(), O_WRONLY, 0700);
 		if (fd < 0
-			|| dup2(pipeFd[1], STDOUT_FILENO) < 0
-			|| dup2(fd, STDIN_FILENO) < 0
+			|| dup2(fd, STDOUT_FILENO) < 0
 			|| close(fd) < 0)
 			std::exit(1);
 		execve(exe.c_str(), (char *const*)args.data(), (char *const*)env.data());
@@ -279,15 +311,16 @@ void	Response::startCgi()
 	}
 	else
 	{
-		if (close(pipeFd[1]) < 0)
-		{
-			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-			cgiStage = FINISH_WAITING;
-			return ;
-		}
+		// if (close(pipeFd[1]) < 0)
+		// {
+		// 	setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		// 	cgiStage = FINISH_WAITING;
+		// 	return ;
+		// }
 		std::time(&cgiStartTime);
-		cgiResFd = pipeFd[0];
-		cgiStage = ADD_FD_POLL;
+		// cgiResFd = pipeFd[0];
+		// cgiStage = ADD_FD_POLL;
+		cgiStage = WAITING_CGI;
 	}
 }
 
@@ -295,22 +328,23 @@ void	Response::processCgi(int op)
 {
 	int				status;
 	pid_t			waitRes;
-	unsigned char	buf[BUFFER_SIZE];
+	// unsigned char	buf[BUFFER_SIZE];
 	int				readSize = 0;
 
+	// std::cerr<<"process cgi"<<std::endl;
 	if (cgiStage == INIT)
 		startCgi();
 	else if (cgiStage == WAITING_CGI || cgiStage == ADD_FD_POLL)
 	{
 		if (cgiStage == ADD_FD_POLL)
 			cgiStage = WAITING_CGI;
-		if (op == EXTRACT_PIPE && (readSize = read(cgiResFd, buf, BUFFER_SIZE)) > 0)
-		{
-			std::cout << "extracting data from cgi pipe" << std::endl;
-			appendBuf(cgiRes, buf, readSize);
-			std::cout << "read size: " << readSize << std::endl;
-			cgiStartTime = std::time(NULL);
-		}
+		// if (op == EXTRACT_PIPE && (readSize = read(cgiResFd, buf, BUFFER_SIZE)) > 0)
+		// {
+		// 	// std::cout << "extracting data from cgi pipe" << std::endl;
+		// 	appendBuf(cgiRes, buf, readSize);
+		// 	// std::cout << "read size: " << readSize << std::endl;
+		// 	cgiStartTime = std::time(NULL);
+		// }
 		if (readSize < 0
 			|| (waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG)) < 0)
 			// || (WIFEXITED(status) && WEXITSTATUS(status) != 0))
@@ -322,17 +356,19 @@ void	Response::processCgi(int op)
 			|| op == KILL_PROCESS)
 		{
 			std::cout << "time to kill cgiPid: " << cgiPid << std::endl;
-			kill(cgiPid, SIGKILL);
+			// kill(cgiPid, SIGKILL);
 			// setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			std::cout << "finish kill cgiPid: " << cgiPid << std::endl;
 		}
-		if (waitRes == cgiPid
-			|| (!waitRes && difftime(std::time(NULL), cgiStartTime) > cgiWaitTime)
-			|| op == KILL_PROCESS)
+		if (waitRes == cgiPid)
+			// || (!waitRes && difftime(std::time(NULL), cgiStartTime) > cgiWaitTime)
+			// || op == KILL_PROCESS)
 		{
 			waitpid(cgiPid, &status, WUNTRACED | WNOHANG);
 			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 				setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+			std::cout<< "bodyfilepath:"<<bodyFilePath<<std::endl;
+			std::cout << "cgi res size: " << fileSize(bodyFilePath) << std::endl;
 			// std::cout << "cgi res size: " << cgiRes.size() << std::endl;
 			// std::cout << "cgi res content: ";
 			// printBytes(cgiRes);
@@ -340,9 +376,18 @@ void	Response::processCgi(int op)
 			cgiStage = FINISH_WAITING;
 		}
 	}
-	if (isFinishWaitingStage() && resultPage.empty() && !cgiRes.empty())
+	// std::cout<<"finishwait"<<std::endl;
+	if (isFinishWaitingStage() && resultPage.empty())
+	{
+		// setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		std::cout<<"convert cgi"<<std::endl;
 		if (!convertCGIResToResponse())
+		{
+			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			std::cout<<"convert cgi res fail"<<std::endl;
+		}
+	}
+	// std::cerr<<"process cgi fin"<<std::endl;
 }
 
 void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
@@ -356,15 +401,20 @@ void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
 	strs[5] = "CONTENT_LENGTH=";
 	strs[6] = "CONTENT_TYPE=";
 	strs[7] = "GATEWAY_INTERFACE=CGI/1.1";
-	strs[8] = "QUERY_STRING=a=ugv&b=iop";
+	strs[8] = "HTTP_TRANSFER_ENCODING=chunked";
+	strs[9] = "HTTP_X_SECRET_HEADER_FOR_TEST=1";
 	strs[0] += resourcePath;
 	strs[1] += "/";
 	strs[2] += request.getHttpVer();
 	strs[3] += request.getMethod();
 	strs[4] += "200";
-	strs[5] += toString(request.getBodyLength());
-	if (request.getHeaders().count(CONTENTTYPE) > 0)
-		strs[6] += request.getHeaders().at(CONTENTTYPE);
+	if (!request.getBodyFilePath().empty())
+		strs[5] += toString(fileSize(request.getBodyFilePath()));
+	else
+		strs[5] += toString(request.getBodyLength());
+	// std::cerr<<"content_length:"<<strs[5]<<std::endl;
+	if (request.getHeaders().count(CONTENT_TYPE) > 0)
+		strs[6] += request.getHeaders().at(CONTENT_TYPE);
 	else
 		strs[6] = "";
 	args[0] = (char *) exe.c_str();
@@ -378,7 +428,8 @@ void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
 	env[6] = (char *) strs[6].c_str();
 	env[7] = (char *) strs[7].c_str();
 	env[8] = (char *) strs[8].c_str();
-	env[9] = NULL;
+	env[9] = (char *) strs[9].c_str();
+	env[10] = NULL;
 }
 
 void	Response::setStatusCode(int code)
@@ -421,7 +472,7 @@ void	Response::determineResType(void)
 	std::string	filePathStr;
 	
 	filePathStr = mergeFullPath(matchLocation->getRootFolder(),
-		request.getPaths(), locationMatchLength, matchLocation->hasCGIConfig());
+		request.getPaths(), locationMatchLength, matchLocation->getCGIConfig());
 	logMessage(std::cout, "FilePath str: " + filePathStr);
 	if (request.isMethod("DELETE"))
 	{
@@ -429,14 +480,20 @@ void	Response::determineResType(void)
 		resourcePath = filePathStr;
 		return ;
 	}
-	if (matchLocation->hasCGIConfig())
+	if (matchLocation->isOneOfCGIConfig(filePathStr))
+	{
 		resultType = CGI_EXE;
-	if (isDir(filePathStr))
+		resourcePath = filePathStr;
+		// std::cout<<"is cgi"<<std::endl;
+	}
+	else if (isDir(filePathStr))
 	{
 		if (*filePathStr.rbegin() != '/')
 			filePathStr.push_back('/');
 		logMessage(std::cout, "dir: " + filePathStr);
 		resourcePath = matchLocation->findValidIndexPage(filePathStr);
+		if (!resourcePath.empty() && matchLocation->isOneOfCGIConfig(resourcePath))
+			resultType = CGI_EXE;
 		logMessage(std::cout, "Resource path str: " + resourcePath);
 		if (resourcePath.empty())
 		{
@@ -450,6 +507,23 @@ void	Response::determineResType(void)
 	}
 	if (isRegularFile(filePathStr))
 		resourcePath = filePathStr;
+	if (isRegularFile(resourcePath) && fileExeOK(resourcePath))
+	{
+		resultType = CGI_EXE;
+	}
+	// std::cout <<"filepathstr:"<<filePathStr<<std::endl;
+	// if (fileWithExt(filePathStr, "bla"))
+	// {
+	// 	std::cout <<"end with bla"<<std::endl;
+	// 	resultType = CGI_EXE;
+	// 	if (filePathStr == "./data/www/YoupiBanane/youpla.bla")
+	// 		resourcePath = "./data/www/YoupiBanane/youpi.bla";
+	// 	// if (!fileExist(filePathStr))
+	// 	// {
+	// 	// 	setStatusCodeResType(200, ERR_PAGE);
+	// 	// 	headers.insert(std::make_pair("Status", getFullStatusMessage(200)));
+	// 	// }
+	// }
 	if (resultType == NONE)
 		resultType = FILE;
 }
@@ -459,12 +533,12 @@ void	Response::processResponse()
 	if (!resultPage.empty())
 		return ;
 	if (!statusOK() || resultType == ERR_PAGE)
-		resultPage = stringToBytes(genHttpResponse(statusCode));
+		resultPage = stringToBytes(genHttpResponse(statusCode, headers));
 	if (statusOK())
 		matchLocation = service->findMatchingRoute(request);
 	if (statusOK() && !matchLocation)
 		(logMessage(std::cout, "no route match"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
-	if (statusOK() && matchLocation)
+	if (statusOK() && matchLocation && resultType == NONE)
 	{
 		std::cout<<"route str:"<<matchLocation->getRouteStr()<<std::endl;
 		locationMatchLength = matchLocation->getRouteMatchLength(request.getPaths());
@@ -475,10 +549,10 @@ void	Response::processResponse()
 	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
 		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
 	if (statusOK() && matchLocation && (size_t)matchLocation->getMaxBodySize() < request.getBodyLength())
-		(logMessage(std::cout, "body too large"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
+		(logMessage(std::cout, "body too large"), setStatusCodeResType(Content_Too_Large, ERR_PAGE));
 	if (statusOK() && matchLocation && resultType == NONE)
 		determineResType();
-	if (statusOK() && !fileExist(resourcePath))
+	if (statusOK() && !fileExist(resourcePath) && resultType != CGI_EXE)
 		(logMessage(std::cout, "file not found"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
 	if (statusOK() && fileExist(resourcePath) && !fileReadOK(resourcePath))
 		(logMessage(std::cout, "file not readable"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
@@ -490,6 +564,7 @@ void	Response::processResponse()
 	if (statusOK() && resultType == CGI_EXE
 		&& isRegularFile(resourcePath) && !fileExeOK(resourcePath))
 		resultType = FILE;
+	// std::cerr<<"??? "<< resultType<<std::endl;
 	if (statusOK() && resultType == CGI_EXE)
 		processCgi(PROCESS_DATA);
 	if (statusOK() && resultType == FILE)
