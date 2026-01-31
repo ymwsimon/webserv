@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/29 17:29:55 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/31 18:01:11 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,4 +107,5 @@ class Response
 		void				setCgiStage(int stage);
 		void				processResponse();
 		void				deleteResource();
+		void				clearResultPage();
 };

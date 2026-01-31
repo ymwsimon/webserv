@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/29 15:29:07 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/31 20:29:30 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -240,10 +240,15 @@ Bytes	&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size)
 	return bytes;
 }
 
+Bytes	&appendBuf(Bytes &bytes, Bytes &buf, size_t size)
+{
+	bytes.insert(bytes.end(), buf.begin(), buf.begin() + size);
+	return bytes;
+}
+
 Bytes	&appendBytes(Bytes &bytes, std::string toAppend)
 {
-	for (size_t i = 0; i < toAppend.length(); ++i)
-		bytes.push_back(toAppend[i]);
+	bytes.insert(bytes.end(), toAppend.begin(), toAppend.end());
 	return bytes;
 }
 

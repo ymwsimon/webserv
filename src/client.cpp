@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/29 17:28:49 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/31 18:01:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ Client::Client(const Client &right) : service(right.service)
 
 Client::~Client()
 {
-	
+	incomingData.clear();	
 }
 
 Client	&Client::operator=(const Client &right)
@@ -64,16 +64,17 @@ int	Client::sendData(struct epoll_event *evt)
 				std::remove(responses.front().getBodyFilePath().c_str());
 			std::cout << responses.front().getStatusCode() << std::endl;;
 			std::cout << responses.front().getResultPage().size() << std::endl;
-			content = responses.front().getResultPage();
+			// content = responses.front().getResultPage();
 			std::cout << "sending out data" << std::endl;
-			std::cout << "content" << std::endl;
-			for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
-				std::cout << responses.front().getResultPage()[i];
-			std::cout << std::endl;
+			// std::cout << "content" << std::endl;
+			// for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
+			// 	std::cout << responses.front().getResultPage()[i];
+			// std::cout << std::endl;
 			if (send(evt->data.fd, responses.front().getResultPage().data(),
 				responses.front().getResultPage().size(), 0) < 0)
 				std::cout << "error send data out" << std::endl;
 			requests.pop_front();
+			responses.front().clearResultPage();
 			responses.pop_front();
 			// if (statusCode == BAD_REQUEST)
 				// return 0;
@@ -88,13 +89,17 @@ int Client::recvData(struct epoll_event *evt)
 	int		readSize = 0;
 	int		fd;
 
-	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, 0);
+	// while ((readSize = recv(evt->data.fd, buf, BUFFER_SIZE, MSG_DONTWAIT)) > 0)
+	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, MSG_DONTWAIT);
+
 	// std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)
 	{
 		(void)fd;
 		// fd = open("indata", O_WRONLY | O_CREAT | O_APPEND, 0755);
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
+		// if (readSize < BUFFER_SIZE)
+		// 	break ;
 		// write(fd, buf, readSize);
 		// close(fd);
 	}
@@ -133,7 +138,9 @@ void	Client::processData()
 			requests.back().setDataEnd(incomingData.end());
 		}
 		requests.back().parseRequest();
-		incomingData = Bytes(requests.back().getDataStart(), requests.back().getDataEnd());
+		// incomingData = Bytes(requests.back().getDataStart(), requests.back().getDataEnd());
+		Bytes::iterator	it(incomingData.begin() + std::distance(static_cast<Bytes::const_iterator>(incomingData.begin()), requests.back().getDataStart()));
+		incomingData.erase(incomingData.begin(), it);
 	}
 }
 

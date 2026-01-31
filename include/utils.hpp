@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/29 16:55:28 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/31 01:12:50 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,7 @@ int			toInt(std::string str);
 unsigned long	hexToUL(std::string str);
 long long	hexToLL(std::string str);
 Bytes		&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size);
+Bytes		&appendBuf(Bytes &bytes, Bytes &buf, size_t size);
 Bytes		&appendBytes(Bytes &bytes, std::string toAppend);
 Bytes		&appendBytes(Bytes &bytes, Bytes::const_iterator start, Bytes::const_iterator end);
 void		printBytes(const Bytes &bytes);

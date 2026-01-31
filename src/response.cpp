@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/29 17:31:07 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/31 20:30:34 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,13 +141,13 @@ void	Response::printResponse() const
 
 void	Response::getFileResponse()
 {
-	unsigned char		buf[BUFFER_SIZE];
+	Bytes				buf(BUFFER_SIZE);
 	std::string			head;
 	int					fd;
 	int					readSize;
 
 	fd = open(resourcePath.c_str(), O_RDONLY);
-	while (fd >= 0 && (readSize = read(fd, buf, BUFFER_SIZE)) > 0)
+	while (fd >= 0 && (readSize = read(fd, buf.data(), BUFFER_SIZE)) > 0)
 		appendBuf(resultPage, buf, readSize);
 	if (fd < 0
 		|| close(fd) < 0
@@ -173,10 +173,10 @@ bool	Response::convertCGIResToResponse()
 	Bytes::const_iterator				crlfPos;
 	int									size;
 	int									fd;
-	Byte								buf[BUFFER_SIZE];
+	Bytes								buf(BUFFER_SIZE);
 
 	fd = open(bodyFilePath.c_str(), O_RDONLY, 0700);
-	while ((size = read(fd, buf, BUFFER_SIZE)) > 0)
+	while ((size = read(fd, buf.data(), BUFFER_SIZE)) > 0)
 		appendBuf(cgiRes, buf, size);
 	extractHeader(cgiRes, crlfPos);
 	if (headers.empty() || headers.count(CONTENT_TYPE) == 0)
@@ -412,7 +412,6 @@ void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
 		strs[5] += toString(fileSize(request.getBodyFilePath()));
 	else
 		strs[5] += toString(request.getBodyLength());
-	// std::cerr<<"content_length:"<<strs[5]<<std::endl;
 	if (request.getHeaders().count(CONTENT_TYPE) > 0)
 		strs[6] += request.getHeaders().at(CONTENT_TYPE);
 	else
@@ -484,7 +483,6 @@ void	Response::determineResType(void)
 	{
 		resultType = CGI_EXE;
 		resourcePath = filePathStr;
-		// std::cout<<"is cgi"<<std::endl;
 	}
 	else if (isDir(filePathStr))
 	{
@@ -564,7 +562,6 @@ void	Response::processResponse()
 	if (statusOK() && resultType == CGI_EXE
 		&& isRegularFile(resourcePath) && !fileExeOK(resourcePath))
 		resultType = FILE;
-	// std::cerr<<"??? "<< resultType<<std::endl;
 	if (statusOK() && resultType == CGI_EXE)
 		processCgi(PROCESS_DATA);
 	if (statusOK() && resultType == FILE)
@@ -584,4 +581,9 @@ void	Response::deleteResource()
 		setStatusCode(NO_CONTENT);
 		resultPage = stringToBytes(genHttpResponse(statusCode));
 	}
+}
+
+void	Response::clearResultPage()
+{
+	resultPage.clear();
 }
