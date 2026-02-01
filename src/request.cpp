@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/29 16:40:36 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/01/31 21:58:18 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ Request::Request(Bytes::const_iterator start, Bytes::const_iterator end) : newDa
 	statusCode = HTTP_OK;
 	bodyLength = 0;
 	expectedChunkSize = -1;
+	bodyFd = -1;
 }
 
 Request::Request(const Request &right)
@@ -52,6 +53,7 @@ Request	&Request::operator=(const Request &right)
 		bodyLength = right.bodyLength;
 		bodyFilePath = right.bodyFilePath;
 		expectedChunkSize = right.expectedChunkSize;
+		bodyFd = right.bodyFd;
 	}
 	return *this;
 }
@@ -229,9 +231,6 @@ void	Request::parseBody()
 void	Request::parseChunk()
 {
 	Bytes::const_iterator	it = searchPattern(newDataStart, newDataEnd, CRLF);
-	Bytes::const_iterator	bodyEnd;
-	// unsigned long			size;
-	int						fd;
 	Bytes					data;
 
 	if (newDataStart == newDataEnd
@@ -269,21 +268,31 @@ void	Request::parseChunk()
 		else
 		{
 			// std::cout<<"writing chunk"<<std::endl;
-			fd = open(bodyFilePath.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0755);
-			if (fd < 0)
+			if (bodyFd == -1 && statusOK())
+				bodyFd = open(bodyFilePath.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0777);
+			if (bodyFd < 0)
 				statusCode = INTERNAL_ERROR;
 			else
 			{
 				if (!expectedChunkSize)
-					requestStatus = COMPLETE;
-				else
 				{
-					data = Bytes(newDataStart, newDataStart + expectedChunkSize);
-					if (write(fd, data.data(), data.size()) < 0)
+					requestStatus = COMPLETE;
+					if (!body.empty() && write(bodyFd, body.data(), body.size()) < 0)
+						statusCode = INTERNAL_ERROR;
+					if (close(bodyFd) < 0)
 						statusCode = INTERNAL_ERROR;
 				}
-				if (close(fd) < 0)
-					statusCode = INTERNAL_ERROR;
+				else
+				{
+					body.insert(body.end(), newDataStart, newDataStart + expectedChunkSize);
+					// data = Bytes(newDataStart, newDataStart + expectedChunkSize);
+					if (body.size() >= BUFFER_SIZE * 5)
+					{
+						if (write(bodyFd, body.data(), body.size()) < 0)
+							statusCode = INTERNAL_ERROR;
+						body.clear();
+					}
+				}
 			}
 			newDataStart = it + CRLF.size();
 			expectedChunkSize = -1;
