@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/31 18:01:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/01 17:16:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,10 +66,10 @@ int	Client::sendData(struct epoll_event *evt)
 			std::cout << responses.front().getResultPage().size() << std::endl;
 			// content = responses.front().getResultPage();
 			std::cout << "sending out data" << std::endl;
-			// std::cout << "content" << std::endl;
-			// for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
-			// 	std::cout << responses.front().getResultPage()[i];
-			// std::cout << std::endl;
+			std::cout << "content" << std::endl;
+			for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
+				std::cout << responses.front().getResultPage()[i];
+			std::cout << std::endl;
 			if (send(evt->data.fd, responses.front().getResultPage().data(),
 				responses.front().getResultPage().size(), 0) < 0)
 				std::cout << "error send data out" << std::endl;
@@ -90,7 +90,7 @@ int Client::recvData(struct epoll_event *evt)
 	int		fd;
 
 	// while ((readSize = recv(evt->data.fd, buf, BUFFER_SIZE, MSG_DONTWAIT)) > 0)
-	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, MSG_DONTWAIT);
+	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, 0);
 
 	// std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)

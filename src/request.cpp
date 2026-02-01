@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/01 15:21:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/01 18:24:43 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -268,7 +268,7 @@ void	Request::parseChunk()
 		{
 			// std::cout<<"writing chunk"<<std::endl;
 			if (bodyFd == -1 && statusOK())
-				bodyFd = open(bodyFilePath.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0777);
+				bodyFd = open(bodyFilePath.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0700);
 			if (bodyFd < 0)
 				statusCode = INTERNAL_ERROR;
 			else

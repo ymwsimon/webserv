@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/31 20:30:34 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/01 18:25:06 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,7 +146,7 @@ void	Response::getFileResponse()
 	int					fd;
 	int					readSize;
 
-	fd = open(resourcePath.c_str(), O_RDONLY);
+	fd = open(resourcePath.c_str(), O_RDONLY, 0700);
 	while (fd >= 0 && (readSize = read(fd, buf.data(), BUFFER_SIZE)) > 0)
 		appendBuf(resultPage, buf, readSize);
 	if (fd < 0
