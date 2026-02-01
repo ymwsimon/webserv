@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/31 21:58:18 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/01 15:21:04 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -217,8 +217,7 @@ void	Request::parseBody()
 			data = Bytes(newDataStart, copyUpTo);
 			if (write(fd, data.data(), data.size()) < 0)
 				setStatusCode(INTERNAL_ERROR);
-			// for (Bytes::const_iterator it = newDataStart; it != copyUpTo; ++it)
-			// body.insert(body.end(), newDataStart, copyUpTo);
+			body.insert(body.end(), newDataStart, copyUpTo);
 			if (close(fd) < 0)
 				setStatusCode(INTERNAL_ERROR);
 		}
