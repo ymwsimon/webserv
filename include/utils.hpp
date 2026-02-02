@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/31 01:12:50 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/01 23:29:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,7 @@ bool		fileWithExt(const std::string &filePath, std::string ext);
 off_t		fileSize(const std::string &filePath);
 std::string	toString(long long n);
 std::string	stringToLowerCase(std::string str);
+char		transformHttpHeader(char c);
 int			toInt(std::string str);
 unsigned long	hexToUL(std::string str);
 long long	hexToLL(std::string str);

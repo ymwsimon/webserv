@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/31 18:01:11 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/02 11:00:07 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,6 +100,7 @@ class Response
 		void				startCgi();
 		void				processCgi(int op);
 		void				prepareArgEnv(std::string exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);
+		void				mergeEnvStrs(std::map<std::string, std::string> &allHeader, std::vector<std::string> &strs);
 		void				setStatusCode(int code);
 		void				setMatchLocation(const Location *location);
 		void				setResourcePath(const std::string path);
@@ -108,4 +109,7 @@ class Response
 		void				processResponse();
 		void				deleteResource();
 		void				clearResultPage();
+		void				addHttpPrefixToHeaders(std::map<std::string, std::string> headersToAdd,
+			std::map<std::string, std::string> &headersRes);
+		void				addCgiHeaders(std::map<std::string, std::string> &headersRes);
 };

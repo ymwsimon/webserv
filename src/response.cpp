@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/01 18:25:06 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/02 11:23:41 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -176,6 +176,7 @@ bool	Response::convertCGIResToResponse()
 	Bytes								buf(BUFFER_SIZE);
 
 	fd = open(bodyFilePath.c_str(), O_RDONLY, 0700);
+	cgiRes.reserve(fileSize(bodyFilePath));
 	while ((size = read(fd, buf.data(), BUFFER_SIZE)) > 0)
 		appendBuf(cgiRes, buf, size);
 	extractHeader(cgiRes, crlfPos);
@@ -241,11 +242,13 @@ void	Response::extractHeader(const Bytes &cgiRes, Bytes::const_iterator &crlfPos
 
 void	Response::startCgi()
 {
-	std::vector<std::string>	strs(10);
-	std::vector<char *>			args(2);
-	std::vector<char *>			env(11);
-	int							fd;
-	std::string					exe;
+	std::vector<std::string>			strs;
+	std::vector<char *>					args;
+	std::vector<char *>					env;
+	std::map<std::string, std::string>	headersToAdd = request.getHeaders();
+	std::map<std::string, std::string>	allHeaders;
+	int									fd;
+	std::string							exe;
 
 	exe = matchLocation->findCGIExecutable(extractFileExt(resourcePath));
 	std::cout<<"resource path:"<<resourcePath<<std::endl;
@@ -283,6 +286,9 @@ void	Response::startCgi()
 	{
 		std::string	inBodyPath = request.getBodyFilePath();
 
+		addHttpPrefixToHeaders(headersToAdd, allHeaders);
+		addCgiHeaders(allHeaders);
+		mergeEnvStrs(allHeaders, strs);
 		prepareArgEnv(exe, strs, args, env);
 		// if (close(pipeFd[0]) < 0)
 		// 	std::exit(1);
@@ -393,42 +399,27 @@ void	Response::processCgi(int op)
 void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
 	std::vector<char *> &args, std::vector<char *> &env)
 {
-	strs[0] = "SCRIPT_FILENAME=";
-	strs[1] = "PATH_INFO=";
-	strs[2] = "SERVER_PROTOCOL=";
-	strs[3] = "REQUEST_METHOD=";
-	strs[4] = "REDIRECT_STATUS=";
-	strs[5] = "CONTENT_LENGTH=";
-	strs[6] = "CONTENT_TYPE=";
-	strs[7] = "GATEWAY_INTERFACE=CGI/1.1";
-	strs[8] = "HTTP_TRANSFER_ENCODING=chunked";
-	strs[9] = "HTTP_X_SECRET_HEADER_FOR_TEST=1";
-	strs[0] += resourcePath;
-	strs[1] += "/";
-	strs[2] += request.getHttpVer();
-	strs[3] += request.getMethod();
-	strs[4] += "200";
-	if (!request.getBodyFilePath().empty())
-		strs[5] += toString(fileSize(request.getBodyFilePath()));
-	else
-		strs[5] += toString(request.getBodyLength());
-	if (request.getHeaders().count(CONTENT_TYPE) > 0)
-		strs[6] += request.getHeaders().at(CONTENT_TYPE);
-	else
-		strs[6] = "";
-	args[0] = (char *) exe.c_str();
-	args[1] = NULL;
-	env[0] = (char *) strs[0].c_str();
-	env[1] = (char *) strs[1].c_str();
-	env[2] = (char *) strs[2].c_str();
-	env[3] = (char *) strs[3].c_str();
-	env[4] = (char *) strs[4].c_str();
-	env[5] = (char *) strs[5].c_str();
-	env[6] = (char *) strs[6].c_str();
-	env[7] = (char *) strs[7].c_str();
-	env[8] = (char *) strs[8].c_str();
-	env[9] = (char *) strs[9].c_str();
-	env[10] = NULL;
+	args.push_back((char *)exe.c_str());
+	args.push_back(NULL);
+	env.reserve(strs.size() + 1);
+	for(std::vector<std::string>::const_iterator it = strs.begin(); it != strs.end(); ++it)
+		env.push_back((char *)it->c_str());
+	env.push_back(NULL);
+}
+
+void	Response::mergeEnvStrs(std::map<std::string, std::string> &allHeader, std::vector<std::string> &strs)
+{
+	std::string	value;
+
+	strs.reserve(allHeader.size());
+	for(std::map<std::string, std::string>::const_iterator it = allHeader.begin(); it != allHeader.end(); ++it)
+	{
+		value.reserve(it->first.size() + 1 + it->second.size());
+		value = it->first;
+		value.push_back('=');
+		value.insert(value.end(), it->second.begin(), it->second.end());
+		strs.push_back(value);
+	}
 }
 
 void	Response::setStatusCode(int code)
@@ -509,19 +500,6 @@ void	Response::determineResType(void)
 	{
 		resultType = CGI_EXE;
 	}
-	// std::cout <<"filepathstr:"<<filePathStr<<std::endl;
-	// if (fileWithExt(filePathStr, "bla"))
-	// {
-	// 	std::cout <<"end with bla"<<std::endl;
-	// 	resultType = CGI_EXE;
-	// 	if (filePathStr == "./data/www/YoupiBanane/youpla.bla")
-	// 		resourcePath = "./data/www/YoupiBanane/youpi.bla";
-	// 	// if (!fileExist(filePathStr))
-	// 	// {
-	// 	// 	setStatusCodeResType(200, ERR_PAGE);
-	// 	// 	headers.insert(std::make_pair("Status", getFullStatusMessage(200)));
-	// 	// }
-	// }
 	if (resultType == NONE)
 		resultType = FILE;
 }
@@ -542,8 +520,6 @@ void	Response::processResponse()
 		locationMatchLength = matchLocation->getRouteMatchLength(request.getPaths());
 		std::cout<<"match length:"<<locationMatchLength<<std::endl;
 	}
-	if (statusOK() && request.getMethod() == "HEAD")
-		(logMessage(std::cout, "head not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
 	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
 		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
 	if (statusOK() && matchLocation && (size_t)matchLocation->getMaxBodySize() < request.getBodyLength())
@@ -586,4 +562,33 @@ void	Response::deleteResource()
 void	Response::clearResultPage()
 {
 	resultPage.clear();
+}
+
+void	Response::addHttpPrefixToHeaders(std::map<std::string, std::string> headersToAdd,
+	std::map<std::string, std::string> &headersRes)
+{
+	for (std::map<std::string, std::string>::const_iterator it = headersToAdd.begin();
+		it != headersToAdd.end(); ++it)
+	{
+		std::string	newKey = "HTTP_";
+
+		newKey.insert(newKey.end(), it->first.begin(), it->first.end());
+		std::transform(newKey.begin(), newKey.end(), newKey.begin(), transformHttpHeader);
+		headersRes.insert(std::make_pair(newKey, it->second));
+	}
+}
+
+void	Response::addCgiHeaders(std::map<std::string, std::string> &headersRes)
+{
+	headersRes.insert(std::make_pair("SCRIPT_FILENAME", resourcePath));
+	headersRes.insert(std::make_pair("PATH_INFO", "/"));
+	headersRes.insert(std::make_pair("SERVER_PROTOCOL", request.getHttpVer()));
+	headersRes.insert(std::make_pair("REQUEST_METHOD", request.getMethod()));
+	headersRes.insert(std::make_pair("REDIRECT_STATUS", "200"));
+	headersRes.insert(std::make_pair("CONTENT_LENGTH", toString(fileSize(request.getBodyFilePath()))));
+	if (request.getHeaders().count(CONTENT_TYPE) > 0)
+		headersRes.insert(std::make_pair("CONTENT_TYPE", request.getHeaders().at(CONTENT_TYPE)));
+	else
+		headersRes.insert(std::make_pair("CONTENT_TYPE", ""));
+	headersRes.insert(std::make_pair("GATEWAY_INTERFACE", "CGI/1.1"));
 }

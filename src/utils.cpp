@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/31 20:29:30 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/02 11:21:31 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,6 +179,15 @@ std::string	stringToLowerCase(std::string str)
 	return str;
 }
 
+char	transformHttpHeader(char c)
+{
+	if (c == '-')
+		return '_';
+	if (islower(c))
+		return toupper(c);
+	return c;
+}
+
 int	toInt(std::string str)
 {
 	std::stringstream	ss(str);
@@ -235,6 +244,7 @@ long long	hexToLL(std::string str)
 
 Bytes	&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size)
 {
+	bytes.reserve(bytes.size() + size);
 	for (size_t i = 0; i < size; ++i)
 		bytes.push_back(buf[i]);
 	return bytes;
