@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/02 11:23:41 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/03 23:48:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -172,13 +172,26 @@ bool	Response::convertCGIResToResponse()
 {
 	Bytes::const_iterator				crlfPos;
 	int									size;
-	int									fd;
-	Bytes								buf(BUFFER_SIZE);
+	// int									fd;
+	// Bytes								buf(BUFFER_SIZE);
+	Bytes								buf(fileSize(bodyFilePath));
 
-	fd = open(bodyFilePath.c_str(), O_RDONLY, 0700);
+	// std::vector<char>	a;
+	// char b;
+	std::ifstream	inputStream(bodyFilePath.c_str(), std::ios_base::binary);
+
+	buf.reserve(fileSize(bodyFilePath));
+	inputStream.read((char *)buf.data(), fileSize(bodyFilePath));
+	if (!inputStream.good())
+		std::cout<<"input stream no good"<<std::endl;
+	std::cout<<"last read size:"<<inputStream.gcount()<<std::endl;
+	// inputStream >> b;
+	// fd = open(bodyFilePath.c_str(), O_RDONLY, 0700);
 	cgiRes.reserve(fileSize(bodyFilePath));
-	while ((size = read(fd, buf.data(), BUFFER_SIZE)) > 0)
-		appendBuf(cgiRes, buf, size);
+	// while ((size = read(fd, buf.data(), BUFFER_SIZE)) > 0)
+	// 	appendBuf(cgiRes, buf, size);
+	std::cout<<"buf size:"<<buf.size()<<std::endl;
+	appendBuf(cgiRes, buf, buf.size());
 	extractHeader(cgiRes, crlfPos);
 	if (headers.empty() || headers.count(CONTENT_TYPE) == 0)
 	{
@@ -201,7 +214,7 @@ bool	Response::convertCGIResToResponse()
 	for (std::map<std::string, std::string>::iterator headerIt = headers.begin();
 		headerIt != headers.end(); ++headerIt)
 		appendBytes(resultPage, genHttpHeader(headerIt->first, headerIt->second));
-	size = std::distance(crlfPos + CRLF.size(), static_cast<Bytes::const_iterator> (cgiRes.end()));
+	size = cgiRes.size() - std::distance(static_cast<Bytes::const_iterator> (cgiRes.begin()), crlfPos + CRLF.size());
 	appendBytes(resultPage, genHttpHeader(CONTENT_LENGTH, toString(size)));
 	appendBytes(resultPage, CRLFStr);
 	appendBytes(resultPage, crlfPos + CRLF.size(), cgiRes.end());

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/01 17:16:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/03 23:47:12 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,14 +131,14 @@ void	Client::processData()
 	while (searchForNewLine(it) != incomingData.end())
 	{
 		if (requests.empty() || requests.back().complete())
-			requests.push_back(Request(incomingData.begin(), incomingData.end()));
+			requests.push_back(Request(incomingData.begin(), incomingData.end(), incomingData));
 		else
 		{
 			requests.back().setDataStart(incomingData.begin());
 			requests.back().setDataEnd(incomingData.end());
+			requests.back().setIncomingData(incomingData);
 		}
 		requests.back().parseRequest();
-		// incomingData = Bytes(requests.back().getDataStart(), requests.back().getDataEnd());
 		Bytes::iterator	it(incomingData.begin() + std::distance(static_cast<Bytes::const_iterator>(incomingData.begin()), requests.back().getDataStart()));
 		incomingData.erase(incomingData.begin(), it);
 	}

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/31 20:34:03 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/03 21:56:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,8 @@ class Request
 		HEADERS,
 		BODY,
 		COMPLETE,
-		WAITING_CHUNK,
+		CHUNK_LENGTH,
+		CHUNK_DATA,
 	};
 
 	private:
@@ -49,6 +50,7 @@ class Request
 		Bytes								body;
 		Bytes::const_iterator 				newDataStart;
 		Bytes::const_iterator 				newDataEnd;
+		Bytes								&incomingData;
 		int									statusCode;
 		int									requestStatus;
 		size_t								bodyLength;
@@ -61,17 +63,21 @@ class Request
 		void								parseRequestHeader();
 		void								splitRoute();
 		void								parseBody();
-		void								parseChunk();
+		void								parseChunkLength();
+		void								parseChunkData();
 		void								extractContentLength(std::string &len);
 		bool								isPostMethod() const;
 		bool								isPutMethod() const;
-		bool								switchToChunkMode();
+		bool								switchToChunkMode() const;
+		bool								readyparseChunkLength() const;
+		bool								readyparseChunkData() const;
+		bool								readyparseBody() const;
 	public:
 		static std::string	valMet[4];
 		static std::vector<std::string>	validMethod;
 		static std::string	valVer[1];
 		static std::vector<std::string>	validHttpVersion;
-		Request(Bytes::const_iterator newDataStart, Bytes::const_iterator newDataEnd);
+		Request(Bytes::const_iterator newDataStart, Bytes::const_iterator newDataEnd, Bytes &inData);
 		Request(const Request &right);
 		~Request();
 		Request										&operator=(const Request &right);
@@ -95,5 +101,6 @@ class Request
 		Bytes::const_iterator						getDataEnd() const;
 		void										setDataStart(Bytes::const_iterator s);
 		void										setDataEnd(Bytes::const_iterator e);
+		void										setIncomingData(Bytes &inData);
 		void										setStatusCode(int code);
 };
