@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/02 11:00:07 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/04 12:09:08 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ enum e_cgiStage
 enum e_cgiEvent
 {
 	EXTRACT_PIPE,
+	WRITE_PIPE,
 	KILL_PROCESS,
 	PROCESS_DATA,
 };
@@ -58,15 +59,18 @@ class Response
 		const Location						*matchLocation;
 		std::string							resourcePath;
 		std::ifstream						*pageStream;
-		int									cgiResFd;
+		int									cgiOutFd;
+		int									cgiInFd;
+		size_t								byteWritten;
 		int									cgiStage;
 		Bytes								resultPage;
 		Bytes								cgiRes;
 		int									statusCode;
 		int									resultType;
 		pid_t								cgiPid;
-		int									pipeFd[2];
-		std::time_t							cgiStartTime;
+		int									outPipeFd[2];
+		int									inPipeFd[2];
+		std::time_t							cgiLastActiveTime;
 		std::map<std::string, std::string>	headers;
 		size_t								locationMatchLength;
 		std::string							bodyFilePath;
@@ -90,11 +94,13 @@ class Response
 		const std::string	getResourcePath() const;
 		const std::ifstream	*getPageStream() const;
 		int					getResultType() const;
-		int					getCgiResFd() const;
+		int					getCgiOutFd() const;
+		int					getCgiInFd() const;
 		int					getCgiStage() const;
 		void				printResponse() const;
 		void				getFileResponse();
 		std::string			getBodyFilePath() const;
+		size_t				getByteWritten() const;
 		bool				convertCGIResToResponse();
 		void				extractHeader(const Bytes &cgiRes, Bytes::const_iterator &crlfPos);
 		void				startCgi();

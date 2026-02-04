@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/01 23:29:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/04 10:54:13 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 #include "html.hpp"
 #include "http.hpp"
 #define BUFFER_SIZE 5000000
+#define PIPE_BUFFER_SIZE 50000
 #define TRANSFER_SIZE 5000000
 
 typedef unsigned char Byte;

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 01:05:02 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/04 12:49:45 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -285,42 +285,45 @@ void	Request::parseChunkData()
 		}
 		else
 		{
-			if (bodyFd == -1 && statusOK())
-				bodyFd = open(bodyFilePath.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0700);
-			if (bodyFd < 0)
-				statusCode = INTERNAL_ERROR;
-			else
-			{
+			// if (bodyFd == -1 && statusOK())
+			// 	bodyFd = open(bodyFilePath.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0700);
+
+			// if (bodyFd < 0)
+			// 	statusCode = INTERNAL_ERROR;
+			// else
+			// {
 				if (!expectedChunkSize)
 				{
 					std::cout <<"time to stop"<<std::endl;
 					requestStatus = COMPLETE;
-					if (!body.empty() && write(bodyFd, body.data(), body.size()) < 0)
-						statusCode = INTERNAL_ERROR;
-					if (close(bodyFd) < 0)
-						statusCode = INTERNAL_ERROR;
+					// if (!body.empty() && write(bodyFd, body.data(), body.size()) < 0)
+					// 	statusCode = INTERNAL_ERROR;
+					// if (close(bodyFd) < 0)
+					// 	statusCode = INTERNAL_ERROR;
 				}
 				else
 				{
 					body.insert(body.end(), incomingData.begin(), incomingData.begin() + expectedChunkSize);
-					if (body.size() >= BUFFER_SIZE * 5)
-					{
-						if (write(bodyFd, body.data(), body.size()) < 0)
-						{
-							statusCode = INTERNAL_ERROR;
-							requestStatus = COMPLETE;
-						}
-						body.clear();
-					}
+					// std::cout<<"n byte inserted to body:" << expectedChunkSize<<std::endl;
+					// if (body.size() >= BUFFER_SIZE * 5)
+					// {
+					// 	if (write(bodyFd, body.data(), body.size()) < 0)
+					// 	{
+					// 		statusCode = INTERNAL_ERROR;
+					// 		requestStatus = COMPLETE;
+					// 	}
+					// 	body.clear();
+					// }
 					if (requestStatus == CHUNK_DATA)
 						requestStatus = CHUNK_LENGTH;
 					newDataStart = incomingData.begin() + expectedChunkSize + CRLF.size();
 					expectedChunkSize = -1;
 				}
-			}
+			// }
 		}
 	}
 }
+
 void	Request::parseRequest()
 {
 	Bytes::const_iterator	it;
@@ -333,16 +336,16 @@ void	Request::parseRequest()
 	{
 		if (it == newDataStart && (newDataStart != newDataEnd) && requestStatus == HEADERS)
 		{
-			int	fd;
+			// int	fd;
 
 			requestStatus = BODY;
 			std::srand(std::time(NULL));
-			bodyFilePath = "tmp/" + toString(std::rand());
-			while (fileExist(bodyFilePath))
-				bodyFilePath = "tmp/" + toString(std::rand());
-			fd = open(bodyFilePath.c_str(), O_CREAT | O_TRUNC, 0700);
-			if (fd < 0 || close(fd) < 0)
-				setStatusCode(INTERNAL_ERROR);
+			// bodyFilePath = "tmp/" + toString(std::rand());
+			// while (fileExist(bodyFilePath))
+			// 	bodyFilePath = "tmp/" + toString(std::rand());
+			// fd = open(bodyFilePath.c_str(), O_CREAT | O_TRUNC, 0700);
+			// if (fd < 0 || close(fd) < 0)
+			// 	setStatusCode(INTERNAL_ERROR);
 			if (switchToChunkMode())
 			{
 				std::cout << "change to chunk mode start" << std::endl;

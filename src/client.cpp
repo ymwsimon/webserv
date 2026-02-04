@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/03 23:47:12 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/04 14:34:17 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,8 +49,8 @@ int	Client::sendData(struct epoll_event *evt)
 		if (responses.empty())
 		{
 			responses.push_back(Response(service, requests.front()));
-			std::cout<<"new response"<<std::endl;
-			requests.front().printRequest();
+			// std::cout<<"new response"<<std::endl;
+			// requests.front().printRequest();
 		}
 		responses.front().processResponse();
 		if (!responses.empty() && !responses.front().getResultPage().empty()
@@ -66,10 +66,10 @@ int	Client::sendData(struct epoll_event *evt)
 			std::cout << responses.front().getResultPage().size() << std::endl;
 			// content = responses.front().getResultPage();
 			std::cout << "sending out data" << std::endl;
-			std::cout << "content" << std::endl;
-			for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
-				std::cout << responses.front().getResultPage()[i];
-			std::cout << std::endl;
+			// std::cout << "content" << std::endl;
+			// for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
+			// 	std::cout << responses.front().getResultPage()[i];
+			// std::cout << std::endl;
 			if (send(evt->data.fd, responses.front().getResultPage().data(),
 				responses.front().getResultPage().size(), 0) < 0)
 				std::cout << "error send data out" << std::endl;
