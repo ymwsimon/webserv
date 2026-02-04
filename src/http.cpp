@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:48:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/28 21:17:13 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/04 01:02:34 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -192,7 +192,7 @@ std::string	genHttpResponseLine(int code)
 	return defaultHTTPVer + " " + getFullStatusMessage(code) + CRLFStr;
 }
 
-std::string	genHttpResponse(int code)
+std::string	genHttpResponse(int code, bool isHeadMethod)
 {
 	std::string							res;
 	std::string							body;
@@ -200,7 +200,8 @@ std::string	genHttpResponse(int code)
 
 	if (!code)
 		code = 200;
-	body = genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code));
+	if (!isHeadMethod)
+		body = genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code));
 	if (code == BAD_REQUEST)
 	{
 		headers.insert(std::make_pair("Connection", "close"));
@@ -246,7 +247,7 @@ std::string	genHttpResponse(int code, const std::string &content,
 	return res + content;
 }
 
-std::string	genHttpResponse(int code, std::map<std::string, std::string> headers)
+std::string	genHttpResponse(int code, std::map<std::string, std::string> headers, bool isHeadMethod)
 {
 	std::string							res;
 	std::string							body;
@@ -258,5 +259,7 @@ std::string	genHttpResponse(int code, std::map<std::string, std::string> headers
 	headers.insert(std::make_pair(CONTENT_LENGTH, toString(body.size())));
 	if (code == BAD_REQUEST)
 		headers.insert(std::make_pair("Connection", "close"));
+	if (isHeadMethod)
+		body.clear();
 	return genHttpResponse(code, body, headers);
 }

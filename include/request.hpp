@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/03 21:56:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/04 01:06:55 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,8 +66,6 @@ class Request
 		void								parseChunkLength();
 		void								parseChunkData();
 		void								extractContentLength(std::string &len);
-		bool								isPostMethod() const;
-		bool								isPutMethod() const;
 		bool								switchToChunkMode() const;
 		bool								readyparseChunkLength() const;
 		bool								readyparseChunkData() const;
@@ -85,6 +83,9 @@ class Request
 		bool										complete() const;
 		bool										statusOK() const;
 		bool										isMethod(std::string query) const;
+		bool										isPostMethod() const;
+		bool										isPutMethod() const;
+		bool										isHeadMethod() const;
 		bool										isWaitingChunk() const;
 		void										printRequest() const;
 		const std::string							&getMethod() const;

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/03 23:48:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/04 01:07:14 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -522,7 +522,7 @@ void	Response::processResponse()
 	if (!resultPage.empty())
 		return ;
 	if (!statusOK() || resultType == ERR_PAGE)
-		resultPage = stringToBytes(genHttpResponse(statusCode, headers));
+		resultPage = stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod()));
 	if (statusOK())
 		matchLocation = service->findMatchingRoute(request);
 	if (statusOK() && !matchLocation)
@@ -568,7 +568,7 @@ void	Response::deleteResource()
 	else
 	{
 		setStatusCode(NO_CONTENT);
-		resultPage = stringToBytes(genHttpResponse(statusCode));
+		resultPage = stringToBytes(genHttpResponse(statusCode, request.isHeadMethod()));
 	}
 }
 

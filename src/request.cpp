@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/03 23:47:31 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/04 01:05:02 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,6 +144,11 @@ bool	Request::isPostMethod() const
 bool	Request::isPutMethod() const
 {
 	return method == "PUT";
+}
+
+bool	Request::isHeadMethod() const
+{
+	return method == "HEAD";
 }
 
 bool	Request::switchToChunkMode() const
