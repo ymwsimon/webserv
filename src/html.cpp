@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 16:41:15 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 19:50:51 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/06 15:44:37 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,25 +19,62 @@ std::string	getStatusBody(int code)
 	return "";
 }
 
-std::string	genHtmlTagStart(std::string tag)
+std::string	&genHtmlTagStart(std::string tag, std::string &res)
 {
-	return "<" + tag + ">";
+	res.reserve(res.size() + tag.size() + 2);
+	res.insert(res.begin(), '>');
+	res.insert(0, tag);
+	res.insert(res.begin(), '<');
+	return res;
 }
 
-std::string	genHtmlTagStart(std::string tag, std::vector<std::pair<std::string, std::string> > attr)
+std::string	genHtmlTagStart(std::string tag)
 {
-	std::string	res = " ";
+	tag.insert(tag.begin(), '<');
+	tag.insert(tag.end(), '>');
+	return tag;
+}
+
+std::string	&genHtmlTagStart(std::string tag, std::vector<std::pair<std::string, std::string> > &attr, std::string &res)
+{
+	std::string	fullTag = "<";
+
+	fullTag.append(tag);
+	for (size_t i = 0; i < attr.size(); ++i)
+	{
+		fullTag.append(" ");
+		fullTag.append(attr[i].first);
+		fullTag.append("=\"");
+		fullTag.append(attr[i].second);
+		fullTag.append("\"");
+	}
+	fullTag.append(">");
+	res.insert(0, fullTag);
+	return res;
+}
+
+std::string	genHtmlTagStart(std::string tag, std::vector<std::pair<std::string, std::string> > &attr)
+{
+	std::string	res;
 
 	for (size_t i = 0; i < attr.size(); ++i)
 	{
+		res.append(" ");
 		res.append(attr[i].first);
 		res.append("=\"");
 		res.append(attr[i].second);
 		res.append("\"");
 	}
-	if (attr.size())
-		return "<" + tag + res + ">";
-	return "<" + tag + ">";
+	return "<" + tag + res + ">";
+}
+
+std::string	&genHtmlTagEnd(std::string tag, std::string &res)
+{
+	res.reserve(res.size() + tag.size() + 3);
+	res.append("</");
+	res.append(tag);
+	res.insert(res.end(), '>');
+	return res;
 }
 
 std::string	genHtmlTagEnd(std::string tag)
@@ -47,28 +84,15 @@ std::string	genHtmlTagEnd(std::string tag)
 
 std::string	&appendHtmlTag(std::string tag, std::string &content)
 {
-	content.insert(0, genHtmlTagStart(tag));
-	content.append(genHtmlTagEnd(tag));
+	genHtmlTagStart(tag, content);
+	genHtmlTagEnd(tag, content);
 	return content;
 }
 
 std::string	&appendHtmlTag(std::string tag,
-	std::vector<std::pair<std::string, std::string> > attr, std::string &content)
+	std::vector<std::pair<std::string, std::string> > &attr, std::string &res)
 {
-	content.insert(0, genHtmlTagStart(tag, attr));
-	content.append(genHtmlTagEnd(tag));
-	return content;
-}
-
-std::string	genHtmlPage(std::string title, std::string content)
-{
-	std::string	res;
-
-	appendHtmlTag(TITLE, title);
-	appendHtmlTag(HEADTag, title);
-	appendHtmlTag(BODY, content);
-	res = title + content;
-	appendHtmlTag(HTML, res);
-	res = genHtmlTagStart(DOCTYPE + " " + HTML) + res;
+	genHtmlTagStart(tag, attr, res);
+	genHtmlTagEnd(tag, res);
 	return res;
 }

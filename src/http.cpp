@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:48:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 01:02:34 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/06 18:23:02 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -175,43 +175,112 @@ const std::string	&getMediaType(std::string mType)
 	return mediaTypeTable.at("bin");
 }
 
-std::string	getFullStatusMessage(int code)
+std::string	&getFullStatusMessage(int code, std::string &res)
 {
 	if (messageTable.count(code) == 0)
 		code = 404;
-	return toString(code) + " " + getStatusMessage(code);
+	res = toString(code);
+	res.append(" ");
+	res.append(getStatusMessage(code));
+	return res;
+}
+
+std::string	getFullStatusMessage(int code)
+{
+	std::string	res;
+
+	if (messageTable.count(code) == 0)
+		code = 404;
+	res = toString(code);
+	res.append(" ");
+	res.append(getStatusMessage(code));
+	return res;
+}
+
+std::string	&genHttpHeader(std::string fieldName, std::string fieldValue, std::string &res)
+{
+	res.append(fieldName);
+	res.append(": ");
+	res.append(fieldValue);
+	res.append(CRLFStr);
+	return res;
 }
 
 std::string	genHttpHeader(std::string fieldName, std::string fieldValue)
 {
-	return fieldName + ": " + fieldValue + CRLFStr;
+	std::string	res;
+
+	res.append(fieldName);
+	res.append(": ");
+	res.append(fieldValue);
+	res.append(CRLFStr);
+	return res;
+}
+
+std::string	&genHttpResponseLine(int code, std::string &res)
+{
+	res.append(defaultHTTPVer);
+	res.append(" ");
+	res.append(toString(code));
+	res.append(" ");
+	res.append(getStatusMessage(code));
+	res.append(CRLFStr);
+	return res;
 }
 
 std::string	genHttpResponseLine(int code)
 {
-	return defaultHTTPVer + " " + getFullStatusMessage(code) + CRLFStr;
+	std::string	res;
+
+	res.append(defaultHTTPVer);
+	res.append(" ");
+	res.append(toString(code));
+	res.append(" ");
+	res.append(getStatusMessage(code));
+	res.append(CRLFStr);
+	return res;
 }
 
-std::string	genHttpResponse(int code, bool isHeadMethod)
+std::string	&genHtmlPage(std::string title, std::string &content)
 {
-	std::string							res;
-	std::string							body;
+	appendHtmlTag(TITLE, title);
+	appendHtmlTag(HEADTag, title);
+	appendHtmlTag(BODY, content);
+	appendHtmlTag(HTML, content);
+	content.insert(0, title);
+	genHtmlTagStart(DOCTYPE + " " + HTML, content);
+	return content;
+}
+
+std::string	&genHttpResponse(int code, bool isHeadMethod, std::string &res)
+{
 	std::map<std::string, std::string>	headers;
 
 	if (!code)
 		code = 200;
 	if (!isHeadMethod)
-		body = genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code));
+		genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code, res));
 	if (code == BAD_REQUEST)
-	{
 		headers.insert(std::make_pair("Connection", "close"));
-		return genHttpResponse(code, body, headers);
-	}
-	else
-		return genHttpResponse(code, body);
+	genHttpResponse(code, res, headers);
+	return res;
 }
 
-std::string	genHttpResponse(int code, const std::string &content)
+std::string	genHttpResponse(int code, bool isHeadMethod)
+{
+	std::string							res;
+	std::map<std::string, std::string>	headers;
+
+	if (!code)
+		code = 200;
+	if (!isHeadMethod)
+		genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code, res));
+	if (code == BAD_REQUEST)
+		headers.insert(std::make_pair("Connection", "close"));
+	return genHttpResponse(code, res, headers);
+}
+
+std::string	genHttpResponse(int code, std::string &content)
 {
 	std::string	res;
 
@@ -220,7 +289,7 @@ std::string	genHttpResponse(int code, const std::string &content)
 	return genHttpResponse(code, HTML, content);
 }
 
-std::string	genHttpResponse(int code, std::string mediaType, const std::string &content)
+std::string	genHttpResponse(int code, std::string mediaType, std::string &content)
 {
 	std::string							res;
 	std::map<std::string, std::string>	headers;
@@ -233,33 +302,46 @@ std::string	genHttpResponse(int code, std::string mediaType, const std::string &
 	return genHttpResponse(code, content, headers);
 }
 
-std::string	genHttpResponse(int code, const std::string &content,
+std::string	&genHttpResponse(int code, std::string &content,
 	std::map<std::string, std::string> headers)
 {
 	std::string	res;
 
 	if (!code)
 		code = 200;
-	res = genHttpResponseLine(code);
+	genHttpResponseLine(code, res);
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
-		res += genHttpHeader(it->first, it->second);	
-	res += CRLFStr;
-	return res + content;
+		genHttpHeader(it->first, it->second, res);
+	res.append(CRLFStr);
+	content.insert(0, res);
+	return content;
+}
+
+std::string	&genHttpResponse(int code, std::map<std::string, std::string> headers, bool isHeadMethod, std::string &res)
+{
+	if (!code)
+		code = 200;
+	if (!isHeadMethod)
+		genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code, res));
+	headers.insert(std::make_pair(CONTENT_TYPE, getMediaType(HTML)));
+	headers.insert(std::make_pair(CONTENT_LENGTH, toString(res.size())));
+	if (code == BAD_REQUEST)
+		headers.insert(std::make_pair("Connection", "close"));
+	genHttpResponse(code, res, headers);
+	return res;
 }
 
 std::string	genHttpResponse(int code, std::map<std::string, std::string> headers, bool isHeadMethod)
 {
 	std::string							res;
-	std::string							body;
 
 	if (!code)
 		code = 200;
-	body = genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code));
+	if (!isHeadMethod)
+		genHtmlPage(getFullStatusMessage(code), getFullStatusMessage(code, res));
 	headers.insert(std::make_pair(CONTENT_TYPE, getMediaType(HTML)));
-	headers.insert(std::make_pair(CONTENT_LENGTH, toString(body.size())));
+	headers.insert(std::make_pair(CONTENT_LENGTH, toString(res.size())));
 	if (code == BAD_REQUEST)
 		headers.insert(std::make_pair("Connection", "close"));
-	if (isHeadMethod)
-		body.clear();
-	return genHttpResponse(code, body, headers);
+	return genHttpResponse(code, res, headers);
 }

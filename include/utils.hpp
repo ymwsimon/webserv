@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 10:54:13 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/06 17:49:12 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,8 @@ Bytes		&appendBuf(Bytes &bytes, Bytes &buf, size_t size);
 Bytes		&appendBytes(Bytes &bytes, std::string toAppend);
 Bytes		&appendBytes(Bytes &bytes, Bytes::const_iterator start, Bytes::const_iterator end);
 void		printBytes(const Bytes &bytes);
-Bytes		stringToBytes(std::string str);
+Bytes		&stringToBytes(std::string &str, Bytes &bytes);
+Bytes		stringToBytes(std::string &str);
 std::string bytesToString(const Bytes &data);
 std::string bytesToString(Bytes::const_iterator start, Bytes::const_iterator end);
 void		logMessage(std::ostream &s, std::string msg);

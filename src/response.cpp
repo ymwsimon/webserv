@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 15:50:20 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/06 17:53:06 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,10 +166,10 @@ void	Response::getFileResponse()
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return ;
 	}
-	head = genHttpResponseLine(statusCode);
-	head += genHttpHeader(CONTENT_TYPE, getMediaType(extractFileExt(resourcePath)));
-	head += genHttpHeader(CONTENT_LENGTH, toString(resultPage.size()));
-	head += CRLFStr;
+	genHttpResponseLine(statusCode, head);
+	genHttpHeader(CONTENT_TYPE, getMediaType(extractFileExt(resourcePath)), head);
+	genHttpHeader(CONTENT_LENGTH, toString(resultPage.size()), head);
+	head.append(CRLFStr);
 	resultPage.insert(resultPage.begin(), head.begin(), head.end());
 }
 
@@ -557,10 +557,12 @@ void	Response::determineResType(void)
 
 void	Response::processResponse()
 {
+	std::string	res;
+
 	if (!resultPage.empty())
 		return ;
 	if (!statusOK() || resultType == ERR_PAGE)
-		resultPage = stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod()));
+		stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod(), res), resultPage);
 	if (statusOK())
 		matchLocation = service->findMatchingRoute(request);
 	if (statusOK() && !matchLocation)
@@ -597,6 +599,8 @@ void	Response::processResponse()
 
 void	Response::deleteResource()
 {
+	std::string	res;
+
 	if (!request.getRoute().empty() &&
 		((*request.getRoute().rbegin() == '/' && isRegularFile(resourcePath))
 		 || (*request.getRoute().rbegin() != '/' && isDir(resourcePath))))
@@ -606,7 +610,7 @@ void	Response::deleteResource()
 	else
 	{
 		setStatusCode(NO_CONTENT);
-		resultPage = stringToBytes(genHttpResponse(statusCode, request.isHeadMethod()));
+		stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod(), res), resultPage);
 	}
 }
 

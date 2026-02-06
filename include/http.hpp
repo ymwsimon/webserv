@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:46:32 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 01:02:54 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/06 17:41:38 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,13 +39,17 @@ enum e_HTTPStatusCode
 
 const std::string	&getStatusMessage(int code);
 const std::string	&getMediaType(std::string mType);
+std::string			&getFullStatusMessage(int code, std::string &res);
 std::string			getFullStatusMessage(int code);
+std::string			&genHttpHeader(std::string fieldName, std::string fieldValue, std::string &res);
 std::string			genHttpHeader(std::string fieldName, std::string fieldValue);
+std::string			&genHttpResponseLine(int code, std::string &res);
 std::string			genHttpResponseLine(int code);
-std::string			genHtmlPage(std::string title, std::string content);
+std::string			&genHtmlPage(std::string title, std::string &content);
 std::string			genHttpResponse(int code, bool isHeadMethod);
-std::string			genHttpResponse(int code, const std::string &content);
-std::string			genHttpResponse(int code, std::string mediaType, const std::string &content);
-std::string			genHttpResponse(int code, const std::string &content,
+std::string			genHttpResponse(int code, std::string &content);
+std::string			genHttpResponse(int code, std::string mediaType, std::string &content);
+std::string			&genHttpResponse(int code, std::string &content,
 	std::map<std::string, std::string> headers);
+std::string			&genHttpResponse(int code, std::map<std::string, std::string> headers, bool isHeadMethod, std::string &res);
 std::string			genHttpResponse(int code, std::map<std::string, std::string> headers, bool isHeadMethod);

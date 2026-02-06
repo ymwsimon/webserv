@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/02 11:21:31 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/06 17:49:02 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -275,7 +275,13 @@ void	printBytes(const Bytes &bytes)
 		std::cout << bytes[i];
 }
 
-Bytes	stringToBytes(std::string str)
+Bytes	&stringToBytes(std::string &str, Bytes &bytes)
+{
+	bytes = Bytes(str.begin(), str.end());
+	return bytes;
+}
+
+Bytes	stringToBytes(std::string &str)
 {
 	return Bytes(str.begin(), str.end());
 }
