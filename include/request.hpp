@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 01:06:55 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/07 18:41:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,6 @@ class Request
 		void								parseChunkLength();
 		void								parseChunkData();
 		void								extractContentLength(std::string &len);
-		bool								switchToChunkMode() const;
 		bool								readyparseChunkLength() const;
 		bool								readyparseChunkData() const;
 		bool								readyparseBody() const;
@@ -87,6 +86,7 @@ class Request
 		bool										isPutMethod() const;
 		bool										isHeadMethod() const;
 		bool										isWaitingChunk() const;
+		bool										isChunkMode() const;
 		void										printRequest() const;
 		const std::string							&getMethod() const;
 		const std::string							&getRoute() const;

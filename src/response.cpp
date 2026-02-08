@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/06 17:53:06 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/08 18:34:14 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ Response::Response(Service *ser, Request &req) : service(ser), request(req), sta
 	if (!statusOK())
 		resultType = ERR_PAGE;
 	byteWritten = 0;
+	bodyFilePath = req.getBodyFilePath();
 }
 
 Response::Response(const Response &right) : service(right.service), request(right.request)
@@ -94,6 +95,11 @@ bool	Response::isWaitingStage() const
 bool	Response::isFinishWaitingStage() const
 {
 	return cgiStage == FINISH_WAITING;
+}
+
+bool	Response::needCloseCgiInFd() const
+{
+	return byteWritten && request.isChunkMode() && byteWritten == request.getBodyLength();
 }
 
 int	Response::getStatusCode() const
@@ -275,13 +281,12 @@ void	Response::startCgi()
 	std::vector<char *>					env;
 	std::map<std::string, std::string>	headersToAdd = request.getHeaders();
 	std::map<std::string, std::string>	allHeaders;
-	// int									fd;
 	std::string							exe;
 
 	exe = matchLocation->findCGIExecutable(extractFileExt(resourcePath));
 	// std::cout<<"resource path:"<<resourcePath<<std::endl;
 	// std::cout<<"exe path:"<<exe<<std::endl;
-	std::srand(std::time(NULL));
+	// std::srand(std::time(NULL));
 	// bodyFilePath = "tmp/" + toString(std::rand());
 	// while (fileExist(bodyFilePath))
 	// 	bodyFilePath = "tmp/" + toString(std::rand());
@@ -324,8 +329,6 @@ void	Response::startCgi()
 	}
 	if (!cgiPid)
 	{
-		std::string	inBodyPath = request.getBodyFilePath();
-
 		addHttpPrefixToHeaders(headersToAdd, allHeaders);
 		addCgiHeaders(allHeaders);
 		mergeEnvStrs(allHeaders, strs);
@@ -334,6 +337,17 @@ void	Response::startCgi()
 			std::exit(1);
 		if (dup2(outPipeFd[1], STDOUT_FILENO) < 0 || dup2(inPipeFd[0], STDIN_FILENO) < 0)
 			std::exit(1);
+		if (!request.isChunkMode())
+		{
+			int	fd;
+
+			fd = open(bodyFilePath.c_str(), O_RDONLY, 0700);
+			if (close(inPipeFd[0]) < 0
+				|| fd < 0
+				|| dup2(fd, STDIN_FILENO) < 0
+				|| close(fd) < 0)
+				std::exit(1);
+		}
 		// if (bodyPath.empty())
 		// {
 		// 	bodyPath = toString(pipeFd[0]);
@@ -360,6 +374,12 @@ void	Response::startCgi()
 	else
 	{
 		if (close(outPipeFd[1]) < 0 || close(inPipeFd[0]) < 0)
+		{
+			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+			cgiStage = FINISH_WAITING;
+			return ;
+		}
+		if (!request.isChunkMode() && close(inPipeFd[1]) < 0)
 		{
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			cgiStage = FINISH_WAITING;
@@ -399,8 +419,6 @@ void	Response::processCgi(int op)
 			std::min((size_t)PIPE_BUF * 16, request.getBody().size() - byteWritten))) >= 0)
 		{
 			byteWritten += ioSize;
-			// std::cout<<"body size:"<<request.getBody().size()<<std::endl;
-			// std::cout<<"byte written:"<<byteWritten<<std::endl;
 		}
 		if (ioSize < 0
 			|| (waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG)) < 0)
@@ -640,7 +658,8 @@ void	Response::addCgiHeaders(std::map<std::string, std::string> &headersRes)
 	headersRes.insert(std::make_pair("SERVER_PROTOCOL", request.getHttpVer()));
 	headersRes.insert(std::make_pair("REQUEST_METHOD", request.getMethod()));
 	headersRes.insert(std::make_pair("REDIRECT_STATUS", "200"));
-	headersRes.insert(std::make_pair("CONTENT_LENGTH", toString(fileSize(request.getBodyFilePath()))));
+	if (!request.isChunkMode())
+		headersRes.insert(std::make_pair("CONTENT_LENGTH", toString(request.getBodyLength())));
 	if (request.getHeaders().count(CONTENT_TYPE) > 0)
 		headersRes.insert(std::make_pair("CONTENT_TYPE", request.getHeaders().at(CONTENT_TYPE)));
 	else

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 12:46:56 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/08 18:33:23 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,26 +102,20 @@ void	Server::run()
 					clientsConnection.at(evt.data.fd).sendData(&evt);
 				if (cgiPipeFd.count(evt.data.fd) > 0)
 				{
-					if (cgiPipeFd[evt.data.fd]->getResponses().front().getByteWritten() >=
-						cgiPipeFd[evt.data.fd]->getRequests().front().getBody().size())
-						{
-							std::cout << "all data written to pipe for fd: " << evt.data.fd << std::endl;
-							epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
-						}
-					else
+					if (cgiPipeFd[evt.data.fd]->getResponses().front().needCloseCgiInFd())
 					{
-						// std::cout<<"write to pipe"<<std::endl;
-						cgiPipeFd[evt.data.fd]->processResponseCgi(WRITE_PIPE);
-						// std::cout<<"pipe byte written:"<<cgiPipeFd[evt.data.fd]->getResponses().front().getByteWritten() <<std::endl;
-						// std::cout<<"write to pipe fin"<<std::endl;
+						std::cout << "close cgi in pipe fd:"<<cgiPipeFd[evt.data.fd]->getResponses().front().getCgiInFd()<<std::endl;
+						epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
 					}
+					else
+						cgiPipeFd[evt.data.fd]->processResponseCgi(WRITE_PIPE);
 				}
 				if (clientsConnection.count(evt.data.fd) > 0
 					&& !clientsConnection.at(evt.data.fd).getResponses().empty()
 					&& clientsConnection.at(evt.data.fd).getResponses().front().isAddFdStage()
 					&& clientsConnection.at(evt.data.fd).getResponses().front().statusOK())
 					{
-						std::cout<<"add pipe to epoll"<<std::endl;
+						std::cout<<"add pipe to epoll:" << evt.data.fd<<std::endl;
 						epollOperation(evt.data.fd, EPOLL_CTL_ADD, false);
 						std::cout<<"add pipe to epoll fin"<<std::endl;
 					}
@@ -130,7 +124,7 @@ void	Server::run()
 				epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
 			else if (evt.events & EPOLLERR)
 			{
-				std::cout << "error" << std::endl;
+				std::cout << "error fd:" << evt.data.fd << std::endl;
 			}
 		}
 	}
@@ -163,6 +157,7 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 		else
 		{
 			newEvt.data.fd = clientsConnection.at(fd).getResponses().front().getCgiOutFd();
+			std::cout<<"cgi out fd:"<<newEvt.data.fd<<std::endl;
 			newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 			cgiPipeFd.insert(std::make_pair(newEvt.data.fd, &clientsConnection.at(fd)));
 			if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)
@@ -170,13 +165,17 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 				std::cout << "error add new connection/pipe to epoll" << std::endl;
 				return false;
 			}
-			newEvt.data.fd = clientsConnection.at(fd).getResponses().front().getCgiInFd();
-			newEvt.events = EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
-			cgiPipeFd.insert(std::make_pair(newEvt.data.fd, &clientsConnection.at(fd)));
-			if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)
+			if (clientsConnection.at(fd).getRequests().front().isChunkMode())
 			{
-				std::cout << "error add new connection/pipe to epoll" << std::endl;
-				return false;
+				newEvt.data.fd = clientsConnection.at(fd).getResponses().front().getCgiInFd();
+				std::cout<<"cgi int fd:"<<newEvt.data.fd<<std::endl;
+				newEvt.events = EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
+				cgiPipeFd.insert(std::make_pair(newEvt.data.fd, &clientsConnection.at(fd)));
+				if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)
+				{
+					std::cout << "error add new connection/pipe to epoll" << std::endl;
+					return false;
+				}
 			}
 		}
 		// if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)

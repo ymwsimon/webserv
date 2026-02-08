@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 12:09:08 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/08 17:13:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@ class Response
 		CGI_EXE,
 		FILE,
 		LIST_FOLDER,
+		REDIRECT,
 		DELETE_RESOURCE,
 		ERR_PAGE,
 	};
@@ -88,6 +89,7 @@ class Response
 		bool				isAddFdStage() const;
 		bool				isWaitingStage() const;
 		bool				isFinishWaitingStage() const;
+		bool				needCloseCgiInFd() const;
 		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
 		const Location		*getMatchLocation() const;

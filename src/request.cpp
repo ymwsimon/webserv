@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/04 12:49:45 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/08 18:32:03 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -151,7 +151,7 @@ bool	Request::isHeadMethod() const
 	return method == "HEAD";
 }
 
-bool	Request::switchToChunkMode() const
+bool	Request::isChunkMode() const
 {
 	return headers.count(TRANSFER_ENDCODING) > 0
 		&& headers.at(TRANSFER_ENDCODING) == CHUNKED;
@@ -171,8 +171,7 @@ bool	Request::readyparseChunkData() const
 
 bool	Request::readyparseBody() const
 {
-	return requestStatus == BODY &&
-		incomingData.size() >= bodyLength;
+	return requestStatus == BODY;
 }
 
 void	Request::parseRequestHeader()
@@ -224,32 +223,41 @@ void	Request::parseRequestHeader()
 
 void	Request::parseBody()
 {
-	Bytes::const_iterator	copyUpTo;
-	Bytes					data;
-	int						fd;
+	Bytes::iterator	copyUpTo;
 
+	std::cout<<"parse body"<<std::endl;
 	if (isPostMethod() || isPutMethod())
 	{
-		fd = open(bodyFilePath.c_str(), O_WRONLY | O_APPEND, 0700);
-		if (fd < 0)
-			setStatusCode(INTERNAL_ERROR);
-		else
+		std::cout <<"incoming size:"<<incomingData.size()<<std::endl;
+		std::cout <<"body length:"<<bodyLength<<std::endl;
+		copyUpTo = incomingData.end();
+		if (incomingData.size() + body.size() > bodyLength)
+			copyUpTo = incomingData.begin() + (bodyLength - body.size());
+		if (!isChunkMode())
 		{
-			if (std::distance(newDataStart, newDataEnd) + body.size() < bodyLength)
-				copyUpTo = newDataEnd;
+			Bytes	data;
+			int		fd;
+
+			fd = open(bodyFilePath.c_str(), O_WRONLY | O_APPEND, 0777);
+			if (fd < 0)
+				setStatusCode(INTERNAL_ERROR);
 			else
-				copyUpTo = newDataStart + (bodyLength - body.size());
-			data = Bytes(newDataStart, copyUpTo);
-			if (write(fd, data.data(), data.size()) < 0)
-				setStatusCode(INTERNAL_ERROR);
-			body.insert(body.end(), newDataStart, copyUpTo);
-			if (close(fd) < 0)
-				setStatusCode(INTERNAL_ERROR);
+			{
+				data = Bytes(incomingData.begin(), copyUpTo);
+				if (write(fd, data.data(), data.size()) < 0)
+					setStatusCode(INTERNAL_ERROR);
+				if (close(fd) < 0)
+					setStatusCode(INTERNAL_ERROR);
+			}
 		}
 		newDataStart = copyUpTo;
 	}
-	if (body.size() >= bodyLength || !(isPostMethod() || isPutMethod()))
+	if ((fileSize(bodyFilePath) >= (long long int)bodyLength)
+		|| !(isPostMethod() || isPutMethod()))
+	{
 		requestStatus = COMPLETE;
+		std::cout<<"parse req fin"<<std::endl;
+	}
 }
 
 void	Request::parseChunkLength()
@@ -336,21 +344,32 @@ void	Request::parseRequest()
 	{
 		if (it == newDataStart && (newDataStart != newDataEnd) && requestStatus == HEADERS)
 		{
-			// int	fd;
-
-			requestStatus = BODY;
-			std::srand(std::time(NULL));
-			// bodyFilePath = "tmp/" + toString(std::rand());
-			// while (fileExist(bodyFilePath))
-			// 	bodyFilePath = "tmp/" + toString(std::rand());
-			// fd = open(bodyFilePath.c_str(), O_CREAT | O_TRUNC, 0700);
-			// if (fd < 0 || close(fd) < 0)
-			// 	setStatusCode(INTERNAL_ERROR);
-			if (switchToChunkMode())
+			if (isChunkMode())
 			{
 				std::cout << "change to chunk mode start" << std::endl;
 				requestStatus = CHUNK_LENGTH;
+				if (headers.count(CONTENT_LENGTH) > 0)
+					headers.erase(CONTENT_LENGTH);
 				std::cout << "change to chunk mode fin" << std::endl;
+			}
+			else
+			{
+				int	fd;
+
+				requestStatus = BODY;
+				std::srand(std::time(NULL));
+				if (!fileExist("tmp"))
+				{
+					requestStatus = COMPLETE;
+					setStatusCode(INTERNAL_ERROR);
+					return ;
+				}
+				bodyFilePath = "tmp/" + toString(std::rand());
+				while (fileExist(bodyFilePath))
+					bodyFilePath = "tmp/" + toString(std::rand());
+				fd = open(bodyFilePath.c_str(), O_CREAT | O_TRUNC, 0777);
+				if (fd < 0 || close(fd) < 0)
+					setStatusCode(INTERNAL_ERROR);
 			}
 			newDataStart = it + CRLF.size();
 		}
@@ -379,8 +398,6 @@ void	Request::parseRequest()
 		else if (requestStatus == CHUNK_DATA)
 			parseChunkData();
 	}
-	if (!bodyFilePath.empty())
-		bodyLength = fileSize(bodyFilePath);
 	if (requestStatus == COMPLETE && std::find(validHttpVersion.begin(), validHttpVersion.end(), httpVer) == validHttpVersion.end())
 		setStatusCode(BAD_REQUEST);
 }
