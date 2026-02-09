@@ -21,6 +21,8 @@ OBJ_DIR = obj
 
 INC_DIR = include
 
+TMP_DIR = tmp
+
 FLAGS = -Wall -Werror -Wextra -g -std=c++98 -O3
 
 CC = c++
@@ -28,6 +30,7 @@ CC = c++
 all : $(NAME)
 
 $(NAME) : $(OBJS)
+	@mkdir -p $(TMP_DIR)
 	$(CC) $(FLAGS) $(OBJS) -o $(NAME)
 
 $(OBJ_DIR)/%.o : $(SRCS_DIR)/%.cpp
