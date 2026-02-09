@@ -13,21 +13,26 @@ $dir = "./upload/";
 // echo "\n";
 if (!file_exists($dir))
   mkdir($dir, 0700);
-echo sizeof($_FILES);
+// echo sizeof($_FILES);
+$n_files = 0;
 foreach ($_FILES as $f)
 {
   // echo $f["tmp_name"];
   if (!empty($f["tmp_name"]) && file_exists($dir) && is_writeable($dir))
-    move_uploaded_file($f["tmp_name"], $dir . $f["name"]);
-  echo "\n";
-}
-if (!empty($_FILES["fileToUpload"]["tmp_name"]) && file_exists($dir) && is_writeable($dir))
   {
-    // move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $dir . $_FILES["fileToUpload"]["name"]);
-    echo "file uploaded\n";
+    move_uploaded_file($f["tmp_name"], $dir . $f["name"]);
+    $n_files++;
   }
-else
-  echo "file size too large or upload folder is not writeable\n";
+}
+echo $n_files;
+echo " file(s) uploaded\n";
+// if (!empty($_FILES["fileToUpload"]["tmp_name"]) && file_exists($dir) && is_writeable($dir))
+//   {
+//     // move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $dir . $_FILES["fileToUpload"]["name"]);
+//     echo "file uploaded\n";
+//   }
+// else
+//   echo "file size too large or upload folder is not writeable\n";
 // if(isset($_POST["submit"])) {
 //   $check = getimagesize($_FILES["fileToUpload"]["tmp_name"]);
 //   if($check !== false) {
