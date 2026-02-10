@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/06 17:49:12 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/09 10:44:41 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,9 +45,14 @@ const std::string	defaultExeBin = "/usr/bin/bash";
 
 Bytes::const_iterator	searchPattern(Bytes::const_iterator dataStart,
 	Bytes::const_iterator dataEnd, Bytes::const_iterator patternStart, Bytes::const_iterator patternEnd);
+Bytes::iterator	searchPattern(Bytes::iterator dataStart,
+	Bytes::iterator dataEnd, Bytes::iterator patternStart, Bytes::iterator patternEnd);
 Bytes::const_iterator	searchPattern(Bytes::const_iterator dataStart,
 	Bytes::const_iterator dataEnd, const Bytes &pattern);
+Bytes::iterator			searchPattern(Bytes::iterator dataStart,
+	Bytes::iterator dataEnd, Bytes &pattern);
 Bytes::const_iterator	searchPattern(const Bytes &data, const Bytes &pattern);
+Bytes::iterator			searchPattern(Bytes &data, Bytes &pattern);
 
 std::string::const_iterator	searchLastStr(const std::string &data, std::string pattern);
 std::string	extractFileExt(std::string fullPath);
@@ -75,6 +80,8 @@ std::string	stringToLowerCase(std::string str);
 char		transformHttpHeader(char c);
 int			toInt(std::string str);
 unsigned long	hexToUL(std::string str);
+std::string	ulToHex(unsigned long n);
+std::string	llToHex(long long n);
 long long	hexToLL(std::string str);
 Bytes		&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size);
 Bytes		&appendBuf(Bytes &bytes, Bytes &buf, size_t size);

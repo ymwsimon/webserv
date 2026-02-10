@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/06 18:22:37 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/10 20:49:19 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,37 +44,61 @@ int	Client::sendData(struct epoll_event *evt)
 {
 	Bytes	content;
 
-	if (!requests.empty() && requests.front().complete())
+	if (!requests.empty() && (requests.back().complete() || requests.back().isWaitingChunk()))
 	{
 		if (responses.empty())
 		{
 			responses.push_back(Response(service, requests.front()));
 			// std::cout<<"new response"<<std::endl;
-			// requests.front().printRequest();
+			requests.front().printRequest();
 		}
 		responses.front().processResponse();
-		if (!responses.empty() && !responses.front().getResultPage().empty()
-			&& (!responses.front().isCGI() || responses.front().isFinishWaitingStage()))
+		// if (!responses.empty() && !responses.front().getResultPage().empty())
+			// && (!responses.front().isCGI() || responses.front().isChunkMode()))
+		if (!responses.front().getResultPage().empty()
+			&& ((requests.front().complete() && !responses.front().isCGI())
+				|| (((requests.front().isWaitingChunk() || requests.front().complete())
+					&& responses.front().isCGI() && responses.front().statusOK()
+					&& (responses.front().gotEnoughChunkDataToSent() || responses.front().isFinishWaitingStage())))))
 		{
-			if (!requests.front().getBodyFilePath().empty()
-				&& fileExist(requests.front().getBodyFilePath()))
-				std::remove(requests.front().getBodyFilePath().c_str());
-			if (!responses.front().getBodyFilePath().empty()
-				&& fileExist(responses.front().getBodyFilePath()))
-				std::remove(responses.front().getBodyFilePath().c_str());
+			// std::cout<<"req size:"<<requests.size()<<" req f waiting chunk:" << requests.front().isWaitingChunk()<<  std::endl;
+			// std::cout<<"req status:"<<requests.front().getStatusCode()<<" req comp:"<<requests.front().complete() <<std::endl;
+			// std::cout<<"res is cgi:"<<responses.front().isCGI() <<" res got enough data:" << responses.front().gotEnoughChunkDataToSent()<< " res is finish waiting:"<<responses.front().isFinishWaitingStage()<<  std::endl;
+			if (responses.front().isFinishWaitingStage() || !responses.front().isCGI())
+			{
+				if (!requests.front().getBodyFilePath().empty()
+					&& fileExist(requests.front().getBodyFilePath()))
+					std::remove(requests.front().getBodyFilePath().c_str());
+				if (!responses.front().getBodyFilePath().empty()
+					&& fileExist(responses.front().getBodyFilePath()))
+					std::remove(responses.front().getBodyFilePath().c_str());
+			}
 			std::cout << responses.front().getStatusCode() << std::endl;;
 			std::cout << responses.front().getResultPage().size() << std::endl;
 			std::cout << "sending out data" << std::endl;
-			// std::cout << "content" << std::endl;
-			// for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
-			// 	std::cout << responses.front().getResultPage()[i];
-			// std::cout << std::endl;
+			std::cout << "content" << std::endl;
+			for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
+				std::cout << responses.front().getResultPage()[i];
+			std::cout << std::endl;
+			size_t	size = std::min((size_t)BUFFER_SIZE, responses.front().getResultPage().size());
 			if (send(evt->data.fd, responses.front().getResultPage().data(),
-				responses.front().getResultPage().size(), 0) < 0)
+				size, 0) < 0)
 				std::cout << "error send data out" << std::endl;
-			requests.pop_front();
-			responses.front().clearResultPage();
-			responses.pop_front();
+			if (responses.front().statusOK() && responses.front().isCGI()
+				&& responses.front().isChunkMode() && !responses.front().isFinishWaitingStage())
+			{
+				responses.front().removeNCharFromResultPage(size);
+			}
+			else if (requests.front().complete()
+				&& (!responses.front().isChunkMode()
+					|| !responses.front().isCGI()
+					|| responses.front().isFinishWaitingStage()))
+			{
+				std::cout<<"removing req response"<<std::endl;
+				requests.pop_front();
+				// responses.front().clearResultPage();
+				responses.pop_front();
+			}
 			// if (statusCode == BAD_REQUEST)
 				// return 0;
 		}
@@ -97,6 +121,7 @@ int Client::recvData(struct epoll_event *evt)
 		(void)fd;
 		// fd = open("indata", O_WRONLY | O_CREAT | O_APPEND, 0755);
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
+		responses.front().updateCgiActiveTime();
 		// if (readSize < BUFFER_SIZE)
 		// 	break ;
 		// write(fd, buf, readSize);
@@ -138,8 +163,9 @@ void	Client::processData()
 			requests.back().setIncomingData(incomingData);
 		}
 		requests.back().parseRequest();
-		Bytes::iterator	it(incomingData.begin() + std::distance(static_cast<Bytes::const_iterator>(incomingData.begin()), requests.back().getDataStart()));
-		incomingData.erase(incomingData.begin(), it);
+		size_t	size = std::distance(static_cast<Bytes::const_iterator>(incomingData.begin()),
+			requests.back().getDataStart());
+		incomingData.erase(incomingData.begin(), incomingData.begin() + size);
 	}
 }
 

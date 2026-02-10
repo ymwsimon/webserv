@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/06 17:49:02 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/09 10:44:31 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,13 +18,30 @@ Bytes::const_iterator	searchPattern(Bytes::const_iterator dataStart,
 	return std::search(dataStart, dataEnd, patternStart, patternEnd);
 }
 
+Bytes::iterator	searchPattern(Bytes::iterator dataStart,
+	Bytes::iterator dataEnd, Bytes::iterator patternStart, Bytes::iterator patternEnd)
+{
+	return std::search(dataStart, dataEnd, patternStart, patternEnd);
+}
+
 Bytes::const_iterator	searchPattern(Bytes::const_iterator dataStart,
 	Bytes::const_iterator dataEnd, const Bytes &pattern)
 {
 	return std::search(dataStart, dataEnd, pattern.begin(), pattern.end());
 }
 
+Bytes::iterator	searchPattern(Bytes::iterator dataStart,
+	Bytes::iterator dataEnd, Bytes &pattern)
+{
+	return std::search(dataStart, dataEnd, pattern.begin(), pattern.end());
+}
+
 Bytes::const_iterator	searchPattern(const Bytes &data, const Bytes &pattern)
+{
+	return std::search(data.begin(), data.end(), pattern.begin(), pattern.end());
+}
+
+Bytes::iterator	searchPattern(Bytes &data, Bytes &pattern)
 {
 	return std::search(data.begin(), data.end(), pattern.begin(), pattern.end());
 }
@@ -223,6 +240,14 @@ unsigned long	hexToUL(std::string str)
 	return res;
 }
 
+std::string	ulToHex(unsigned long n)
+{
+	std::stringstream	ss;
+
+	ss << std::hex << n;
+	return ss.str();
+}
+
 long long	hexToLL(std::string str)
 {
 	std::stringstream	ss;
@@ -240,6 +265,14 @@ long long	hexToLL(std::string str)
 		return -1;
 	}
 	return res;
+}
+
+std::string	llToHex(long long n)
+{
+	std::stringstream	ss;
+
+	ss << std::hex << n;
+	return ss.str();
 }
 
 Bytes	&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size)

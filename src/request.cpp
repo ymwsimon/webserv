@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/08 18:32:03 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/10 18:34:08 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ Request::Request(Bytes::const_iterator start, Bytes::const_iterator end, Bytes &
 	bodyLength = 0;
 	expectedChunkSize = -1;
 	bodyFd = -1;
+	updated = true;
 }
 
 Request::Request(const Request &right) : incomingData(right.incomingData)
@@ -56,6 +57,7 @@ Request	&Request::operator=(const Request &right)
 		bodyFilePath = right.bodyFilePath;
 		expectedChunkSize = right.expectedChunkSize;
 		bodyFd = right.bodyFd;
+		updated = right.updated;
 	}
 	return *this;
 }
@@ -157,6 +159,11 @@ bool	Request::isChunkMode() const
 		&& headers.at(TRANSFER_ENDCODING) == CHUNKED;
 }
 
+bool	Request::isUpdated() const
+{
+	return updated;
+}
+
 bool	Request::readyparseChunkLength() const
 {
 	return requestStatus == CHUNK_LENGTH
@@ -238,6 +245,7 @@ void	Request::parseBody()
 			Bytes	data;
 			int		fd;
 
+			std::cout<<"not chunk req parse body"<<std::endl;
 			fd = open(bodyFilePath.c_str(), O_WRONLY | O_APPEND, 0777);
 			if (fd < 0)
 				setStatusCode(INTERNAL_ERROR);
@@ -266,7 +274,7 @@ void	Request::parseChunkLength()
 
 	if (it == incomingData.begin())
 		return ;
-	expectedChunkSize = hexToLL(std::string(newDataStart, it));
+	expectedChunkSize = hexToLL(std::string(static_cast<Bytes::const_iterator>(incomingData.begin()), it));
 	if (expectedChunkSize == -1)
 	{
 		std::cout<<"chunk size error"<<std::endl;
@@ -288,6 +296,7 @@ void	Request::parseChunkData()
 			incomingData.begin() + expectedChunkSize + CRLF.size(), CRLF)
 				== incomingData.begin() + expectedChunkSize + CRLF.size())
 		{
+			std::cout<<"need new line"<<std::endl;
 			statusCode = BAD_REQUEST;
 			requestStatus = COMPLETE;
 		}
@@ -300,10 +309,13 @@ void	Request::parseChunkData()
 			// 	statusCode = INTERNAL_ERROR;
 			// else
 			// {
+				bodyLength += expectedChunkSize;
+				newDataStart = incomingData.begin() + expectedChunkSize + CRLF.size();
 				if (!expectedChunkSize)
 				{
 					std::cout <<"time to stop"<<std::endl;
 					requestStatus = COMPLETE;
+					// newDataStart = incomingData.begin() + CRLF.size();
 					// if (!body.empty() && write(bodyFd, body.data(), body.size()) < 0)
 					// 	statusCode = INTERNAL_ERROR;
 					// if (close(bodyFd) < 0)
@@ -322,9 +334,9 @@ void	Request::parseChunkData()
 					// 	}
 					// 	body.clear();
 					// }
-					if (requestStatus == CHUNK_DATA)
-						requestStatus = CHUNK_LENGTH;
-					newDataStart = incomingData.begin() + expectedChunkSize + CRLF.size();
+					// if (requestStatus == CHUNK_DATA)
+					requestStatus = CHUNK_LENGTH;
+					// newDataStart = incomingData.begin() + expectedChunkSize + CRLF.size();
 					expectedChunkSize = -1;
 				}
 			// }
@@ -337,12 +349,13 @@ void	Request::parseRequest()
 	Bytes::const_iterator	it;
 
 	if (!complete() &&
-		((requestStatus < BODY && (it = searchPattern(newDataStart, newDataEnd, CRLF)) != newDataEnd)
+		((requestStatus < BODY && (it = searchPattern(incomingData.begin(), incomingData.end(), CRLF)) != incomingData.end())
 			|| readyparseBody()
 			|| readyparseChunkLength()
 			|| readyparseChunkData()))
 	{
-		if (it == newDataStart && (newDataStart != newDataEnd) && requestStatus == HEADERS)
+		updated = true;
+		if (it == incomingData.begin() && incomingData.size() > 0 && requestStatus == HEADERS)
 		{
 			if (isChunkMode())
 			{
@@ -352,21 +365,23 @@ void	Request::parseRequest()
 					headers.erase(CONTENT_LENGTH);
 				std::cout << "change to chunk mode fin" << std::endl;
 			}
-			else
+			else if (bodyFilePath.empty())
 			{
 				int	fd;
 
 				requestStatus = BODY;
 				std::srand(std::time(NULL));
-				if (!fileExist("tmp"))
+				if (!fileExist("tmp/"))
 				{
 					requestStatus = COMPLETE;
+					std::cout<<"tmp not exist"<<std::endl;
 					setStatusCode(INTERNAL_ERROR);
 					return ;
 				}
 				bodyFilePath = "tmp/" + toString(std::rand());
 				while (fileExist(bodyFilePath))
 					bodyFilePath = "tmp/" + toString(std::rand());
+				(void)fd;
 				fd = open(bodyFilePath.c_str(), O_CREAT | O_TRUNC, 0777);
 				if (fd < 0 || close(fd) < 0)
 					setStatusCode(INTERNAL_ERROR);
@@ -419,7 +434,7 @@ bool	Request::isMethod(std::string query) const
 
 bool	Request::isWaitingChunk() const
 {
-	return requestStatus == CHUNK_LENGTH;
+	return requestStatus == CHUNK_LENGTH || requestStatus == CHUNK_DATA;
 }
 
 void	Request::printRequest() const
@@ -456,6 +471,11 @@ void	Request::setIncomingData(Bytes &inData)
 void	Request::setStatusCode(int code)
 {
 	statusCode = code;
+}
+
+void	Request::setUpdated(bool b)
+{
+	updated = b;
 }
 
 const std::string	&Request::getMethod() const
@@ -511,4 +531,22 @@ Bytes::const_iterator	Request::getDataStart() const
 Bytes::const_iterator	Request::getDataEnd() const
 {
 	return newDataEnd;
+}
+
+void	Request::clearBody()
+{
+	body.clear();
+}
+
+void	Request::removeNCharFromBody(size_t n)
+{
+	if (n <= body.size())
+		body.erase(body.begin(), body.begin() + n);
+	else
+		body.clear();
+}
+
+void	Request::setToComplete()
+{
+	requestStatus = COMPLETE;
 }

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/07 18:41:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/10 13:53:31 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ class Request
 		std::string							bodyFilePath;
 		long long							expectedChunkSize;
 		int									bodyFd;
+		bool								updated;
 		Request();
 		std::string							parseReqLineSegment(const Bytes &delimiter);
 		void								parseRequestLine();
@@ -87,6 +88,7 @@ class Request
 		bool										isHeadMethod() const;
 		bool										isWaitingChunk() const;
 		bool										isChunkMode() const;
+		bool										isUpdated() const;
 		void										printRequest() const;
 		const std::string							&getMethod() const;
 		const std::string							&getRoute() const;
@@ -104,4 +106,8 @@ class Request
 		void										setDataEnd(Bytes::const_iterator e);
 		void										setIncomingData(Bytes &inData);
 		void										setStatusCode(int code);
+		void										setUpdated(bool b);
+		void										clearBody();
+		void										removeNCharFromBody(size_t n);
+		void										setToComplete();
 };

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/08 17:13:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/10 15:36:22 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,8 @@ enum e_cgiStage
 {
 	INIT,
 	ADD_FD_POLL,
-	WAITING_CGI,
+	WAITING_HEADER,
+	WAITING_CGI_BODY,
 	FINISH_WAITING,
 };
 
@@ -90,6 +91,8 @@ class Response
 		bool				isWaitingStage() const;
 		bool				isFinishWaitingStage() const;
 		bool				needCloseCgiInFd() const;
+		bool				isChunkMode() const;
+		bool				gotEnoughChunkDataToSent() const;
 		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
 		const Location		*getMatchLocation() const;
@@ -104,7 +107,10 @@ class Response
 		std::string			getBodyFilePath() const;
 		size_t				getByteWritten() const;
 		bool				convertCGIResToResponse();
-		void				extractHeader(const Bytes &cgiRes, Bytes::const_iterator &crlfPos);
+		void				appendHeaderToResultPage(Bytes::const_iterator	crlfPos);
+		void				extracCgitHeader();
+		void				extractHeader(Bytes::const_iterator &crlfPos);
+		void				appendBodyForChunkMode();
 		void				startCgi();
 		void				processCgi(int op);
 		void				prepareArgEnv(std::string exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);
@@ -120,4 +126,8 @@ class Response
 		void				addHttpPrefixToHeaders(std::map<std::string, std::string> headersToAdd,
 			std::map<std::string, std::string> &headersRes);
 		void				addCgiHeaders(std::map<std::string, std::string> &headersRes);
+		void				endChunkTransfer();
+		void				removeNCharFromResultPage(size_t n);
+		void				updateCgiActiveTime();
+		void				removeCgiResUpTo(Bytes::const_iterator it);
 };
