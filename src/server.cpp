@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 14:56:25 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 19:19:32 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ Server::Server()
 	configs.push_back(config);
 	services.insert(std::make_pair(s.getSocketFd(), s));
 	std::cout << "socket fd for service " << s.getSocketFd() << std::endl;
-	epollFd = epoll_create(100);
+	epollFd = epoll_create(200);
 	if (epollFd < 0)
 		std::cout << "error create epoll" << std::endl;
 	std::cout << "epoll fd " << epollFd << std::endl;
@@ -152,6 +152,7 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 				std::cout << "error accept new connection" << std::endl;
 				return false;
 			}
+			setToNonBlock(newEvt.data.fd);
 			newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 			clientsConnection.insert(std::make_pair(newEvt.data.fd, Client(&services.at(fd))));
 			if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)

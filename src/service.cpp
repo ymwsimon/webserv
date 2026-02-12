@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:55:57 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 19:08:32 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ Service::Service(Config config)
 		std::cout << "error set socket op" << std::endl;
 	if (bind(socketFd, addrInfo->ai_addr, addrInfo->ai_addrlen) < 0)
 		std::cout << "error bind socket" << std::endl;
-	if (listen(socketFd, 100) < 0)
+	if (listen(socketFd, 300) < 0)
 		std::cout << "error listen socket" << std::endl;
 }
 

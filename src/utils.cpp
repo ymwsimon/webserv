@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/11 16:44:10 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 19:12:46 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -340,4 +340,10 @@ std::string bytesToString(Bytes::const_iterator start, Bytes::const_iterator end
 void	logMessage(std::ostream &s, std::string msg)
 {
 	s << msg << std::endl;
+}
+
+void		setToNonBlock(int fd)
+{
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+		std::cout<<"error when set to non blocking"<<std::endl;
 }

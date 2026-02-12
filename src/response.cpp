@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 16:03:12 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 19:20:43 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -373,6 +373,8 @@ void	Response::startCgi()
 		cgiStage = FINISH_WAITING;
 		return ;
 	}
+	setToNonBlock(outPipeFd[0]);
+	setToNonBlock(outPipeFd[1]);
 	cgiOutFd = outPipeFd[0];
 	if (pipe(inPipeFd) < 0)
 	{
@@ -383,6 +385,8 @@ void	Response::startCgi()
 		cgiStage = FINISH_WAITING;
 		return ;
 	}
+	setToNonBlock(inPipeFd[0]);
+	setToNonBlock(inPipeFd[1]);
 	cgiInFd = inPipeFd[1];
 	cgiPid = fork();
 	if (cgiPid < 0)

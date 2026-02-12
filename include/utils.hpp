@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 10:06:32 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 19:11:50 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "html.hpp"
 #include "http.hpp"
 #define BUFFER_SIZE 65536
@@ -94,3 +95,4 @@ Bytes		stringToBytes(std::string &str);
 std::string bytesToString(const Bytes &data);
 std::string bytesToString(Bytes::const_iterator start, Bytes::const_iterator end);
 void		logMessage(std::ostream &s, std::string msg);
+void		setToNonBlock(int fd);
