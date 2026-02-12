@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:35:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 22:54:08 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/11 16:42:58 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ class Client
 		std::deque<Request>		requests;
 		std::deque<Response>	responses;
 		Service					*service;
+		Byte					buf[BUFFER_SIZE];
 		Client();
 		void					processData();
 		Bytes::const_iterator	&searchForNewLine(Bytes::const_iterator &it);

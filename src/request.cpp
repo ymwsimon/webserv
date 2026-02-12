@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/10 18:34:08 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 16:01:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ Request::Request(Bytes::const_iterator start, Bytes::const_iterator end, Bytes &
 	expectedChunkSize = -1;
 	bodyFd = -1;
 	updated = true;
+	chunkMode = false;
 }
 
 Request::Request(const Request &right) : incomingData(right.incomingData)
@@ -58,6 +59,7 @@ Request	&Request::operator=(const Request &right)
 		expectedChunkSize = right.expectedChunkSize;
 		bodyFd = right.bodyFd;
 		updated = right.updated;
+		chunkMode = right.chunkMode;
 	}
 	return *this;
 }
@@ -155,8 +157,7 @@ bool	Request::isHeadMethod() const
 
 bool	Request::isChunkMode() const
 {
-	return headers.count(TRANSFER_ENDCODING) > 0
-		&& headers.at(TRANSFER_ENDCODING) == CHUNKED;
+	return switchToChunkMode();
 }
 
 bool	Request::isUpdated() const
@@ -179,6 +180,12 @@ bool	Request::readyparseChunkData() const
 bool	Request::readyparseBody() const
 {
 	return requestStatus == BODY;
+}
+
+bool	Request::switchToChunkMode() const
+{
+	return headers.count(TRANSFER_ENDCODING) > 0
+		&& headers.at(TRANSFER_ENDCODING) == CHUNKED;
 }
 
 void	Request::parseRequestHeader()
@@ -357,8 +364,9 @@ void	Request::parseRequest()
 		updated = true;
 		if (it == incomingData.begin() && incomingData.size() > 0 && requestStatus == HEADERS)
 		{
-			if (isChunkMode())
+			if (switchToChunkMode())
 			{
+				chunkMode = true;
 				std::cout << "change to chunk mode start" << std::endl;
 				requestStatus = CHUNK_LENGTH;
 				if (headers.count(CONTENT_LENGTH) > 0)

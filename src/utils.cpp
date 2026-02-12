@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/09 10:44:31 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/11 16:44:10 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -277,9 +277,9 @@ std::string	llToHex(long long n)
 
 Bytes	&appendBuf(Bytes &bytes, const unsigned char *buf, size_t size)
 {
-	bytes.reserve(bytes.size() + size);
-	for (size_t i = 0; i < size; ++i)
-		bytes.push_back(buf[i]);
+	Bytes::const_iterator	it(buf);
+
+	bytes.insert(bytes.end(), it, it + size);
 	return bytes;
 }
 

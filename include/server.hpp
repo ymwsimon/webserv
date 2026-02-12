@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 17:31:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/24 23:54:51 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/11 16:14:33 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <signal.h>
 
 class Server
 {

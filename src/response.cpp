@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/10 20:24:37 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 16:03:12 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,9 @@ Response::Response(Service *ser, Request &req) : service(ser), request(req), sta
 	if (!statusOK())
 		resultType = ERR_PAGE;
 	byteWritten = 0;
+	byteExtracted = 0;
+	byteConverted = 0;
+	eraseLimit = 0;
 	bodyFilePath = req.getBodyFilePath();
 	cgiPid = 0;
 }
@@ -45,6 +48,8 @@ Response	&Response::operator=(const Response &right)
 		cgiOutFd = right.cgiOutFd;
 		cgiInFd = right.cgiInFd;
 		byteWritten = right.byteWritten;
+		byteExtracted = right.byteExtracted;
+		byteConverted = right.byteConverted;
 		cgiStage = right.cgiStage;
 		resultPage = right.resultPage;
 		cgiRes = right.cgiRes;
@@ -110,7 +115,7 @@ bool	Response::isChunkMode() const
 
 bool	Response::gotEnoughChunkDataToSent() const
 {
-	return resultPage.size() >= BUFFER_SIZE / 10;
+	return resultPage.size() >= TRANSFER_SIZE;
 }
 
 int	Response::getStatusCode() const
@@ -168,13 +173,13 @@ void	Response::printResponse() const
 
 void	Response::getFileResponse()
 {
-	Bytes				buf(BUFFER_SIZE);
+	// Bytes				buf(BUFFER_SIZE);
 	std::string			head;
 	int					fd;
 	int					readSize;
 
 	fd = open(resourcePath.c_str(), O_RDONLY, 0700);
-	while (fd >= 0 && (readSize = read(fd, buf.data(), BUFFER_SIZE)) > 0)
+	while (fd >= 0 && (readSize = read(fd, buf, BUFFER_SIZE)) > 0)
 		appendBuf(resultPage, buf, readSize);
 	if (fd < 0
 		|| close(fd) < 0
@@ -252,30 +257,22 @@ bool	Response::convertCGIResToResponse()
 
 void	Response::appendHeaderToResultPage(Bytes::const_iterator crlfPos)
 {
-	int	size;
+	size_t	size;
 
 	appendBytes(resultPage, genHttpResponseLine(200));
 	if (isChunkMode())
 		headers.insert(std::make_pair(TRANSFER_ENDCODING, CHUNKED));
-	for (std::map<std::string, std::string>::iterator headerIt = headers.begin();
-		headerIt != headers.end(); ++headerIt)
-		appendBytes(resultPage, genHttpHeader(headerIt->first, headerIt->second));
-	if (!isChunkMode())
+	else
 	{
 		size = cgiRes.size() - std::distance(static_cast<Bytes::const_iterator>(cgiRes.begin()),
 			crlfPos + CRLF.size());
-		appendBytes(resultPage, genHttpHeader(CONTENT_LENGTH, toString(size)));
+		headers.insert(std::make_pair(CONTENT_LENGTH, toString(size)));
 	}
+	for (std::map<std::string, std::string>::iterator headerIt = headers.begin();
+		headerIt != headers.end(); ++headerIt)
+		appendBytes(resultPage, genHttpHeader(headerIt->first, headerIt->second));
 	appendBytes(resultPage, CRLFStr);
 }
-
-// void	Response::extracCgitHeader()
-// {
-// 	Bytes::const_iterator crlfPos;
-
-// 	while ((crlfPos = searchPattern(cgiRes.begin(), cgiRes.end(), CRLF)) != cgiRes.end())
-// 		;
-// }
 
 void	Response::extractHeader(Bytes::const_iterator &crlfPos)
 {
@@ -296,7 +293,7 @@ void	Response::extractHeader(Bytes::const_iterator &crlfPos)
 					removeCgiResUpTo(start + CRLF.size());
 					appendHeaderToResultPage(crlfPos);
 				}
-				if (cgiStage != FINISH_WAITING)
+				if (cgiStage == WAITING_HEADER)
 					cgiStage = WAITING_CGI_BODY;
 			}
 			else
@@ -333,15 +330,16 @@ void	Response::extractHeader(Bytes::const_iterator &crlfPos)
 
 void	Response::appendBodyForChunkMode()
 {
-	size_t	size = std::min((size_t)BUFFER_SIZE, cgiRes.size());
+	size_t		size = std::min((size_t)CHUNK_SIZE, cgiRes.size());
 	std::string	sizeStr = ulToHex(size);
 
-	// byteWritten += size;
+	std::cout<<"append size to body:"<<size<<std::endl;
 	resultPage.insert(resultPage.end(), sizeStr.begin(), sizeStr.end());
 	resultPage.insert(resultPage.end(), CRLF.begin(), CRLF.end());
 	resultPage.insert(resultPage.end(), cgiRes.begin(), cgiRes.begin() + size);
 	resultPage.insert(resultPage.end(), CRLF.begin(), CRLF.end());
 	cgiRes.erase(cgiRes.begin(), cgiRes.begin() + size);
+	byteConverted += size;
 }
 
 void	Response::startCgi()
@@ -461,6 +459,8 @@ void	Response::startCgi()
 		std::time(&cgiLastActiveTime);
 		// cgiResFd = pipeFd[0];
 		byteWritten = 0;
+		byteExtracted = 0;
+		byteConverted = 0;
 		cgiStage = ADD_FD_POLL;
 		// cgiStage = WAITING_CGI;
 	}
@@ -470,8 +470,8 @@ void	Response::processCgi(int op)
 {
 	int				status;
 	pid_t			waitRes = 0;
-	Bytes			buf(PIPE_BUFFER_SIZE);
-	long long		ioSize = 0;
+	// Bytes			buf(BUFFER_SIZE);
+	// long long		ioSize = 0;
 
 	// std::cerr<<"process cgi"<<std::endl;
 	if (cgiStage == INIT)
@@ -480,44 +480,43 @@ void	Response::processCgi(int op)
 	{
 		if (cgiStage == ADD_FD_POLL)
 			cgiStage = WAITING_HEADER;
-		if (op == EXTRACT_PIPE && (ioSize = read(cgiOutFd, buf.data(), PIPE_BUFFER_SIZE)) > 0)
-		{
-			// std::cout << "extracting data from cgi pipe" << std::endl;
-			appendBuf(cgiRes, buf, ioSize);
-			byteWritten += ioSize;
-			// std::cout << "read size: " << readSize << std::endl;
-			updateCgiActiveTime();
-			if (isChunkMode())
-			{
-				if (cgiStage == WAITING_HEADER)
-				{
-					// size_t					size;
-					Bytes::const_iterator	it;
+		// if (op == EXTRACT_PIPE && (ioSize = read(cgiOutFd, buf, BUFFER_SIZE)) > 0)
+		// {
+		// 	// std::cout << "extracting data from cgi pipe" << std::endl;
+		// 	appendBuf(cgiRes, buf, ioSize);
+		// 	byteWritten += ioSize;
+		// 	// std::cout << "read size: " << readSize << std::endl;
+		// 	updateCgiActiveTime();
+		// 	if (isChunkMode())
+		// 	{
+		// 		if (cgiStage == WAITING_HEADER)
+		// 		{
+		// 			// size_t					size;
+		// 			Bytes::const_iterator	it;
 
-					extractHeader(it);
-					// size = std::distance(static_cast<Bytes::const_iterator>(cgiRes.begin()), it);
-					// cgiRes.erase(cgiRes.begin(), cgiRes.begin() + size);
-				}
-				else
-					appendBodyForChunkMode();
-			}
-		}
-		if (op == WRITE_PIPE)
-		//  && byteWritten < request.getBody().size() &&
-		// 	(ioSize = write(cgiInFd, request.getBody().data() + byteWritten,
-		// 	std::min((size_t)PIPE_BUF * 16, request.getBody().size() - byteWritten))) >= 0)
-		{
-			size_t	size = std::min((size_t)PIPE_BUF * 16, request.getBody().size());
+		// 			extractHeader(it);
+		// 			// size = std::distance(static_cast<Bytes::const_iterator>(cgiRes.begin()), it);
+		// 			// cgiRes.erase(cgiRes.begin(), cgiRes.begin() + size);
+		// 		}
+		// 		else
+		// 			appendBodyForChunkMode();
+		// 	}
+		// }
+		// if (op == WRITE_PIPE)
+		// //  && byteWritten < request.getBody().size() &&
+		// // 	(ioSize = write(cgiInFd, request.getBody().data() + byteWritten,
+		// // 	std::min((size_t)PIPE_BUF * 16, request.getBody().size() - byteWritten))) >= 0)
+		// {
+		// 	size_t	size = std::min((size_t)BUFFER_SIZE, request.getBody().size());
 
-			ioSize = write(cgiInFd, request.getBody().data(), size);
-			// std::cerr<<"iosize:" << ioSize<<std::endl;
-			updateCgiActiveTime();
-			if (ioSize >= 0)
-				request.removeNCharFromBody(ioSize);
-			// byteWritten += ioSize;
-		}
-		if (ioSize < 0
-			|| (waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG)) < 0)
+		// 	ioSize = write(cgiInFd, request.getBody().data(), size);
+		// 	// std::cerr<<"iosize:" << ioSize<<std::endl;
+		// 	updateCgiActiveTime();
+		// 	if (ioSize >= 0)
+		// 		request.removeNCharFromBody(ioSize);
+		// 	// byteWritten += ioSize;
+		// }
+		if ((waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG)) < 0)
 			// || (WIFEXITED(status) && WEXITSTATUS(status) != 0))
 		{
 			// std::cerr<<"op:" << op<<std::endl;
@@ -541,9 +540,9 @@ void	Response::processCgi(int op)
 			// }
 			std::cout << "finish kill cgiPid: " << cgiPid << std::endl;
 		}
-		if (waitRes == cgiPid)
-			// || (!waitRes && difftime(std::time(NULL), cgiStartTime) > cgiWaitTime)
-			// || op == KILL_PROCESS)
+		if (waitRes == cgiPid
+			|| (!waitRes && difftime(std::time(NULL), cgiLastActiveTime) > cgiWaitTime)
+			|| op == KILL_PROCESS)
 		{
 			// std::cerr<<"?????"<<std::endl;
 			waitpid(cgiPid, &status, WUNTRACED | WNOHANG);
@@ -556,11 +555,22 @@ void	Response::processCgi(int op)
 			// printBytes(cgiRes);
 			// std::cout << std::endl;
 			cgiStage = FINISH_WAITING;
-			std::cout<<"total byte sent:"<<byteWritten<<std::endl;
+			if (op==KILL_PROCESS)
+				std::cout<<"kill_process op"<<std::endl;
+			std::cout<<"total byte extracted:"<<byteExtracted<<std::endl;
+			std::cout<<"total byte written:"<<byteWritten<<std::endl;
+			std::cout<<"total byte converted:"<<byteConverted<<std::endl;
 			if (isChunkMode())
 			{
 				std::cout <<"end chunk transfer"<<std::endl;
-				endChunkTransfer();
+				while (extractResultFromCgiPipe() > 0)
+					;
+				while (cgiRes.size() > 0)
+				{
+					std::cout<<"inside finish waiting"<<std::endl;
+					appendBodyForChunkMode();
+				}
+				// endChunkTransfer();
 			}
 		}
 	}
@@ -578,12 +588,70 @@ void	Response::processCgi(int op)
 	// std::cerr<<"process cgi fin"<<std::endl;
 }
 
-void	Response::prepareArgEnv(std::string exe, std::vector<std::string> &strs,
+long long	Response::extractResultFromCgiPipe()
+{
+	long long	readSize;
+
+	// if (isFinishWaitingStage())
+	// 	return 0;
+	// std::cout<<"read from pipe start"<<std::endl;
+	readSize = read(cgiOutFd, buf, BUFFER_SIZE);
+	if (readSize >= 0)
+	{
+		appendBuf(cgiRes, buf, readSize);
+		byteExtracted += readSize;
+		std::cout << "read size: " << readSize << std::endl;
+		updateCgiActiveTime();
+	
+		if (isChunkMode())
+		{
+			if (cgiStage == WAITING_HEADER)
+			{
+				Bytes::const_iterator	it;
+
+				extractHeader(it);
+			}
+			else
+				appendBodyForChunkMode();
+		}
+	}
+	// std::cout<<"read from pipe fin"<<std::endl;
+	return readSize;
+}
+
+void	Response::writeDataToCgiPipe()
+{
+	long long		writeSize = 0;
+	size_t			size = std::min((size_t)(BUFFER_SIZE / 4), (request.getBody().size()));
+
+	// if (isFinishWaitingStage())
+	// 	return ;
+	if (size == 0)
+		return ;
+	// std::cout<<"write to pipe start"<<std::endl;
+	writeSize = write(cgiInFd, request.getBody().data() + eraseLimit, size);
+	updateCgiActiveTime();
+	if (writeSize >= 0)
+	{
+		// eraseLimit += writeSize;
+		// if (eraseLimit >= TRANSFER_SIZE)
+		// {
+			request.removeNCharFromBody(writeSize);
+		// 	eraseLimit = 0;
+		// }
+		byteWritten += writeSize;
+	}
+	if (writeSize < 0)
+		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+	// std::cout<<"write to pipe fin"<<std::endl;
+}
+
+void	Response::prepareArgEnv(std::string &exe, std::vector<std::string> &strs,
 	std::vector<char *> &args, std::vector<char *> &env)
 {
 	args.push_back((char *)exe.c_str());
 	args.push_back(NULL);
-	env.reserve(strs.size() + 1);
+	// env.reserve(strs.size() + 1);
 	for(std::vector<std::string>::const_iterator it = strs.begin(); it != strs.end(); ++it)
 		env.push_back((char *)it->c_str());
 	env.push_back(NULL);

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/10 15:36:22 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 10:40:04 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,9 @@ class Response
 		int									cgiOutFd;
 		int									cgiInFd;
 		size_t								byteWritten;
+		size_t								byteExtracted;
+		size_t								byteConverted;
+		size_t								eraseLimit;
 		int									cgiStage;
 		Bytes								resultPage;
 		Bytes								cgiRes;
@@ -76,6 +79,7 @@ class Response
 		std::map<std::string, std::string>	headers;
 		size_t								locationMatchLength;
 		std::string							bodyFilePath;
+		Byte								buf[BUFFER_SIZE];
 		Response();
 		void			determineResType();
 	public:
@@ -108,12 +112,13 @@ class Response
 		size_t				getByteWritten() const;
 		bool				convertCGIResToResponse();
 		void				appendHeaderToResultPage(Bytes::const_iterator	crlfPos);
-		void				extracCgitHeader();
 		void				extractHeader(Bytes::const_iterator &crlfPos);
 		void				appendBodyForChunkMode();
 		void				startCgi();
 		void				processCgi(int op);
-		void				prepareArgEnv(std::string exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);
+		long long			extractResultFromCgiPipe();
+		void				writeDataToCgiPipe();
+		void				prepareArgEnv(std::string &exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);
 		void				mergeEnvStrs(std::map<std::string, std::string> &allHeader, std::vector<std::string> &strs);
 		void				setStatusCode(int code);
 		void				setMatchLocation(const Location *location);

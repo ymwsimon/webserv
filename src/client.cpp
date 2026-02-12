@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/10 20:49:19 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 18:02:42 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,20 +46,27 @@ int	Client::sendData(struct epoll_event *evt)
 
 	if (!requests.empty() && (requests.back().complete() || requests.back().isWaitingChunk()))
 	{
+		// Request	&request = requests.back();
+
 		if (responses.empty())
 		{
 			responses.push_back(Response(service, requests.front()));
 			// std::cout<<"new response"<<std::endl;
 			requests.front().printRequest();
 		}
-		responses.front().processResponse();
+		Response	&response = responses.front();
+
+		// if (response.isCGI())
+		// 	response.processCgi(PROCESS_DATA);
+		// else
+		response.processResponse();
 		// if (!responses.empty() && !responses.front().getResultPage().empty())
 			// && (!responses.front().isCGI() || responses.front().isChunkMode()))
-		if (!responses.front().getResultPage().empty()
-			&& ((requests.front().complete() && !responses.front().isCGI())
+		if (!response.getResultPage().empty()
+			&& ((requests.front().complete() && !response.isCGI())
 				|| (((requests.front().isWaitingChunk() || requests.front().complete())
-					&& responses.front().isCGI() && responses.front().statusOK()
-					&& (responses.front().gotEnoughChunkDataToSent() || responses.front().isFinishWaitingStage())))))
+					&& response.isCGI() && response.statusOK()
+					&& (response.isWaitingStage() || response.isFinishWaitingStage())))))
 		{
 			// std::cout<<"req size:"<<requests.size()<<" req f waiting chunk:" << requests.front().isWaitingChunk()<<  std::endl;
 			// std::cout<<"req status:"<<requests.front().getStatusCode()<<" req comp:"<<requests.front().complete() <<std::endl;
@@ -80,19 +87,31 @@ int	Client::sendData(struct epoll_event *evt)
 			for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
 				std::cout << responses.front().getResultPage()[i];
 			std::cout << std::endl;
-			size_t	size = std::min((size_t)BUFFER_SIZE, responses.front().getResultPage().size());
+			size_t	size = std::min((size_t)TRANSFER_SIZE, responses.front().getResultPage().size());
+			// if (responses.front().isFinishWaitingStage())
+			// 	size = responses.front().getResultPage().size();
+			int	fd;
+			(void)fd;
+			// fd = open("outdata", O_CREAT | O_APPEND | O_WRONLY, 0777);
+			// if (fd >= 0)
+			// {
+			// 	write(fd, responses.front().getResultPage().data(), size);
+			// 	close(fd);
+			// }
+			// else
+			// 	std::cout<<"open outdata fail"<<std::endl;
 			if (send(evt->data.fd, responses.front().getResultPage().data(),
 				size, 0) < 0)
 				std::cout << "error send data out" << std::endl;
 			if (responses.front().statusOK() && responses.front().isCGI()
-				&& responses.front().isChunkMode() && !responses.front().isFinishWaitingStage())
+				&& responses.front().isChunkMode())
 			{
 				responses.front().removeNCharFromResultPage(size);
 			}
-			else if (requests.front().complete()
+			if (requests.front().complete()
 				&& (!responses.front().isChunkMode()
 					|| !responses.front().isCGI()
-					|| responses.front().isFinishWaitingStage()))
+					|| (responses.front().isFinishWaitingStage() && responses.front().getResultPage().size() == 0)))
 			{
 				std::cout<<"removing req response"<<std::endl;
 				requests.pop_front();
@@ -108,7 +127,7 @@ int	Client::sendData(struct epoll_event *evt)
 
 int Client::recvData(struct epoll_event *evt)
 {
-	Byte	buf[BUFFER_SIZE];
+	// Byte	buf[BUFFER_SIZE];
 	int		readSize = 0;
 	int		fd;
 
@@ -126,10 +145,10 @@ int Client::recvData(struct epoll_event *evt)
 		// 	break ;
 		// write(fd, buf, readSize);
 		// close(fd);
+		processData();
 	}
 	// if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
 		// return 0;
-	processData();
 	return readSize;
 }
 
@@ -139,7 +158,12 @@ void	Client::processResponseCgi(int op)
 		return ;
 	Response	&response = responses.front();
 
-	response.processCgi(op);
+	if (op == EXTRACT_PIPE)
+		response.extractResultFromCgiPipe();
+	else if (op == WRITE_PIPE)
+		response.writeDataToCgiPipe();
+	else
+		response.processCgi(op);
 }
 
 Bytes::const_iterator	&Client::searchForNewLine(Bytes::const_iterator &it)

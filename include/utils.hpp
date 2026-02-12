@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/09 10:44:41 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/12 10:06:32 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,10 @@
 #include <unistd.h>
 #include "html.hpp"
 #include "http.hpp"
-#define BUFFER_SIZE 5000000
-#define PIPE_BUFFER_SIZE 50000
-#define TRANSFER_SIZE 5000000
+#define BUFFER_SIZE 65536
+#define CHUNK_SIZE 100000
+// #define PIPE_BUFFER_SIZE 65536
+#define TRANSFER_SIZE 1000000
 
 typedef unsigned char Byte;
 typedef std::vector<Byte> Bytes;

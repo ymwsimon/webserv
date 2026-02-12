@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:46 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/10 13:53:31 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/11 16:19:05 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,7 @@ class Request
 		long long							expectedChunkSize;
 		int									bodyFd;
 		bool								updated;
+		bool								chunkMode;
 		Request();
 		std::string							parseReqLineSegment(const Bytes &delimiter);
 		void								parseRequestLine();
@@ -70,6 +71,7 @@ class Request
 		bool								readyparseChunkLength() const;
 		bool								readyparseChunkData() const;
 		bool								readyparseBody() const;
+		bool								switchToChunkMode() const;
 	public:
 		static std::string	valMet[4];
 		static std::vector<std::string>	validMethod;
