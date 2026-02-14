@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 10:40:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/13 23:44:13 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,8 @@ class Response
 		size_t								locationMatchLength;
 		std::string							bodyFilePath;
 		Byte								buf[BUFFER_SIZE];
+		bool								resultSent;
+		bool								cgiOutPipeDrained;
 		Response();
 		void			determineResType();
 	public:
@@ -97,8 +99,12 @@ class Response
 		bool				needCloseCgiInFd() const;
 		bool				isChunkMode() const;
 		bool				gotEnoughChunkDataToSent() const;
+		bool				isResultPageEmpty() const;
+		bool				isResultSent() const;
+		bool				isCgiOutPipeDrained() const;
 		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
+		const Bytes			&getCgiRes() const;
 		const Location		*getMatchLocation() const;
 		const std::string	getResourcePath() const;
 		const std::ifstream	*getPageStream() const;
@@ -125,6 +131,10 @@ class Response
 		void				setResourcePath(const std::string path);
 		void				setStatusCodeResType(int code, int rType);
 		void				setCgiStage(int stage);
+		void				setResultSent(bool sent);
+		void				routeMatchingCheckLocationLimitationDetermineType();
+		void				checkBodySize();
+		void				updateResultPage();
 		void				processResponse();
 		void				deleteResource();
 		void				clearResultPage();

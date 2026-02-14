@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 18:02:42 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/13 23:47:03 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,84 +42,74 @@ Client	&Client::operator=(const Client &right)
 
 int	Client::sendData(struct epoll_event *evt)
 {
-	Bytes	content;
-
-	if (!requests.empty() && (requests.back().complete() || requests.back().isWaitingChunk()))
+	if (!requests.empty() && (requests.front().complete() || requests.front().isWaitingChunk()))
 	{
-		// Request	&request = requests.back();
+		Request		&request = requests.front();
+		Response	&response = responses.front();
 
 		if (responses.empty())
 		{
-			responses.push_back(Response(service, requests.front()));
-			// std::cout<<"new response"<<std::endl;
-			requests.front().printRequest();
+			responses.push_back(Response(service, request));
+			response = responses.front();
+			response.routeMatchingCheckLocationLimitationDetermineType();
+			request.printRequest();
 		}
-		Response	&response = responses.front();
-
-		// if (response.isCGI())
-		// 	response.processCgi(PROCESS_DATA);
-		// else
-		response.processResponse();
-		// if (!responses.empty() && !responses.front().getResultPage().empty())
-			// && (!responses.front().isCGI() || responses.front().isChunkMode()))
+		if (response.isCGI())
+			response.checkBodySize();
+		response.updateResultPage();
 		if (!response.getResultPage().empty()
-			&& ((requests.front().complete() && !response.isCGI())
-				|| (((requests.front().isWaitingChunk() || requests.front().complete())
+			&& ((request.complete() && !response.isCGI())
+				|| (((request.isWaitingChunk() || request.complete())
 					&& response.isCGI() && response.statusOK()
 					&& (response.isWaitingStage() || response.isFinishWaitingStage())))))
 		{
-			// std::cout<<"req size:"<<requests.size()<<" req f waiting chunk:" << requests.front().isWaitingChunk()<<  std::endl;
-			// std::cout<<"req status:"<<requests.front().getStatusCode()<<" req comp:"<<requests.front().complete() <<std::endl;
-			// std::cout<<"res is cgi:"<<responses.front().isCGI() <<" res got enough data:" << responses.front().gotEnoughChunkDataToSent()<< " res is finish waiting:"<<responses.front().isFinishWaitingStage()<<  std::endl;
-			if (responses.front().isFinishWaitingStage() || !responses.front().isCGI())
+			if (response.isFinishWaitingStage() || !response.isCGI())
 			{
-				if (!requests.front().getBodyFilePath().empty()
-					&& fileExist(requests.front().getBodyFilePath()))
-					std::remove(requests.front().getBodyFilePath().c_str());
-				if (!responses.front().getBodyFilePath().empty()
-					&& fileExist(responses.front().getBodyFilePath()))
-					std::remove(responses.front().getBodyFilePath().c_str());
+				if (!request.getBodyFilePath().empty()
+					&& fileExist(request.getBodyFilePath()))
+					std::remove(request.getBodyFilePath().c_str());
+				if (!response.getBodyFilePath().empty()
+					&& fileExist(response.getBodyFilePath()))
+					std::remove(response.getBodyFilePath().c_str());
 			}
-			std::cout << responses.front().getStatusCode() << std::endl;;
-			std::cout << responses.front().getResultPage().size() << std::endl;
+			std::cout << response.getStatusCode() << std::endl;;
+			std::cout << response.getResultPage().size() << std::endl;
 			std::cout << "sending out data" << std::endl;
 			std::cout << "content" << std::endl;
-			for (size_t i = 0; i < responses.front().getResultPage().size() && i < 200; ++i)
-				std::cout << responses.front().getResultPage()[i];
+			for (size_t i = 0; i < response.getResultPage().size() && i < 200; ++i)
+				std::cout << response.getResultPage()[i];
 			std::cout << std::endl;
-			size_t	size = std::min((size_t)TRANSFER_SIZE, responses.front().getResultPage().size());
-			// if (responses.front().isFinishWaitingStage())
-			// 	size = responses.front().getResultPage().size();
-			int	fd;
-			(void)fd;
-			// fd = open("outdata", O_CREAT | O_APPEND | O_WRONLY, 0777);
-			// if (fd >= 0)
-			// {
-			// 	write(fd, responses.front().getResultPage().data(), size);
-			// 	close(fd);
-			// }
-			// else
-			// 	std::cout<<"open outdata fail"<<std::endl;
-			if (send(evt->data.fd, responses.front().getResultPage().data(),
+			size_t	size = std::min((size_t)TRANSFER_SIZE, response.getResultPage().size());
+			if (false)
+			{
+				int	fd;
+
+				fd = open("outdata", O_CREAT | O_APPEND | O_WRONLY, 0777);
+				if (fd >= 0)
+				{
+					write(fd, responses.front().getResultPage().data(), size);
+					close(fd);
+				}
+				else
+					std::cout<<"open outdata fail"<<std::endl;
+			}
+			if (send(evt->data.fd, response.getResultPage().data(),
 				size, 0) < 0)
 				std::cout << "error send data out" << std::endl;
-			if (responses.front().statusOK() && responses.front().isCGI()
-				&& responses.front().isChunkMode())
-			{
-				responses.front().removeNCharFromResultPage(size);
-			}
-			if (requests.front().complete()
-				&& (!responses.front().isChunkMode()
-					|| !responses.front().isCGI()
-					|| (responses.front().isFinishWaitingStage() && responses.front().getResultPage().size() == 0)))
+			response.setResultSent(true);
+			response.removeNCharFromResultPage(size);
+			if (request.complete()
+				&& (!response.isChunkMode()
+					|| !response.isCGI()
+					|| (response.isFinishWaitingStage()
+						&& response.getResultPage().size() == 0
+						&& response.getCgiRes().empty()
+						&& response.isCgiOutPipeDrained())))
 			{
 				std::cout<<"removing req response"<<std::endl;
 				requests.pop_front();
-				// responses.front().clearResultPage();
 				responses.pop_front();
 			}
-			// if (statusCode == BAD_REQUEST)
-				// return 0;
 		}
 	}
 	return 1;
@@ -140,12 +130,14 @@ int Client::recvData(struct epoll_event *evt)
 		(void)fd;
 		// fd = open("indata", O_WRONLY | O_CREAT | O_APPEND, 0755);
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
-		responses.front().updateCgiActiveTime();
+		processData();
+		if (!responses.empty() && responses.front().isCGI() && responses.front().isWaitingStage())
+			responses.front().updateCgiActiveTime();
 		// if (readSize < BUFFER_SIZE)
 		// 	break ;
 		// write(fd, buf, readSize);
 		// close(fd);
-		processData();
+		
 	}
 	// if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
 		// return 0;
@@ -156,10 +148,19 @@ void	Client::processResponseCgi(int op)
 {
 	if (responses.empty())
 		return ;
+
 	Response	&response = responses.front();
 
 	if (op == EXTRACT_PIPE)
-		response.extractResultFromCgiPipe();
+	{
+		// {
+		// 	while (response.extractResultFromCgiPipe() > 0)
+		// 		;
+		// }
+		// else
+			response.extractResultFromCgiPipe();
+
+	}
 	else if (op == WRITE_PIPE)
 		response.writeDataToCgiPipe();
 	else
@@ -178,19 +179,38 @@ void	Client::processData()
 
 	while (searchForNewLine(it) != incomingData.end())
 	{
-		if (requests.empty() || requests.back().complete())
+		if (requests.empty())
 			requests.push_back(Request(incomingData.begin(), incomingData.end(), incomingData));
-		else
-		{
-			requests.back().setDataStart(incomingData.begin());
-			requests.back().setDataEnd(incomingData.end());
-			requests.back().setIncomingData(incomingData);
-		}
-		requests.back().parseRequest();
+		requests.front().setDataStart(incomingData.begin());
+		requests.front().setDataEnd(incomingData.end());
+		requests.front().setIncomingData(incomingData);
+		requests.front().parseRequest();
 		size_t	size = std::distance(static_cast<Bytes::const_iterator>(incomingData.begin()),
-			requests.back().getDataStart());
+			requests.front().getDataStart());
 		incomingData.erase(incomingData.begin(), incomingData.begin() + size);
 	}
+}
+
+bool	Client::timeToCloseCgiInPipe() const
+{
+	return !requests.empty()
+		&& requests.front().complete()
+		&& requests.front().getBody().size() == 0;
+}
+
+bool	Client::timeToAddCgiPipeToEpoll() const
+{
+	return !responses.empty()
+		&& responses.front().statusOK()
+		&& responses.front().isAddFdStage();
+}
+
+bool	Client::timeToRemoveCgiPipeFromEpoll() const
+{
+	return !responses.empty()
+		&& responses.front().isCgiOutPipeDrained()
+		&& responses.front().getCgiRes().empty()
+		&& responses.front().getResultPage().empty();
 }
 
 const Bytes	&Client::getIncomingData() const
@@ -206,4 +226,24 @@ const std::deque<Request>	&Client::getRequests() const
 const std::deque<Response>	&Client::getResponses() const
 {
 	return responses;
+}
+
+int	Client::getResponseCgiInPipeFd() const
+{
+	if (responses.empty() || !responses.front().isCGI())
+		return -1;
+	return responses.front().getCgiInFd();
+}
+
+int	Client::getResponseCgiOutPipeFd() const
+{
+	if (responses.empty() || !responses.front().isCGI())
+		return -1;
+	return responses.front().getCgiOutFd();
+}
+
+void	Client::removeReqResPair()
+{
+	requests.pop_front();
+	responses.pop_front();
 }

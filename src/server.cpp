@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 19:19:32 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/13 15:30:25 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,19 +66,17 @@ void	Server::run()
 		numFd = epoll_wait(epollFd, incomingEvt, 500, -1);
 		if (numFd < 0)
 			std::cerr<<"epoll wait error"<< std::endl;
-		int	n = 0;
+		// int	n = 0;
 		for (int i = 0; i < numFd; ++i)
 		{
 			evt = incomingEvt[i];
 			if (evt.events & EPOLLIN)
 			{
-				// std::cout << "fd for epollin: " << evt.data.fd << std::endl;
 				if (cgiPipeFd.count(evt.data.fd) > 0)
 				{
-					// std::cout << "extract data from pipe fd: " << evt.data.fd << std::endl;
-					// std::cout<<"extract from pipe"<<std::endl;
 					cgiPipeFd[evt.data.fd]->processResponseCgi(EXTRACT_PIPE);
-					// std::cout << "finish extract from pipe" << std::endl;
+					if (cgiPipeFd[evt.data.fd]->timeToRemoveCgiPipeFromEpoll())
+						epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
 				}
 				else if (services.count(evt.data.fd) > 0)
 				{
@@ -86,53 +84,55 @@ void	Server::run()
 					if (!epollOperation(evt.data.fd, EPOLL_CTL_ADD, false))
 						std::cout << "error accept new socket to epoll" << std::endl;
 				}
-				else
+				else if (clientsConnection.count(evt.data.fd) > 0)
 				{
-					// if (clientsConnection.count(evt.data.fd) > 0
-					// 	&& clientsConnection.at(evt.data.fd).recvData(&evt) == 0)
-					// 	epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
-					if (clientsConnection.count(evt.data.fd) > 0)
-						clientsConnection.at(evt.data.fd).recvData(&evt);
+					clientsConnection.at(evt.data.fd).recvData(&evt);
 				}
 			}
 			else if (evt.events & EPOLLOUT)
 			{
-				++n;
-				// std::cout<<"epollout:"<<evt.data.fd<<std::endl;
-				// if (clientsConnection.count(evt.data.fd) > 0
-				// 	&& !clientsConnection.at(evt.data.fd).sendData(&evt))
-				// 	{}
-					// epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
 				if (clientsConnection.count(evt.data.fd) > 0)
-					clientsConnection.at(evt.data.fd).sendData(&evt);
-				if (cgiPipeFd.count(evt.data.fd) > 0)
 				{
-					if (cgiPipeFd[evt.data.fd]->getResponses().front().needCloseCgiInFd())
-					{
-						std::cout << "close cgi in pipe fd:"<<cgiPipeFd[evt.data.fd]->getResponses().front().getCgiInFd()<<std::endl;
-						epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
-					}
-					else
-						cgiPipeFd[evt.data.fd]->processResponseCgi(WRITE_PIPE);
-				}
-				if (clientsConnection.count(evt.data.fd) > 0
-					&& !clientsConnection.at(evt.data.fd).getResponses().empty()
-					&& clientsConnection.at(evt.data.fd).getResponses().front().isAddFdStage()
-					&& clientsConnection.at(evt.data.fd).getResponses().front().statusOK())
+					clientsConnection.at(evt.data.fd).sendData(&evt);
+					if (clientsConnection.at(evt.data.fd).timeToAddCgiPipeToEpoll())
 					{
 						std::cout<<"add pipe to epoll:" << evt.data.fd<<std::endl;
 						epollOperation(evt.data.fd, EPOLL_CTL_ADD, false);
 						std::cout<<"add pipe to epoll fin"<<std::endl;
 					}
+				}
+				else if (cgiPipeFd.count(evt.data.fd) > 0)
+				{
+					cgiPipeFd[evt.data.fd]->processResponseCgi(WRITE_PIPE);
+					if (cgiPipeFd[evt.data.fd]->timeToCloseCgiInPipe())
+					{
+						std::cout << "close cgi in pipe fd:"
+							<< cgiPipeFd[evt.data.fd]->getResponses().front().getCgiInFd()
+							<< std::endl;
+						epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
+					}
+				}
 			}
 			else if ((evt.events & EPOLLRDHUP) || (evt.events & EPOLLHUP))
-				epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
+			{
+				if (clientsConnection.count(evt.data.fd) > 0)
+				{
+					std::cout<<"fd from client closed:"<<evt.data.fd<<std::endl;
+					// if (clientsConnection[evt.data.fd].)
+					// if (cgiPipeFd.count(clientsConnection[evt.data.fd].))
+					epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
+				}
+				else
+				{
+					std::cout<<"fd from pipe closed:"<<evt.data.fd<<std::endl;
+					epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
+				}
+			}
 			else if (evt.events & EPOLLERR)
 			{
 				std::cout << "error fd:" << evt.data.fd << std::endl;
 			}
 		}
-		// std::cerr<<clientsConnection.size()<<std::endl;
 	}
 }
 

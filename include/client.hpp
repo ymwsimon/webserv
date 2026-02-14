@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:35:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/11 16:42:58 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/13 20:18:57 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,13 @@ class Client
 		int							sendData(struct epoll_event *evt);
 		int 						recvData(struct epoll_event *evt);
 		void						processResponseCgi(int op);
+		bool						timeToCloseCgiInPipe() const;
+		bool						timeToAddCgiPipeToEpoll() const;
+		bool						timeToRemoveCgiPipeFromEpoll() const;
 		const Bytes					&getIncomingData() const;
 		const std::deque<Request>	&getRequests() const;
 		const std::deque<Response>	&getResponses() const;
+		int							getResponseCgiInPipeFd() const;
+		int							getResponseCgiOutPipeFd() const;
+		void						removeReqResPair();
 };

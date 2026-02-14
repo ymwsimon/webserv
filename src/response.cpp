@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 19:20:43 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/14 09:40:43 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ Response::Response(Service *ser, Request &req) : service(ser), request(req), sta
 {
 	resultType = NONE;
 	cgiStage = INIT;
+	matchLocation = NULL;
 	if (!statusOK())
 		resultType = ERR_PAGE;
 	byteWritten = 0;
@@ -24,6 +25,8 @@ Response::Response(Service *ser, Request &req) : service(ser), request(req), sta
 	eraseLimit = 0;
 	bodyFilePath = req.getBodyFilePath();
 	cgiPid = 0;
+	resultSent = false;
+	cgiOutPipeDrained = false;
 }
 
 Response::Response(const Response &right) : service(right.service), request(right.request)
@@ -64,6 +67,8 @@ Response	&Response::operator=(const Response &right)
 		headers = right.headers;
 		locationMatchLength = right.locationMatchLength;
 		bodyFilePath = right.bodyFilePath;
+		resultSent = right.resultSent;
+		cgiOutPipeDrained = right.cgiOutPipeDrained;
 	}
 	return *this;
 }
@@ -118,6 +123,21 @@ bool	Response::gotEnoughChunkDataToSent() const
 	return resultPage.size() >= TRANSFER_SIZE;
 }
 
+bool	Response::isResultPageEmpty() const
+{
+	return resultPage.empty();
+}
+
+bool	Response::isResultSent() const
+{
+	return resultSent;
+}
+
+bool	Response::isCgiOutPipeDrained() const
+{
+	return cgiOutPipeDrained;
+}
+
 int	Response::getStatusCode() const
 {
 	return statusCode;
@@ -153,6 +173,11 @@ const Bytes	&Response::getResultPage() const
 	return resultPage;
 }
 
+const Bytes	&Response::getCgiRes() const
+{
+	return cgiRes;
+}
+
 const Location	*Response::getMatchLocation() const
 {
 	return matchLocation;
@@ -185,7 +210,6 @@ void	Response::getFileResponse()
 		|| close(fd) < 0
 		|| readSize < 0)
 	{
-		// std::cerr<<"???"<<std::endl;
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return ;
 	}
@@ -474,8 +498,6 @@ void	Response::processCgi(int op)
 {
 	int				status;
 	pid_t			waitRes = 0;
-	// Bytes			buf(BUFFER_SIZE);
-	// long long		ioSize = 0;
 
 	// std::cerr<<"process cgi"<<std::endl;
 	if (cgiStage == INIT)
@@ -484,49 +506,8 @@ void	Response::processCgi(int op)
 	{
 		if (cgiStage == ADD_FD_POLL)
 			cgiStage = WAITING_HEADER;
-		// if (op == EXTRACT_PIPE && (ioSize = read(cgiOutFd, buf, BUFFER_SIZE)) > 0)
-		// {
-		// 	// std::cout << "extracting data from cgi pipe" << std::endl;
-		// 	appendBuf(cgiRes, buf, ioSize);
-		// 	byteWritten += ioSize;
-		// 	// std::cout << "read size: " << readSize << std::endl;
-		// 	updateCgiActiveTime();
-		// 	if (isChunkMode())
-		// 	{
-		// 		if (cgiStage == WAITING_HEADER)
-		// 		{
-		// 			// size_t					size;
-		// 			Bytes::const_iterator	it;
-
-		// 			extractHeader(it);
-		// 			// size = std::distance(static_cast<Bytes::const_iterator>(cgiRes.begin()), it);
-		// 			// cgiRes.erase(cgiRes.begin(), cgiRes.begin() + size);
-		// 		}
-		// 		else
-		// 			appendBodyForChunkMode();
-		// 	}
-		// }
-		// if (op == WRITE_PIPE)
-		// //  && byteWritten < request.getBody().size() &&
-		// // 	(ioSize = write(cgiInFd, request.getBody().data() + byteWritten,
-		// // 	std::min((size_t)PIPE_BUF * 16, request.getBody().size() - byteWritten))) >= 0)
-		// {
-		// 	size_t	size = std::min((size_t)BUFFER_SIZE, request.getBody().size());
-
-		// 	ioSize = write(cgiInFd, request.getBody().data(), size);
-		// 	// std::cerr<<"iosize:" << ioSize<<std::endl;
-		// 	updateCgiActiveTime();
-		// 	if (ioSize >= 0)
-		// 		request.removeNCharFromBody(ioSize);
-		// 	// byteWritten += ioSize;
-		// }
 		if ((waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG)) < 0)
-			// || (WIFEXITED(status) && WEXITSTATUS(status) != 0))
 		{
-			// std::cerr<<"op:" << op<<std::endl;
-			// std::cerr<<"???5 "<<waitRes<<std::endl;
-			// std::cerr<<"id:"<<cgiPid<<std::endl;
-			perror(NULL);
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			return ;
 		}
@@ -535,7 +516,6 @@ void	Response::processCgi(int op)
 		{
 			std::cout << "time to kill cgiPid: " << cgiPid << std::endl;
 			kill(cgiPid, SIGKILL);
-			// setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			cgiStage = FINISH_WAITING;
 			// if (isChunkMode())
 			// {
@@ -548,18 +528,16 @@ void	Response::processCgi(int op)
 			|| (!waitRes && difftime(std::time(NULL), cgiLastActiveTime) > cgiWaitTime)
 			|| op == KILL_PROCESS)
 		{
-			// std::cerr<<"?????"<<std::endl;
 			waitpid(cgiPid, &status, WUNTRACED | WNOHANG);
 			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 				setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-			// std::cout<< "bodyfilepath:"<<bodyFilePath<<std::endl;
 			// std::cout << "cgi res size: " << fileSize(bodyFilePath) << std::endl;
 			// std::cout << "cgi res size: " << cgiRes.size() << std::endl;
 			// std::cout << "cgi res content: ";
 			// printBytes(cgiRes);
 			// std::cout << std::endl;
 			cgiStage = FINISH_WAITING;
-			if (op==KILL_PROCESS)
+			if (op == KILL_PROCESS)
 				std::cout<<"kill_process op"<<std::endl;
 			std::cout<<"total byte extracted:"<<byteExtracted<<std::endl;
 			std::cout<<"total byte written:"<<byteWritten<<std::endl;
@@ -567,21 +545,19 @@ void	Response::processCgi(int op)
 			if (isChunkMode())
 			{
 				std::cout <<"end chunk transfer"<<std::endl;
-				while (extractResultFromCgiPipe() > 0)
-					;
-				while (cgiRes.size() > 0)
-				{
-					std::cout<<"inside finish waiting"<<std::endl;
-					appendBodyForChunkMode();
-				}
+				// while (extractResultFromCgiPipe() > 0)
+				// 	;
+				// while (cgiRes.size() > 0)
+				// {
+				// 	std::cout<<"inside finish waiting"<<std::endl;
+				// 	appendBodyForChunkMode();
+				// }
 				// endChunkTransfer();
 			}
 		}
 	}
-	// std::cout<<"finishwait"<<std::endl;
 	if (isFinishWaitingStage() && resultPage.empty() && !isChunkMode())
 	{
-		// setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		std::cout<<"convert cgi"<<std::endl;
 		if (!convertCGIResToResponse())
 		{
@@ -589,7 +565,6 @@ void	Response::processCgi(int op)
 			std::cout<<"convert cgi res fail"<<std::endl;
 		}
 	}
-	// std::cerr<<"process cgi fin"<<std::endl;
 }
 
 long long	Response::extractResultFromCgiPipe()
@@ -599,6 +574,8 @@ long long	Response::extractResultFromCgiPipe()
 	// if (isFinishWaitingStage())
 	// 	return 0;
 	// std::cout<<"read from pipe start"<<std::endl;
+	// if (cgiOutPipeDrained)
+	// 	return 0;
 	readSize = read(cgiOutFd, buf, BUFFER_SIZE);
 	if (readSize >= 0)
 	{
@@ -606,7 +583,6 @@ long long	Response::extractResultFromCgiPipe()
 		byteExtracted += readSize;
 		std::cout << "read size: " << readSize << std::endl;
 		updateCgiActiveTime();
-	
 		if (isChunkMode())
 		{
 			if (cgiStage == WAITING_HEADER)
@@ -619,6 +595,10 @@ long long	Response::extractResultFromCgiPipe()
 				appendBodyForChunkMode();
 		}
 	}
+	if (readSize == -1)
+		std::cerr<<"readsize -1"<<std::endl;
+	if (readSize == 0 && isFinishWaitingStage())
+		cgiOutPipeDrained = true;
 	// std::cout<<"read from pipe fin"<<std::endl;
 	return readSize;
 }
@@ -655,7 +635,6 @@ void	Response::prepareArgEnv(std::string &exe, std::vector<std::string> &strs,
 {
 	args.push_back((char *)exe.c_str());
 	args.push_back(NULL);
-	// env.reserve(strs.size() + 1);
 	for(std::vector<std::string>::const_iterator it = strs.begin(); it != strs.end(); ++it)
 		env.push_back((char *)it->c_str());
 	env.push_back(NULL);
@@ -665,7 +644,6 @@ void	Response::mergeEnvStrs(std::map<std::string, std::string> &allHeader, std::
 {
 	std::string	value;
 
-	strs.reserve(allHeader.size());
 	for(std::map<std::string, std::string>::const_iterator it = allHeader.begin(); it != allHeader.end(); ++it)
 	{
 		value.reserve(it->first.size() + 1 + it->second.size());
@@ -695,7 +673,10 @@ void	Response::setStatusCodeResType(int code, int rType)
 {
 	if (rType == ERR_PAGE)
 	{
-		resultPage.clear();
+		if (resultSent)
+			endChunkTransfer();
+		else
+			resultPage.clear();
 		if (isCGI())
 		{
 			cgiStage = FINISH_WAITING;
@@ -709,6 +690,11 @@ void	Response::setStatusCodeResType(int code, int rType)
 void	Response::setCgiStage(int stage)
 {
 	cgiStage = stage;
+}
+
+void	Response::setResultSent(bool sent)
+{
+	resultSent = sent;
 }
 
 void	Response::determineResType(void)
@@ -756,6 +742,57 @@ void	Response::determineResType(void)
 	}
 	if (resultType == NONE)
 		resultType = FILE;
+}
+
+void	Response::routeMatchingCheckLocationLimitationDetermineType()
+{
+	if (statusOK() && ! matchLocation)
+		matchLocation = service->findMatchingRoute(request);
+	if (statusOK() && !matchLocation)
+		(logMessage(std::cout, "no route match"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
+	if (statusOK() && matchLocation && resultType == NONE)
+	{
+		std::cout<<"route str:"<<matchLocation->getRouteStr()<<std::endl;
+		locationMatchLength = matchLocation->getRouteMatchLength(request.getPaths());
+		std::cout<<"match length:"<<locationMatchLength<<std::endl;
+	}
+	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
+		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
+	checkBodySize();
+	if (statusOK() && matchLocation && resultType == NONE)
+		determineResType();
+	if (statusOK() && !fileExist(resourcePath) && resultType != CGI_EXE)
+		(logMessage(std::cout, "file not found"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
+	if (statusOK() && fileExist(resourcePath) && !fileReadOK(resourcePath))
+		(logMessage(std::cout, "file not readable"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
+}
+
+void	Response::checkBodySize()
+{
+	if (statusOK() && matchLocation && (size_t)matchLocation->getMaxBodySize() < request.getBodyLength())
+		(logMessage(std::cout, "body too large"), setStatusCodeResType(Content_Too_Large, ERR_PAGE));
+}
+
+void	Response::updateResultPage()
+{
+	std::string	res;
+
+	if (resultSent && !isCGI())
+		return ;
+	if (statusOK() && resultType == DELETE_RESOURCE)
+		deleteResource();
+	if (statusOK() && resultType == LIST_FOLDER)
+		resultPage = matchLocation->generateIndexPages(resourcePath,
+			mergeFullPath("", request.getPaths(), locationMatchLength, false));
+	if (statusOK() && resultType == CGI_EXE
+		&& isRegularFile(resourcePath) && !fileExeOK(resourcePath))
+		resultType = FILE;
+	if (statusOK() && resultType == CGI_EXE)
+		processCgi(PROCESS_DATA);
+	if (statusOK() && resultType == FILE)
+		getFileResponse();
+	if (!statusOK() || resultType == ERR_PAGE)
+		stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod(), res), resultPage);
 }
 
 void	Response::processResponse()
