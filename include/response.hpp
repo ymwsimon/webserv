@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/13 23:44:13 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/15 09:54:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,8 +82,11 @@ class Response
 		Byte								buf[BUFFER_SIZE];
 		bool								resultSent;
 		bool								cgiOutPipeDrained;
+		bool								allHeaderExtracted;
+		bool								endChunkAppended;
 		Response();
-		void			determineResType();
+		void								determineResType();
+		void								processCgiRes();
 	public:
 		Response(Service *ser, Request &req);
 		Response(const Response &right);
@@ -102,6 +105,7 @@ class Response
 		bool				isResultPageEmpty() const;
 		bool				isResultSent() const;
 		bool				isCgiOutPipeDrained() const;
+		bool				isEndChunkAppended() const;
 		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
 		const Bytes			&getCgiRes() const;

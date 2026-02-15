@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 17:31:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/11 16:14:33 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/15 18:56:57 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ class Server
 		std::set<Client>		clients;
 		std::map<int, Client>	clientsConnection;
 		std::map<int, Client *>	cgiPipeFd;
+		std::set<int>			fdInEpoll;
 		int						epollFd;
 		bool					epollOperation(int fd, int op, bool needToStop);
 	public:

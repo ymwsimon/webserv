@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:35:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/13 20:18:57 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/15 14:09:43 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,12 +30,16 @@ class Client
 		std::deque<Request>		requests;
 		std::deque<Response>	responses;
 		Service					*service;
+		int						socketFd;
 		Byte					buf[BUFFER_SIZE];
 		Client();
-		void					processData();
+		void					processRequest();
+		void					processResponse();
+		void					writeIncomingData(int readSize);
+		void					writeOutData(size_t size);
 		Bytes::const_iterator	&searchForNewLine(Bytes::const_iterator &it);
 	public:
-		Client(Service *ser);
+		Client(Service *ser, int fd);
 		Client(const Client &right);
 		~Client();
 		Client						&operator=(const Client &right);
@@ -45,10 +49,15 @@ class Client
 		bool						timeToCloseCgiInPipe() const;
 		bool						timeToAddCgiPipeToEpoll() const;
 		bool						timeToRemoveCgiPipeFromEpoll() const;
+		bool						isOkToSendData() const;
+		bool						isOkToRemoveRequestResponse() const;
 		const Bytes					&getIncomingData() const;
 		const std::deque<Request>	&getRequests() const;
 		const std::deque<Response>	&getResponses() const;
 		int							getResponseCgiInPipeFd() const;
 		int							getResponseCgiOutPipeFd() const;
+		int							getSocketFd() const;
 		void						removeReqResPair();
+		void						processRequestResponse();
+		void						setCgiStageToWaiting();
 };
