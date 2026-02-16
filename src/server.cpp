@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/15 19:52:51 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/16 18:23:47 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ Server::Server()
 	configs.push_back(config);
 	services.insert(std::make_pair(s.getSocketFd(), s));
 	std::cout << "socket fd for service " << s.getSocketFd() << std::endl;
-	epollFd = epoll_create(200);
+	epollFd = epoll_create(1);
 	if (epollFd < 0)
 		std::cout << "error create epoll" << std::endl;
 	std::cout << "epoll fd " << epollFd << std::endl;
@@ -56,18 +56,19 @@ Server	&Server::operator=(const Server &right)
 
 void	Server::run()
 {
-	struct epoll_event 	incomingEvt[500];
+	struct epoll_event 	incomingEvt[2000];
 	struct epoll_event 	evt;
-	int					numFd;
+	int					numEvent;
 	Bytes				data;
 
 	while (true)
 	{
-		numFd = epoll_wait(epollFd, incomingEvt, 500, 500);
-		if (numFd < 0)
+		numEvent = epoll_wait(epollFd, incomingEvt, 2000, 100);
+		if (numEvent < 0)
 			std::cerr<<"epoll wait error"<< std::endl;
-		// int	n = 0;
-		for (int i = 0; i < numFd; ++i)
+		// if (numEvent > 0)
+		// 	std::cerr<<"n epoll:"<<numEvent<<std::endl;
+		for (int i = 0; i < numEvent; ++i)
 		{
 			evt = incomingEvt[i];
 			if (evt.events & EPOLLIN)
@@ -123,6 +124,8 @@ void	Server::run()
 				}
 				else if (cgiPipeFd.count(evt.data.fd) > 0)
 				{
+					if (cgiPipeFd.at(evt.data.fd)->getRequests().front().getBody().size())
+						std::cout<<"can write cgi in pipe:"<<evt.data.fd<<std::endl;
 					cgiPipeFd.at(evt.data.fd)->processResponseCgi(WRITE_PIPE);
 					if (evt.data.fd != cgiPipeFd.at(evt.data.fd)->getResponseCgiInPipeFd())
 						std::cerr<<"what3" << evt.data.fd<<std::endl;
@@ -167,7 +170,6 @@ void	Server::run()
 		// std::cerr<<"n client conn:"<<clientsConnection.size()<<std::endl;
 		// std::cerr<<"n cgi pipe:"<<cgiPipeFd.size()<<std::endl;
 		// std::cerr<<"n epoll fd:"<<fdInEpoll.size()<<std::endl;
-
 		std::vector<int>	toDelete;
 		for (std::map<int, Client*>::iterator it = cgiPipeFd.begin(); it != cgiPipeFd.end(); ++it)
 		{

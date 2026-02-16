@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:12:27 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 22:14:23 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/16 11:45:23 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,12 +87,12 @@ const Location	*Config::getLocationMatch(const std::vector<std::string> &paths) 
 	int				matchLength = -1;
 	int				tmpRes;
 
-	for (size_t i = 0; i < getLocations().size(); ++i)
+	for (size_t i = 0; i < locations.size(); ++i)
 	{
-		tmpRes = getLocations()[i].getRouteMatchLength(paths);
+		tmpRes = locations[i].getRouteMatchLength(paths);
 		if (tmpRes > matchLength)
 		{
-			res = &getLocations()[i];
+			res = &locations[i];
 			matchLength = tmpRes;
 		}
 	}

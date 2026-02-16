@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/15 19:53:36 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/16 17:28:59 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,13 +58,13 @@ int	Client::sendData(struct epoll_event *evt)
 				&& fileExist(response.getBodyFilePath()))
 				std::remove(response.getBodyFilePath().c_str());
 		}
-		std::cout << response.getStatusCode() << std::endl;;
-		std::cout << response.getResultPage().size() << std::endl;
-		std::cout << "sending out data" << std::endl;
-		std::cout << "content" << std::endl;
-		for (size_t i = 0; i < response.getResultPage().size() && i < 200; ++i)
-			std::cout << response.getResultPage()[i];
-		std::cout << std::endl;
+		// std::cout << response.getStatusCode() << std::endl;;
+		// std::cout << response.getResultPage().size() << std::endl;
+		// std::cout << "sending out data" << std::endl;
+		// std::cout << "content" << std::endl;
+		// for (size_t i = 0; i < response.getResultPage().size() && i < 200; ++i)
+		// 	std::cout << response.getResultPage()[i];
+		// std::cout << std::endl;
 		size_t	size = std::min((size_t)TRANSFER_SIZE, response.getResultPage().size());
 
 		// writeOutData(size);
@@ -76,8 +76,8 @@ int	Client::sendData(struct epoll_event *evt)
 		// if (isOkToRemoveRequestResponse())
 			// removeReqResPair();
 	}
-	else if (!requests.empty() && !responses.empty() && !responses.front().isResultPageEmpty())
-		std::cout<<"got something to send"<<std::endl;
+	// else if (!requests.empty() && !responses.empty() && !responses.front().isResultPageEmpty())
+	// 	std::cout<<"got something to send"<<std::endl;
 	return 1;
 }
 
@@ -85,7 +85,7 @@ int Client::recvData(struct epoll_event *evt)
 {
 	int		readSize = 0;
 
-	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, 0);
+	readSize = recv(evt->data.fd, buf, TRANSFER_SIZE, 0);
 
 	// std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)
@@ -128,6 +128,8 @@ void	Client::processRequest()
 {
 	Bytes::const_iterator	it;
 
+	if (!requests.empty() && requests.front().complete())
+		return ;
 	while (searchForNewLine(it) != incomingData.end())
 	{
 		if (requests.empty())
@@ -149,12 +151,14 @@ void	Client::processResponse()
 		Request		&request = requests.front();
 		Response	&response = responses.front();
 
+		// if (!responses.empty() && response.isFinishWaitingStage() && response.getCgiRes().empty())
+		// 	return ;
 		if (responses.empty())
 		{
 			responses.push_back(Response(service, request));
 			response = responses.front();
 			response.routeMatchingCheckLocationLimitationDetermineType();
-			request.printRequest();
+			// request.printRequest();
 		}
 		if (response.isChunkMode())
 		{

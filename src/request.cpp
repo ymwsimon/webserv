@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 16:01:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/16 17:23:16 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -320,7 +320,7 @@ void	Request::parseChunkData()
 				newDataStart = incomingData.begin() + expectedChunkSize + CRLF.size();
 				if (!expectedChunkSize)
 				{
-					std::cout <<"time to stop"<<std::endl;
+					std::cout <<"end chunk recieve"<<std::endl;
 					requestStatus = COMPLETE;
 					// newDataStart = incomingData.begin() + CRLF.size();
 					// if (!body.empty() && write(bodyFd, body.data(), body.size()) < 0)
@@ -330,7 +330,9 @@ void	Request::parseChunkData()
 				}
 				else
 				{
+					std::cout<<"chunk with size added:"<<expectedChunkSize<<std::endl;
 					body.insert(body.end(), incomingData.begin(), incomingData.begin() + expectedChunkSize);
+					std::cout<<"new req body size:"<<body.size()<<std::endl;
 					// std::cout<<"n byte inserted to body:" << expectedChunkSize<<std::endl;
 					// if (body.size() >= BUFFER_SIZE * 5)
 					// {
