@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/16 18:13:46 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/16 21:39:35 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,7 @@ Response	&Response::operator=(const Response &right)
 		byteWritten = right.byteWritten;
 		byteExtracted = right.byteExtracted;
 		byteConverted = right.byteConverted;
+		eraseLimit = right.eraseLimit;
 		cgiStage = right.cgiStage;
 		resultPage = right.resultPage;
 		cgiRes = right.cgiRes;
@@ -237,6 +238,11 @@ std::string	Response::getBodyFilePath() const
 size_t	Response::getByteWritten() const
 {
 	return byteWritten;
+}
+
+size_t	Response::getEraseLimit() const
+{
+	return eraseLimit;
 }
 
 bool	Response::convertCGIResToResponse()
@@ -595,28 +601,27 @@ long long	Response::extractResultFromCgiPipe()
 void	Response::writeDataToCgiPipe()
 {
 	ssize_t		writeSize = 0;
-	size_t		size = std::min((size_t)(BUFFER_SIZE), request.getBody().size());
+	size_t		size = std::min((size_t)(BUFFER_SIZE), request.getBody().size() - eraseLimit);
 
-	// if (isFinishWaitingStage())
-	// 	return ;
 	if (size == 0)
 		return ;
 	// std::cout<<"write to pipe start"<<std::endl;
-	writeSize = write(cgiInFd, request.getBody().data(), size);
+	writeSize = write(cgiInFd, request.getBody().data() + eraseLimit, size);
 	if (writeSize < (ssize_t)size)
 		std::cerr<< (ssize_t)size - writeSize<<std::endl;
 	updateCgiActiveTime();
 	if (writeSize > 0)
 	{
-		// eraseLimit += writeSize;
-		// if (eraseLimit >= TRANSFER_SIZE)
-		// {
-		request.removeNCharFromBody(writeSize);
-		std::cout<<"n char removed from body:"<<writeSize<<std::endl;
-		std::cout<<"new req body size:"<<request.getBody().size()<<std::endl;
-		// 	eraseLimit = 0;
-		// }
+		eraseLimit += writeSize;
 		byteWritten += writeSize;
+		if (eraseLimit >= 5000000)
+		{
+			request.removeNCharFromBody(eraseLimit);
+			// std::cout<<"n char removed from body:"<<eraseLimit<<std::endl;
+			eraseLimit = 0;
+			// std::cout<<"new req body size:"<<request.getBody().size()<<std::endl;
+		}
+		
 	}
 	if (writeSize < 0)
 	{

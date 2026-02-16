@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/16 14:18:13 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/16 20:53:48 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,6 +120,7 @@ class Response
 		void				getFileResponse();
 		std::string			getBodyFilePath() const;
 		size_t				getByteWritten() const;
+		size_t				getEraseLimit() const;
 		bool				convertCGIResToResponse();
 		void				appendHeaderToResultPage(Bytes::const_iterator	crlfPos);
 		void				extractHeader(Bytes::const_iterator &crlfPos);

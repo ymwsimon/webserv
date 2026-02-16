@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/16 18:23:47 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/16 21:39:54 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,8 +124,6 @@ void	Server::run()
 				}
 				else if (cgiPipeFd.count(evt.data.fd) > 0)
 				{
-					if (cgiPipeFd.at(evt.data.fd)->getRequests().front().getBody().size())
-						std::cout<<"can write cgi in pipe:"<<evt.data.fd<<std::endl;
 					cgiPipeFd.at(evt.data.fd)->processResponseCgi(WRITE_PIPE);
 					if (evt.data.fd != cgiPipeFd.at(evt.data.fd)->getResponseCgiInPipeFd())
 						std::cerr<<"what3" << evt.data.fd<<std::endl;

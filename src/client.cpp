@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/16 17:28:59 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/16 21:39:04 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -195,7 +195,7 @@ bool	Client::timeToCloseCgiInPipe() const
 {
 	return !requests.empty()
 		&& ((requests.front().complete()
-		&& requests.front().getBody().empty()
+		&& requests.front().getBodyLength() == responses.front().getByteWritten()
 		&& !responses.empty()) || responses.front().isFinishWaitingStage());
 }
 
