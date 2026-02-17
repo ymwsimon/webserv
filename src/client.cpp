@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/16 21:39:04 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/17 09:39:43 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,7 +85,7 @@ int Client::recvData(struct epoll_event *evt)
 {
 	int		readSize = 0;
 
-	readSize = recv(evt->data.fd, buf, TRANSFER_SIZE, 0);
+	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, 0);
 
 	// std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)
@@ -173,7 +173,8 @@ void	Client::writeIncomingData(int readSize)
 	int	fd;
 
 	fd = open("indata", O_WRONLY | O_CREAT | O_APPEND, 0755);
-	write(fd, buf, readSize);
+	if (write(fd, buf, readSize))
+	{}
 	close(fd);
 }
 
@@ -184,7 +185,8 @@ void	Client::writeOutData(size_t size)
 	fd = open("outdata", O_CREAT | O_APPEND | O_WRONLY, 0777);
 	if (fd >= 0)
 	{
-		write(fd, responses.front().getResultPage().data(), size);
+		if (write(fd, responses.front().getResultPage().data(), size))
+		{}
 		close(fd);
 	}
 	else

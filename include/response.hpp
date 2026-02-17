@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/16 20:53:48 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/17 11:14:27 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,7 +140,6 @@ class Response
 		void				routeMatchingCheckLocationLimitationDetermineType();
 		void				checkBodySize();
 		void				updateResultPage();
-		// void				processResponse();
 		void				deleteResource();
 		void				clearResultPage();
 		void				addHttpPrefixToHeaders(std::map<std::string, std::string> headersToAdd,

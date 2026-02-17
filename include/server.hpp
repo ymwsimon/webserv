@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 17:31:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/15 18:56:57 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/17 10:55:22 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,15 +21,18 @@
 #include <algorithm>
 #include <signal.h>
 
+extern bool	g_finish;
+extern int	g_error;
+
 class Server
 {
 	private:
 		std::vector<Config>		configs;
-		std::map<int, Service>	services;
+		std::vector<Service>	services;
+		std::map<int, Service*>	socketServices;
 		std::set<Client>		clients;
 		std::map<int, Client>	clientsConnection;
-		std::map<int, Client *>	cgiPipeFd;
-		std::set<int>			fdInEpoll;
+		std::map<int, Client*>	cgiPipeFd;
 		int						epollFd;
 		bool					epollOperation(int fd, int op, bool needToStop);
 	public:
@@ -39,7 +42,7 @@ class Server
 		Server							&operator=(const Server &right);
 		void							run();
 		const std::vector<Config>		&getConfigs() const;
-		const std::map<int, Service>	&getServices() const;
+		const std::map<int, Service*>	&getServices() const;
 		const std::map<int, Client>		&getClients() const;
 		const int						&getEpollFd() const;
 };

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/16 21:39:35 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/17 11:41:27 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -601,7 +601,7 @@ long long	Response::extractResultFromCgiPipe()
 void	Response::writeDataToCgiPipe()
 {
 	ssize_t		writeSize = 0;
-	size_t		size = std::min((size_t)(BUFFER_SIZE), request.getBody().size() - eraseLimit);
+	size_t		size = std::min((size_t)(BUFFER_SIZE / 2), request.getBody().size() - eraseLimit);
 
 	if (size == 0)
 		return ;
@@ -677,7 +677,7 @@ void	Response::setStatusCodeResType(int code, int rType)
 		// if (resultSent)
 		// 	endChunkTransfer();
 		// else
-			resultPage.clear();
+		resultPage.clear();
 		if (isCGI())
 		{
 			cgiStage = FINISH_WAITING;
@@ -747,15 +747,12 @@ void	Response::determineResType(void)
 
 void	Response::processCgiRes()
 {
+	Bytes::const_iterator	it;
+
 	if (!cgiRes.empty() && isChunkMode())
 	{
-		// std::cout<<"converting cgires"<<std::endl;
 		if (!allHeaderExtracted)
-		{
-			Bytes::const_iterator	it;
-
 			extractHeader(it);
-		}
 		else
 			appendBodyForChunkMode();
 	}
@@ -801,8 +798,8 @@ void	Response::updateResultPage()
 {
 	std::string	res;
 
-	// if (resultSent && !isCGI())
-	// 	return ;
+	if ((resultSent || !resultPage.empty()) && !isCGI())
+		return ;
 	if (statusOK() && resultType == DELETE_RESOURCE)
 		deleteResource();
 	if (statusOK() && resultType == LIST_FOLDER)
@@ -818,51 +815,6 @@ void	Response::updateResultPage()
 	if (!statusOK() || resultType == ERR_PAGE)
 		stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod(), res), resultPage);
 }
-
-// void	Response::processResponse()
-// {
-// 	std::string	res;
-
-// 	if (!request.isUpdated() && !isCGI())
-// 		return ;
-// 	request.setUpdated(false);
-// 	if (statusOK() && !matchLocation)
-// 		matchLocation = service->findMatchingRoute(request);
-// 	if (statusOK() && !matchLocation)
-// 		(logMessage(std::cout, "no route match"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
-// 	if (statusOK() && matchLocation && resultType == NONE)
-// 	{
-// 		std::cout<<"route str:"<<matchLocation->getRouteStr()<<std::endl;
-// 		locationMatchLength = matchLocation->getRouteMatchLength(request.getPaths());
-// 		std::cout<<"match length:"<<locationMatchLength<<std::endl;
-// 	}
-// 	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
-// 		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
-// 	if (statusOK() && matchLocation
-// 		&& ((size_t)matchLocation->getMaxBodySize() < request.getBody().size()
-// 			|| (isChunkMode() && (size_t)matchLocation->getMaxBodySize() < request.getBodyLength())))
-// 		(logMessage(std::cout, "body too large"), setStatusCodeResType(Content_Too_Large, ERR_PAGE));
-// 	if (statusOK() && matchLocation && resultType == NONE)
-// 		determineResType();
-// 	if (statusOK() && !fileExist(resourcePath) && resultType != CGI_EXE)
-// 		(logMessage(std::cout, "file not found"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
-// 	if (statusOK() && fileExist(resourcePath) && !fileReadOK(resourcePath))
-// 		(logMessage(std::cout, "file not readable"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
-// 	if (statusOK() && resultType == DELETE_RESOURCE)
-// 		deleteResource();
-// 	if (statusOK() && resultType == LIST_FOLDER)
-// 		resultPage = matchLocation->generateIndexPages(resourcePath,
-// 			mergeFullPath("", request.getPaths(), locationMatchLength, false));
-// 	if (statusOK() && resultType == CGI_EXE
-// 		&& isRegularFile(resourcePath) && !fileExeOK(resourcePath))
-// 		resultType = FILE;
-// 	if (statusOK() && resultType == CGI_EXE)
-// 		processCgi(PROCESS_DATA);
-// 	if (statusOK() && resultType == FILE)
-// 		getFileResponse();
-// 	if (!statusOK() || resultType == ERR_PAGE)
-// 		stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod(), res), resultPage);
-// }
 
 void	Response::deleteResource()
 {

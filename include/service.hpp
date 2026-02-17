@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 21:58:23 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:55:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/17 10:41:31 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ class Service
 		int					socketFd;
 		Config				serviceConfig;
 		Service();
+		void				initAddrInfo();
 	public:
 		Service(Config config);
 		Service(const Service &right);

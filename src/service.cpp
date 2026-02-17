@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 19:08:32 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/17 11:14:03 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,17 +14,10 @@
 
 Service::Service(Config config)
 {
-	struct addrinfo		addr;
 	int					op = 1;
 
 	serviceConfig = config;
-	bzero(&addr, sizeof(addr));
-	addr.ai_family = AF_INET;
-	addr.ai_socktype = SOCK_STREAM;
-	addr.ai_flags = AI_PASSIVE;
-	addr.ai_protocol = 0;
-	if (getaddrinfo("127.0.0.1", "8080", &addr, &addrInfo))
-		std::cout << "error get addrinfo" << std::endl;
+	initAddrInfo();
 	socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
 	if (socketFd < 0)
 		std::cout << "error create socket" << std::endl;
@@ -44,19 +37,32 @@ Service::Service(const Service &right)
 
 Service::~Service()
 {
-	
+	freeaddrinfo(addrInfo);
 }
 
 Service	&Service::operator=(const Service &right)
 {
 	if (this != &right)
 	{
-		addrInfo = right.addrInfo;
+		serviceConfig = right.serviceConfig;
 		addrLen = right.addrLen;
 		socketFd = right.socketFd;
-		serviceConfig = right.serviceConfig;
+		initAddrInfo();
 	}
 	return *this;
+}
+
+void	Service::initAddrInfo()
+{
+	struct addrinfo		addr;
+
+	bzero(&addr, sizeof(addr));
+	addr.ai_family = AF_INET;
+	addr.ai_socktype = SOCK_STREAM;
+	addr.ai_flags = AI_PASSIVE;
+	addr.ai_protocol = 0;
+	if (getaddrinfo(serviceConfig.getListenAddress().c_str(), toString(serviceConfig.getPort()).c_str(), &addr, &addrInfo))
+		std::cout << "error get addrinfo" << std::endl;
 }
 
 struct addrinfo	*Service::getAddrInfo() const
