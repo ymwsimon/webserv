@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/17 11:13:15 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/20 11:59:28 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -163,7 +163,16 @@ void	Server::run()
 		{
 			it->second.processRequestResponse();
 			if (it->second.isOkToRemoveRequestResponse())
+			{
+				pid_t	p = it->second.getResponses().front().getPid();
+				if (p)
+				{
+					std::cout<<"to be remove pid:"<<p<<std::endl;
+					std::cout<<"wait res:"<<it->second.getResponses().front().getWaitRes() <<std::endl;
+					std::cout<<"wait status:"<<it->second.getResponses().front().getWaitStatus() <<std::endl;
+				}
 				it->second.removeReqResPair();
+			}
 			if (it->second.timeToAddCgiPipeToEpoll())
 			{
 				std::cout<<"client fd add cgi pipe fd to epoll:" << it->first<<std::endl;

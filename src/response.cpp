@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/17 11:41:27 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/20 22:49:23 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -243,6 +243,21 @@ size_t	Response::getByteWritten() const
 size_t	Response::getEraseLimit() const
 {
 	return eraseLimit;
+}
+
+pid_t	Response::getPid() const
+{
+	return cgiPid;
+}
+
+pid_t	Response::getWaitRes() const
+{
+	return waitRes;
+}
+
+int	Response::getWaitStatus() const
+{
+	return waitStatus;
 }
 
 bool	Response::convertCGIResToResponse()
@@ -491,28 +506,21 @@ void	Response::startCgi()
 
 void	Response::processCgi(int op)
 {
-	int				status;
-	pid_t			waitRes = 0;
-
-	// std::cerr<<"process cgi"<<std::endl;
 	if (cgiStage == INIT)
 		startCgi();
 	else if (cgiStage == WAITING_HEADER || cgiStage == WAITING_CGI_BODY)// || cgiStage == ADD_FD_POLL)
 	{
-		// if (cgiStage == ADD_FD_POLL)
-		// 	cgiStage = WAITING_HEADER;
-		if ((waitRes = waitpid(cgiPid, &status, WUNTRACED | WNOHANG)) < 0)
+		if ((waitRes = waitpid(cgiPid, &waitStatus, WUNTRACED | WNOHANG)) < 0)
 		{
-			// std::cerr<<"???5"<<std::endl;
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			return ;
 		}
-		if ((!waitRes && std::difftime(std::time(NULL), cgiLastActiveTime) > cgiWaitTime)
-			|| op == KILL_PROCESS)
+		if (!waitRes && std::difftime(std::time(NULL), cgiLastActiveTime) > cgiWaitTime)
 		{
 			std::cout << "time to kill cgiPid: " << cgiPid << std::endl;
 			kill(cgiPid, SIGKILL);
 			cgiStage = FINISH_WAITING;
+			waitRes = waitpid(cgiPid, &waitStatus, WUNTRACED);
 			// if (isChunkMode())
 			// {
 			// 	std::cout <<"end chunk transfer"<<std::endl;
@@ -520,12 +528,9 @@ void	Response::processCgi(int op)
 			// }
 			std::cout << "finish kill cgiPid: " << cgiPid << std::endl;
 		}
-		if (waitRes == cgiPid
-			|| (!waitRes && difftime(std::time(NULL), cgiLastActiveTime) > cgiWaitTime)
-			|| op == KILL_PROCESS)
+		if (waitRes == cgiPid)
 		{
-			waitpid(cgiPid, &status, WUNTRACED | WNOHANG);
-			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+			if (WIFEXITED(waitStatus) && WEXITSTATUS(waitStatus) != 0)
 			{
 				std::cerr<<"???6"<<std::endl;
 				setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
@@ -541,9 +546,9 @@ void	Response::processCgi(int op)
 			std::cout<<"total byte extracted:"<<byteExtracted<<std::endl;
 			std::cout<<"total byte written:"<<byteWritten<<std::endl;
 			std::cout<<"total byte converted:"<<byteConverted<<std::endl;
-			if (isChunkMode())
-			{
-				std::cout <<"end chunk transfer"<<std::endl;
+			// if (isChunkMode())
+			// {
+			// 	std::cout <<"end chunk transfer"<<std::endl;
 				// while (extractResultFromCgiPipe() > 0)
 				// 	;
 				// while (cgiRes.size() > 0)
@@ -552,7 +557,7 @@ void	Response::processCgi(int op)
 				// 	appendBodyForChunkMode();
 				// }
 				// endChunkTransfer();
-			}
+			// }
 		}
 	}
 	processCgiRes();
@@ -579,13 +584,13 @@ long long	Response::extractResultFromCgiPipe()
 	// if (cgiOutPipeDrained)
 	// 	return 0;
 	readSize = read(cgiOutFd, buf, BUFFER_SIZE);
+	updateCgiActiveTime();
 	if (readSize > 0)
 	{
 		appendBuf(cgiRes, buf, readSize);
 		byteExtracted += readSize;
 		// std::cout << "read size: " << readSize << std::endl;
 		// std::cout << "read from cgi out fd: " << cgiOutFd << std::endl;
-		updateCgiActiveTime();
 	}
 	if (readSize == -1)
 		std::cerr<<"readsize -1"<<std::endl;
@@ -605,7 +610,6 @@ void	Response::writeDataToCgiPipe()
 
 	if (size == 0)
 		return ;
-	// std::cout<<"write to pipe start"<<std::endl;
 	writeSize = write(cgiInFd, request.getBody().data() + eraseLimit, size);
 	if (writeSize < (ssize_t)size)
 		std::cerr<< (ssize_t)size - writeSize<<std::endl;
@@ -617,18 +621,14 @@ void	Response::writeDataToCgiPipe()
 		if (eraseLimit >= 5000000)
 		{
 			request.removeNCharFromBody(eraseLimit);
-			// std::cout<<"n char removed from body:"<<eraseLimit<<std::endl;
 			eraseLimit = 0;
-			// std::cout<<"new req body size:"<<request.getBody().size()<<std::endl;
 		}
 		
 	}
 	if (writeSize < 0)
 	{
-		std::cerr<<"???7:"<<cgiInFd<<std::endl;
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 	}
-	// std::cout<<"write to pipe fin"<<std::endl;
 }
 
 void	Response::prepareArgEnv(std::string &exe, std::vector<std::string> &strs,
@@ -674,9 +674,6 @@ void	Response::setStatusCodeResType(int code, int rType)
 {
 	if (rType == ERR_PAGE)
 	{
-		// if (resultSent)
-		// 	endChunkTransfer();
-		// else
 		resultPage.clear();
 		if (isCGI())
 		{

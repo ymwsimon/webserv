@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/17 11:14:27 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/20 22:16:00 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@
 #include "request.hpp"
 #include "utils.hpp"
 
-const int	cgiWaitTime = 10;
+const int	cgiWaitTime = 3;
 
 enum e_cgiStage
 {
@@ -73,6 +73,8 @@ class Response
 		int									statusCode;
 		int									resultType;
 		pid_t								cgiPid;
+		pid_t								waitRes;
+		int									waitStatus;
 		int									outPipeFd[2];
 		int									inPipeFd[2];
 		std::time_t							cgiLastActiveTime;
@@ -121,6 +123,9 @@ class Response
 		std::string			getBodyFilePath() const;
 		size_t				getByteWritten() const;
 		size_t				getEraseLimit() const;
+		pid_t				getPid() const;
+		pid_t				getWaitRes() const;
+		int					getWaitStatus() const;
 		bool				convertCGIResToResponse();
 		void				appendHeaderToResultPage(Bytes::const_iterator	crlfPos);
 		void				extractHeader(Bytes::const_iterator &crlfPos);
