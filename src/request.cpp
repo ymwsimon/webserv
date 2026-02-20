@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/20 11:11:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/20 22:55:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -377,20 +377,16 @@ void	Request::parseRequest()
 			}
 			else if (bodyFilePath.empty())
 			{
-				int	fd;
-
+				int			fd;
+				std::string	tmpPath = "tmp/";
+			
 				requestStatus = BODY;
 				std::srand(std::time(NULL));
-				if (!fileExist("tmp/"))
-				{
-					requestStatus = COMPLETE;
-					std::cout<<"tmp not exist"<<std::endl;
-					setStatusCode(INTERNAL_ERROR);
-					return ;
-				}
-				bodyFilePath = "tmp/" + toString(std::rand());
+				if (!fileExist(tmpPath))
+					tmpPath = "";
+				bodyFilePath = tmpPath + toString(std::rand());
 				while (fileExist(bodyFilePath))
-					bodyFilePath = "tmp/" + toString(std::rand());
+					bodyFilePath = tmpPath + toString(std::rand());
 				(void)fd;
 				fd = open(bodyFilePath.c_str(), O_CREAT | O_TRUNC, 0777);
 				if (fd < 0 || close(fd) < 0)
