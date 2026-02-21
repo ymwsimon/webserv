@@ -3,3 +3,10 @@
 *.o
 webserv
 YoupiBanane/*
+*.zst
+upload/*
+tmp/*
+*.Identifier
+indata
+outdata
+aaa
