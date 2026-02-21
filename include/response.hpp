@@ -6,12 +6,13 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/20 22:16:00 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/20 23:29:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include <vector>
+#include <set>
 #include <fstream>
 #include <string>
 #include <ctime>
@@ -59,8 +60,8 @@ class Response
 		Service								*service;
 		Request								&request;
 		const Location						*matchLocation;
+		std::set<int>						prevStatusCode;
 		std::string							resourcePath;
-		std::ifstream						*pageStream;
 		int									cgiOutFd;
 		int									cgiInFd;
 		size_t								byteWritten;
@@ -113,7 +114,6 @@ class Response
 		const Bytes			&getCgiRes() const;
 		const Location		*getMatchLocation() const;
 		const std::string	getResourcePath() const;
-		const std::ifstream	*getPageStream() const;
 		int					getResultType() const;
 		int					getCgiOutFd() const;
 		int					getCgiInFd() const;

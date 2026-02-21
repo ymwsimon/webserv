@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/25 22:30:20 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/21 17:21:54 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ class Location
 {
 	private:
 		std::map<std::string, std::string>	cgi;
+		std::map<int, std::string> 			&errorPages;
 		std::string							routeStr;
 		std::vector<std::string>			route;
 		std::string							rootFolder;
@@ -40,8 +41,8 @@ class Location
 			PUT = 8,
 			HEAD = 16,
 		};
-		Location();
-		Location(int i);
+		Location(std::map<int, std::string> &errorPages);
+		Location(std::map<int, std::string> &errorPages, int i);
 		Location(const Location &right);
 		~Location();
 		Location						&operator=(const Location &right);

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/20 22:49:23 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/20 23:28:44 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,6 @@ Response	&Response::operator=(const Response &right)
 		request = right.request;
 		matchLocation = right.matchLocation;
 		resourcePath = right.resourcePath;
-		pageStream = right.pageStream;
 		cgiOutFd = right.cgiOutFd;
 		cgiInFd = right.cgiInFd;
 		byteWritten = right.byteWritten;
@@ -151,11 +150,6 @@ bool	Response::isEndChunkAppended() const
 int	Response::getStatusCode() const
 {
 	return statusCode;
-}
-
-const std::ifstream	*Response::getPageStream() const
-{
-	return pageStream;
 }
 
 int	Response::getResultType() const

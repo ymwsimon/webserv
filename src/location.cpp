@@ -6,13 +6,13 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/01/29 12:01:36 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/21 17:23:26 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/location.hpp"
 
-Location::Location()
+Location::Location(std::map<int, std::string> &ep) : errorPages(ep)
 {
 	autoIndex = false;
 	allowedMethod = 0;
@@ -33,7 +33,7 @@ Location::Location()
 	// cgi.insert(std::make_pair("html", "aaa"));
 }
 
-Location::Location(int i)
+Location::Location(std::map<int, std::string> &ep, int i) : errorPages(ep)
 {
 	if (i == 1)
 	{
@@ -93,7 +93,7 @@ Location::Location(int i)
 	}
 }
 
-Location::Location(const Location &right)
+Location::Location(const Location &right) : errorPages(right.errorPages)
 {
 	*this = right;
 }
