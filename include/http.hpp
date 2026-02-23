@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:46:32 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/06 17:41:38 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 10:21:59 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,11 +22,13 @@ const std::string	CONTENT_TYPE = "content-type";
 const std::string	CONTENT_LENGTH = "content-length";
 const std::string	TRANSFER_ENDCODING = "transfer-encoding";
 const std::string	CHUNKED = "chunked";
+const std::string	STATUS = "status";
 
 enum e_HTTPStatusCode
 {
 	HTTP_OK = 200,
 	NO_CONTENT = 204,
+	HTTP_REDIRECT = 302,
 	BAD_REQUEST = 400,
 	FORBIDDEN = 403,
 	NOT_FOUND = 404,
@@ -53,3 +55,4 @@ std::string			&genHttpResponse(int code, std::string &content,
 	std::map<std::string, std::string> headers);
 std::string			&genHttpResponse(int code, std::map<std::string, std::string> headers, bool isHeadMethod, std::string &res);
 std::string			genHttpResponse(int code, std::map<std::string, std::string> headers, bool isHeadMethod);
+bool				isExternalPath(std::string path);

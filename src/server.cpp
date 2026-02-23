@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/20 11:59:28 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 10:43:16 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,7 +119,10 @@ void	Server::run()
 				else
 				{
 					if (cgiPipeFd.at(evt.data.fd)->getResponseCgiOutPipeFd() == evt.data.fd)
+					{
+						std::cout << "drain pipe"<<std::endl;
 						cgiPipeFd.at(evt.data.fd)->processResponseCgi(EXTRACT_PIPE);
+					}
 					if (cgiPipeFd.at(evt.data.fd)->getResponseCgiOutPipeFd() != evt.data.fd ||
 						cgiPipeFd.at(evt.data.fd)->timeToRemoveCgiPipeFromEpoll())
 					{

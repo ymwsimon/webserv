@@ -6,14 +6,23 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/20 23:28:44 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 11:05:00 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/response.hpp"
 
-Response::Response(Service *ser, Request &req) : service(ser), request(req), statusCode(req.getStatusCode())
+Response::Response(Service *ser, Request &req) : service(ser), request(req)
 {
+	statusCode = req.getStatusCode();
+	init();
+}
+
+void	Response::init()
+{
+	paths = request.getPaths();
+	route = request.getRoute();
+	method = request.getMethod();
 	resultType = NONE;
 	cgiStage = INIT;
 	matchLocation = NULL;
@@ -23,12 +32,15 @@ Response::Response(Service *ser, Request &req) : service(ser), request(req), sta
 	byteExtracted = 0;
 	byteConverted = 0;
 	eraseLimit = 0;
-	bodyFilePath = req.getBodyFilePath();
+	bodyFilePath = request.getBodyFilePath();
 	cgiPid = 0;
 	resultSent = false;
 	cgiOutPipeDrained = false;
 	allHeaderExtracted = false;
 	endChunkAppended = false;
+	resultPage.clear();
+	cgiRes.clear();
+	headers.clear();
 }
 
 Response::Response(const Response &right) : service(right.service), request(right.request)
@@ -47,6 +59,9 @@ Response	&Response::operator=(const Response &right)
 	{
 		service = right.service;
 		request = right.request;
+		paths = right.paths;
+		route = right.route;
+		method = right.method;
 		matchLocation = right.matchLocation;
 		resourcePath = right.resourcePath;
 		cgiOutFd = right.cgiOutFd;
@@ -147,6 +162,21 @@ bool	Response::isEndChunkAppended() const
 	return endChunkAppended;
 }
 
+bool	Response::isHeadMethod() const
+{
+	return method == "HEAD";
+}
+
+bool	Response::isStatusCodeinCustomErrorPage() const
+{
+	return service->getServiceConfig().getErrorPages().count(statusCode) > 0;
+}
+
+bool	Response::isRedirectStatusCode() const
+{
+	return statusCode / 100 == 3;
+}
+
 int	Response::getStatusCode() const
 {
 	return statusCode;
@@ -170,6 +200,11 @@ int	Response::getCgiInFd() const
 int	Response::getCgiStage() const
 {
 	return cgiStage;
+}
+
+const std::map<int, std::string>	&Response::getCustomErrorPage() const
+{
+	return service->getServiceConfig().getErrorPages();
 }
 
 const Bytes	&Response::getResultPage() const
@@ -264,16 +299,20 @@ bool	Response::convertCGIResToResponse()
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		return false;
 	}
-	if (headers.count("status") > 0 && headers.at("status") != "200 OK")
+	if (headers.count(STATUS) > 0)
 	{
-		std::cout<<"status err"<<std::endl;
-		std::cout<<"status: "<<headers.at("status") <<std::endl;
+		std::string				statusStr = headers.at(STATUS);
+		std::string::iterator	spIter = std::search(statusStr.begin(), statusStr.end(),
+			SPACE.begin(), SPACE.end());
+		// std::cout<<"status err"<<std::endl;
+		std::cout<<"status: "<<statusStr <<std::endl;
 
-		// statusCode = toInt(headers.at("status"));
-		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
-		// if (statusCode == -1)
+		statusCode = toInt(std::string(statusStr.begin(), spIter));
+		std::cout<<"status code: "<<statusCode <<std::endl;
+		if (statusCode == -1)
+			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 		// 	statusCode = INTERNAL_ERROR;
-		return false;
+		// return false;
 	}
 	appendHeaderToResultPage(crlfPos);
 	appendBytes(resultPage, crlfPos + CRLF.size(), cgiRes.end());
@@ -284,7 +323,7 @@ void	Response::appendHeaderToResultPage(Bytes::const_iterator crlfPos)
 {
 	size_t	size;
 
-	appendBytes(resultPage, genHttpResponseLine(200));
+	appendBytes(resultPage, genHttpResponseLine(statusCode));
 	if (isChunkMode())
 		headers.insert(std::make_pair(TRANSFER_ENDCODING, CHUNKED));
 	else
@@ -515,6 +554,8 @@ void	Response::processCgi(int op)
 			kill(cgiPid, SIGKILL);
 			cgiStage = FINISH_WAITING;
 			waitRes = waitpid(cgiPid, &waitStatus, WUNTRACED);
+			if (cgiRes.empty() && !resultSent)
+				setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			// if (isChunkMode())
 			// {
 			// 	std::cout <<"end chunk transfer"<<std::endl;
@@ -564,6 +605,10 @@ void	Response::processCgi(int op)
 			setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 			std::cout<<"convert cgi res fail"<<std::endl;
 		}
+		std::cout << "Res page:" << std::endl;
+		for (size_t i = 0; i < resultPage.size(); ++i)
+			std::cout << resultPage[i];
+		std::cout << std::endl;
 		cgiRes.clear();
 	}
 }
@@ -578,9 +623,10 @@ long long	Response::extractResultFromCgiPipe()
 	// if (cgiOutPipeDrained)
 	// 	return 0;
 	readSize = read(cgiOutFd, buf, BUFFER_SIZE);
-	updateCgiActiveTime();
+	// std::cerr<<"qqq";
 	if (readSize > 0)
 	{
+		updateCgiActiveTime();
 		appendBuf(cgiRes, buf, readSize);
 		byteExtracted += readSize;
 		// std::cout << "read size: " << readSize << std::endl;
@@ -607,9 +653,9 @@ void	Response::writeDataToCgiPipe()
 	writeSize = write(cgiInFd, request.getBody().data() + eraseLimit, size);
 	if (writeSize < (ssize_t)size)
 		std::cerr<< (ssize_t)size - writeSize<<std::endl;
-	updateCgiActiveTime();
 	if (writeSize > 0)
 	{
+		updateCgiActiveTime();
 		eraseLimit += writeSize;
 		byteWritten += writeSize;
 		if (eraseLimit >= 5000000)
@@ -694,9 +740,9 @@ void	Response::determineResType(void)
 	std::string	filePathStr;
 	
 	filePathStr = mergeFullPath(matchLocation->getRootFolder(),
-		request.getPaths(), locationMatchLength, matchLocation->getCGIConfig());
+		paths, locationMatchLength, matchLocation->getCGIConfig());
 	logMessage(std::cout, "FilePath str: " + filePathStr);
-	if (request.isMethod("DELETE"))
+	if (method == "DELETE")
 	{
 		resultType = DELETE_RESOURCE;
 		resourcePath = filePathStr;
@@ -758,21 +804,29 @@ void	Response::routeMatchingCheckLocationLimitationDetermineType()
 {
 	if (statusOK() && !matchLocation)
 	{
-		matchLocation = service->findMatchingRoute(request);
+		matchLocation = service->findMatchingRoute(paths);
 		if (!matchLocation)
 			(logMessage(std::cout, "no route match"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
 	}
 	if (statusOK() && matchLocation && resultType == NONE)
 	{
 		std::cout<<"route str:"<<matchLocation->getRouteStr()<<std::endl;
-		locationMatchLength = matchLocation->getRouteMatchLength(request.getPaths());
+		locationMatchLength = matchLocation->getRouteMatchLength(paths);
 		std::cout<<"match length:"<<locationMatchLength<<std::endl;
 	}
-	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(request.getMethod()))
+	if (statusOK() && matchLocation && !matchLocation->isMethodAllowed(method))
 		(logMessage(std::cout, "method not allowed"), setStatusCodeResType(NOT_ALLOWED, ERR_PAGE));
 	checkBodySize();
 	if (statusOK() && matchLocation && resultType == NONE)
 		determineResType();
+	if (statusOK() && !fileWriteOK(resourcePath) && resultType == DELETE_RESOURCE)
+		(logMessage(std::cout, "file not writable"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
+	if (statusOK() && matchLocation && !matchLocation->getRedirect().empty())
+	{
+		setStatusCodeResType(HTTP_REDIRECT, REDIRECT);
+		headers.insert(std::make_pair("location", matchLocation->getRedirect()));
+		method = "GET";
+	}
 	if (statusOK() && !fileExist(resourcePath) && resultType != CGI_EXE)
 		(logMessage(std::cout, "file not found"), setStatusCodeResType(NOT_FOUND, ERR_PAGE));
 	if (statusOK() && fileExist(resourcePath) && !fileReadOK(resourcePath))
@@ -795,32 +849,56 @@ void	Response::updateResultPage()
 		deleteResource();
 	if (statusOK() && resultType == LIST_FOLDER)
 		resultPage = matchLocation->generateIndexPages(resourcePath,
-			mergeFullPath("", request.getPaths(), locationMatchLength, false));
+			mergeFullPath("", paths, locationMatchLength, false));
 	if (statusOK() && resultType == CGI_EXE
 		&& isRegularFile(resourcePath) && !fileExeOK(resourcePath))
 		resultType = FILE;
-	if (statusOK() && resultType == CGI_EXE)
+	if (resultType == CGI_EXE)
 		processCgi(PROCESS_DATA);
 	if (statusOK() && resultType == FILE)
 		getFileResponse();
-	if (!statusOK() || resultType == ERR_PAGE)
-		stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod(), res), resultPage);
+	if (resultType == ERR_PAGE)
+		stringToBytes(genHttpResponse(statusCode, headers, isHeadMethod(), res), resultPage);
+	if (isStatusCodeinCustomErrorPage() && !prevStatusCode.count(statusCode))
+	{
+		std::string	newRoute = getCustomErrorPage().at(statusCode);
+		std::vector<std::string> newPaths = splitPath(newRoute);
+
+		if (!isExternalPath(newRoute) && !isRedirectStatusCode())
+		{
+			prevStatusCode.insert(statusCode);
+			statusCode = HTTP_OK;
+			init();
+			paths = newPaths;
+			method = "GET";
+			route = newRoute;
+			routeMatchingCheckLocationLimitationDetermineType();
+		}
+		else
+		{
+			setStatusCodeResType(HTTP_REDIRECT, REDIRECT);
+			headers.erase("location");
+			headers.insert(std::make_pair("location", newRoute));
+			method = "GET";
+			stringToBytes(genHttpResponse(statusCode, headers, isHeadMethod(), res), resultPage);
+		}
+	}
 }
 
 void	Response::deleteResource()
 {
 	std::string	res;
 
-	if (!request.getRoute().empty() &&
-		((*request.getRoute().rbegin() == '/' && isRegularFile(resourcePath))
-		 || (*request.getRoute().rbegin() != '/' && isDir(resourcePath))))
+	if (!route.empty() &&
+		((*route.rbegin() == '/' && isRegularFile(resourcePath))
+		 || (*route.rbegin() != '/' && isDir(resourcePath))))
 		setStatusCodeResType(CONFLICT, ERR_PAGE);
 	else if (std::remove(resourcePath.c_str()))
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
 	else
 	{
 		setStatusCode(NO_CONTENT);
-		stringToBytes(genHttpResponse(statusCode, headers, request.isHeadMethod(), res), resultPage);
+		stringToBytes(genHttpResponse(statusCode, headers, isHeadMethod(), res), resultPage);
 	}
 }
 
@@ -848,7 +926,7 @@ void	Response::addCgiHeaders(std::map<std::string, std::string> &headersRes)
 	headersRes.insert(std::make_pair("SCRIPT_FILENAME", resourcePath));
 	headersRes.insert(std::make_pair("PATH_INFO", "/"));
 	headersRes.insert(std::make_pair("SERVER_PROTOCOL", request.getHttpVer()));
-	headersRes.insert(std::make_pair("REQUEST_METHOD", request.getMethod()));
+	headersRes.insert(std::make_pair("REQUEST_METHOD", method));
 	headersRes.insert(std::make_pair("REDIRECT_STATUS", "200"));
 	if (!request.isChunkMode())
 		headersRes.insert(std::make_pair("CONTENT_LENGTH", toString(request.getBodyLength())));

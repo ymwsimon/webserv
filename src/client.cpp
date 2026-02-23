@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/17 09:39:43 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 11:12:52 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -211,9 +211,10 @@ bool	Client::timeToAddCgiPipeToEpoll() const
 bool	Client::timeToRemoveCgiPipeFromEpoll() const
 {
 	return !responses.empty()
-		&& responses.front().isCgiOutPipeDrained()
-		&& responses.front().getCgiRes().empty()
-		&& responses.front().getResultPage().empty();
+		&& responses.front().isFinishWaitingStage()
+		&& responses.front().isCgiOutPipeDrained();
+		// && responses.front().getCgiRes().empty()
+		// && responses.front().getResultPage().empty();
 }
 
 bool	Client::isOkToSendData() const
@@ -227,7 +228,7 @@ bool	Client::isOkToSendData() const
 	return (!response.getResultPage().empty()
 			&& ((request.complete() && !response.isCGI())
 				|| (((request.isWaitingChunk() || request.complete())
-					&& response.isCGI() && response.statusOK()
+					&& response.isCGI()
 					&& (response.isWaitingStage() || response.isFinishWaitingStage())))));
 }
 

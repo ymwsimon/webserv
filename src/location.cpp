@@ -6,13 +6,13 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/21 17:23:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/22 17:38:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/location.hpp"
 
-Location::Location(std::map<int, std::string> &ep) : errorPages(ep)
+Location::Location()
 {
 	autoIndex = false;
 	allowedMethod = 0;
@@ -33,7 +33,7 @@ Location::Location(std::map<int, std::string> &ep) : errorPages(ep)
 	// cgi.insert(std::make_pair("html", "aaa"));
 }
 
-Location::Location(std::map<int, std::string> &ep, int i) : errorPages(ep)
+Location::Location(int i)
 {
 	if (i == 1)
 	{
@@ -93,7 +93,7 @@ Location::Location(std::map<int, std::string> &ep, int i) : errorPages(ep)
 	}
 }
 
-Location::Location(const Location &right) : errorPages(right.errorPages)
+Location::Location(const Location &right)
 {
 	*this = right;
 }
@@ -180,6 +180,11 @@ int	Location::getAllowedMethod() const
 int	Location::getMaxBodySize() const
 {
 	return maxBodySize;
+}
+
+std::string	Location::getRedirect() const
+{
+	return redirect;
 }
 
 void	Location::setRoutePaths(std::vector<std::string> p)

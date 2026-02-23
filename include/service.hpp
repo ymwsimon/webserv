@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 21:58:23 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/17 10:41:31 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/22 15:34:41 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,5 +38,5 @@ class Service
 		const u_int32_t	&getAddrLen() const;
 		const int		&getSocketFd() const;
 		const Config	&getServiceConfig() const;
-		const Location	*findMatchingRoute(const Request &req) const;
+		const Location	*findMatchingRoute(const std::vector<std::string> &paths) const;
 };

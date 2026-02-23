@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:12:27 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/21 17:24:50 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 10:24:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,9 @@
 
 Config::Config()
 {
-	Location	l(errorPages);
-	Location	l2(errorPages);
-	Location	l3(errorPages);
+	Location	l;
+	Location	l2;
+	Location	l3;
 	std::vector<std::string>	splitRes;
 
 	// locations.push_back(l);
@@ -25,12 +25,13 @@ Config::Config()
 	l2.setRoutePaths(splitRes);
 	l2.setRootFolder("/folderb/");
 	// locations.push_back(l2);
-	locations.push_back(Location(errorPages, 1));
-	locations.push_back(Location(errorPages, 2));
-	locations.push_back(Location(errorPages, 3));
+	locations.push_back(Location(1));
+	locations.push_back(Location(2));
+	locations.push_back(Location(3));
 	listenAddress = "127.0.0.1";
 	serverName = "localhost";
 	port = 8080;
+	// errorPages.insert(std::make_pair(404, "http://localhost:8080/q"));
 }
 
 Config::Config(const Config &right)

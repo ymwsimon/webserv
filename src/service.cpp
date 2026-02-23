@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/17 11:14:03 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/22 15:34:33 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,7 +85,7 @@ const Config	&Service::getServiceConfig() const
 	return serviceConfig;
 }
 
-const Location	*Service::findMatchingRoute(const Request &req) const
+const Location	*Service::findMatchingRoute(const std::vector<std::string> &paths) const
 {
-	return serviceConfig.getLocationMatch(req.getPaths());
+	return serviceConfig.getLocationMatch(paths);
 }

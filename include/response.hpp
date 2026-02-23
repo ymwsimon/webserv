@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/20 23:29:26 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/22 18:07:00 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,9 @@ class Response
 	private:
 		Service								*service;
 		Request								&request;
+		std::string							route;
+		std::vector<std::string> 			paths;
+		std::string							method;
 		const Location						*matchLocation;
 		std::set<int>						prevStatusCode;
 		std::string							resourcePath;
@@ -88,6 +91,7 @@ class Response
 		bool								allHeaderExtracted;
 		bool								endChunkAppended;
 		Response();
+		void								init();
 		void								determineResType();
 		void								processCgiRes();
 	public:
@@ -109,6 +113,9 @@ class Response
 		bool				isResultSent() const;
 		bool				isCgiOutPipeDrained() const;
 		bool				isEndChunkAppended() const;
+		bool				isHeadMethod() const;
+		bool				isStatusCodeinCustomErrorPage() const;
+		bool				isRedirectStatusCode() const;
 		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
 		const Bytes			&getCgiRes() const;
@@ -118,6 +125,7 @@ class Response
 		int					getCgiOutFd() const;
 		int					getCgiInFd() const;
 		int					getCgiStage() const;
+		const std::map<int, std::string>	&getCustomErrorPage() const;
 		void				printResponse() const;
 		void				getFileResponse();
 		std::string			getBodyFilePath() const;
@@ -126,6 +134,7 @@ class Response
 		pid_t				getPid() const;
 		pid_t				getWaitRes() const;
 		int					getWaitStatus() const;
+		
 		bool				convertCGIResToResponse();
 		void				appendHeaderToResultPage(Bytes::const_iterator	crlfPos);
 		void				extractHeader(Bytes::const_iterator &crlfPos);

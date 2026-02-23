@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:48:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/06 18:23:02 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/22 17:11:10 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -344,4 +344,9 @@ std::string	genHttpResponse(int code, std::map<std::string, std::string> headers
 	if (code == BAD_REQUEST)
 		headers.insert(std::make_pair("Connection", "close"));
 	return genHttpResponse(code, res, headers);
+}
+
+bool	isExternalPath(std::string path)
+{
+	return !path.empty() && path[0] != '/';
 }
