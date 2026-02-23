@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 11:05:00 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 17:20:09 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,11 @@ void	Response::init()
 	cgiOutPipeDrained = false;
 	allHeaderExtracted = false;
 	endChunkAppended = false;
+	fileAllRead = false;
 	resultPage.clear();
 	cgiRes.clear();
 	headers.clear();
+	fileFd = -2;
 }
 
 Response::Response(const Response &right) : service(right.service), request(right.request)
@@ -88,6 +90,8 @@ Response	&Response::operator=(const Response &right)
 		cgiOutPipeDrained = right.cgiOutPipeDrained;
 		allHeaderExtracted = right.allHeaderExtracted;
 		endChunkAppended = right.endChunkAppended;
+		fileAllRead = right.fileAllRead;
+		fileFd = right.fileFd;
 	}
 	return *this;
 }
@@ -100,6 +104,11 @@ bool	Response::statusOK() const
 bool	Response::isNoneType() const
 {
 	return resultType == NONE;
+}
+
+bool	Response::isFileType() const
+{
+	return resultType == FILE;
 }
 
 bool	Response::isCGI() const
@@ -177,6 +186,11 @@ bool	Response::isRedirectStatusCode() const
 	return statusCode / 100 == 3;
 }
 
+bool	Response::isFileAllRead() const
+{
+	return fileAllRead;
+}
+
 int	Response::getStatusCode() const
 {
 	return statusCode;
@@ -237,26 +251,51 @@ void	Response::printResponse() const
 
 void	Response::getFileResponse()
 {
-	// Bytes				buf(BUFFER_SIZE);
 	std::string			head;
-	int					fd;
 	int					readSize;
 
-	fd = open(resourcePath.c_str(), O_RDONLY, 0700);
-	while (fd >= 0 && (readSize = read(fd, buf, BUFFER_SIZE)) > 0)
-		appendBuf(resultPage, buf, readSize);
-	if (fd < 0
-		|| close(fd) < 0
-		|| readSize < 0)
+	if (fileFd == -2)
+		fileFd = open(resourcePath.c_str(), O_RDONLY, 0700);
+	if (fileFd < 0)
 	{
 		setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+		fileAllRead = true;
 		return ;
 	}
-	genHttpResponseLine(statusCode, head);
-	genHttpHeader(CONTENT_TYPE, getMediaType(extractFileExt(resourcePath)), head);
-	genHttpHeader(CONTENT_LENGTH, toString(resultPage.size()), head);
-	head.append(CRLFStr);
-	resultPage.insert(resultPage.begin(), head.begin(), head.end());
+	else if (!resultSent)
+	{
+		std::cout<<"append head"<<std::endl;
+		genHttpResponseLine(statusCode, head);
+		genHttpHeader(CONTENT_TYPE, getMediaType(extractFileExt(resourcePath)), head);
+		genHttpHeader(CONTENT_LENGTH, toString(fileSize(resourcePath)), head);
+		head.append(CRLFStr);
+		resultPage.insert(resultPage.begin(), head.begin(), head.end());
+	}
+	if (!fileAllRead)
+	{
+		std::cout<<"read file"<<std::endl;
+		readSize = read(fileFd, buf, BUFFER_SIZE);
+		if (readSize > 0)
+			appendBuf(resultPage, buf, readSize);
+		else if (readSize == 0)
+		{
+			fileAllRead = true;
+			if (close(fileFd) < 0)
+			{
+				if (!resultSent)
+					setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+				else
+					statusCode = INTERNAL_ERROR;
+			}
+		}
+		else if (readSize == - 1)
+		{
+			if (!resultSent)
+				setStatusCodeResType(INTERNAL_ERROR, ERR_PAGE);
+			else
+				statusCode = INTERNAL_ERROR;
+		}
+	}
 }
 
 std::string	Response::getBodyFilePath() const
@@ -622,6 +661,8 @@ long long	Response::extractResultFromCgiPipe()
 	// std::cout<<"read from pipe start"<<std::endl;
 	// if (cgiOutPipeDrained)
 	// 	return 0;
+	if (cgiOutPipeDrained)
+		return 0;
 	readSize = read(cgiOutFd, buf, BUFFER_SIZE);
 	// std::cerr<<"qqq";
 	if (readSize > 0)
@@ -843,7 +884,7 @@ void	Response::updateResultPage()
 {
 	std::string	res;
 
-	if ((resultSent || !resultPage.empty()) && !isCGI())
+	if ((resultSent || !resultPage.empty()) && !isCGI() && (resultType != FILE || fileAllRead))
 		return ;
 	if (statusOK() && resultType == DELETE_RESOURCE)
 		deleteResource();
@@ -857,7 +898,7 @@ void	Response::updateResultPage()
 		processCgi(PROCESS_DATA);
 	if (statusOK() && resultType == FILE)
 		getFileResponse();
-	if (resultType == ERR_PAGE)
+	if (resultType == ERR_PAGE || resultPage.empty())
 		stringToBytes(genHttpResponse(statusCode, headers, isHeadMethod(), res), resultPage);
 	if (isStatusCodeinCustomErrorPage() && !prevStatusCode.count(statusCode))
 	{
@@ -874,7 +915,7 @@ void	Response::updateResultPage()
 			route = newRoute;
 			routeMatchingCheckLocationLimitationDetermineType();
 		}
-		else
+		else if (isExternalPath(newRoute))
 		{
 			setStatusCodeResType(HTTP_REDIRECT, REDIRECT);
 			headers.erase("location");
@@ -923,11 +964,13 @@ void	Response::addHttpPrefixToHeaders(std::map<std::string, std::string> headers
 
 void	Response::addCgiHeaders(std::map<std::string, std::string> &headersRes)
 {
+	//CGI env
 	headersRes.insert(std::make_pair("SCRIPT_FILENAME", resourcePath));
 	headersRes.insert(std::make_pair("PATH_INFO", "/"));
 	headersRes.insert(std::make_pair("SERVER_PROTOCOL", request.getHttpVer()));
 	headersRes.insert(std::make_pair("REQUEST_METHOD", method));
 	headersRes.insert(std::make_pair("REDIRECT_STATUS", "200"));
+	headersRes.insert(std::make_pair("SERVER_SOFTWARE", "webserv"));
 	if (!request.isChunkMode())
 		headersRes.insert(std::make_pair("CONTENT_LENGTH", toString(request.getBodyLength())));
 	if (request.getHeaders().count(CONTENT_TYPE) > 0)

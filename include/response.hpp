@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/22 18:07:00 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 14:50:42 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,6 +90,8 @@ class Response
 		bool								cgiOutPipeDrained;
 		bool								allHeaderExtracted;
 		bool								endChunkAppended;
+		bool								fileAllRead;
+		int									fileFd;
 		Response();
 		void								init();
 		void								determineResType();
@@ -101,6 +103,7 @@ class Response
 		Response			&operator=(const Response &right);
 		bool				statusOK() const;
 		bool				isNoneType() const;
+		bool				isFileType() const;
 		bool				isCGI() const;
 		bool				isINITStage() const;
 		bool				isAddFdStage() const;
@@ -116,6 +119,7 @@ class Response
 		bool				isHeadMethod() const;
 		bool				isStatusCodeinCustomErrorPage() const;
 		bool				isRedirectStatusCode() const;
+		bool				isFileAllRead() const;
 		int					getStatusCode() const;
 		const Bytes			&getResultPage() const;
 		const Bytes			&getCgiRes() const;

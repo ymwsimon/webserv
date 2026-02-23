@@ -6,16 +6,17 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 11:12:52 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 16:13:28 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/client.hpp"
 #include "../include/utils.hpp"
 
-Client::Client(Service *ser, int fd) : service(ser), socketFd(fd)
+Client::Client(Service *ser, int fd) : service(ser)
 {
-
+	socketFd = fd;
+	clientError = false;
 }
 
 Client::Client(const Client &right) : service(right.service)
@@ -37,6 +38,7 @@ Client	&Client::operator=(const Client &right)
 		responses = right.responses;
 		service = right.service;
 		socketFd = right.socketFd;
+		clientError = right.clientError;
 	}
 	return *this;
 }
@@ -66,18 +68,21 @@ int	Client::sendData(struct epoll_event *evt)
 		// 	std::cout << response.getResultPage()[i];
 		// std::cout << std::endl;
 		size_t	size = std::min((size_t)TRANSFER_SIZE, response.getResultPage().size());
+		ssize_t	sentSize;
 
-		// writeOutData(size);
-		if (send(evt->data.fd, response.getResultPage().data(),
-			size, 0) < 0)
+		sentSize = send(evt->data.fd, response.getResultPage().data(), size, 0);
+		if (sentSize < 0)
+		{
 			std::cout << "error send data out" << std::endl;
-		response.setResultSent(true);
-		response.removeNCharFromResultPage(size);
-		// if (isOkToRemoveRequestResponse())
-			// removeReqResPair();
+			clientError = true;
+		}
+		else
+		{
+			// writeOutData(sentSize);
+			response.setResultSent(true);
+			response.removeNCharFromResultPage(sentSize);
+		}
 	}
-	// else if (!requests.empty() && !responses.empty() && !responses.front().isResultPageEmpty())
-	// 	std::cout<<"got something to send"<<std::endl;
 	return 1;
 }
 
@@ -241,13 +246,12 @@ bool	Client::isOkToRemoveRequestResponse() const
 	const Response	&response = responses.front();
 
 	return (request.complete() && response.isResultSent()
-			&& (!response.isChunkMode()
-				|| !response.isCGI()
+			&& ((!response.isCGI() && (!response.isFileType() || response.isFileAllRead()))
 				|| (response.isFinishWaitingStage()
 					&& response.getResultPage().empty()
 					&& response.getCgiRes().empty()
 					&& response.isCgiOutPipeDrained()
-					&& response.isEndChunkAppended())));
+					&& (response.isEndChunkAppended() || !response.isChunkMode()))));
 }
 
 const Bytes	&Client::getIncomingData() const

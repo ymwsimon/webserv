@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:12:27 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 10:24:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 17:18:12 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,8 @@ Config::Config()
 	listenAddress = "127.0.0.1";
 	serverName = "localhost";
 	port = 8080;
-	// errorPages.insert(std::make_pair(404, "http://localhost:8080/q"));
+	errorPages.insert(std::make_pair(404, "/q"));
+	// errorPages.insert(std::make_pair(302, "/a"));
 }
 
 Config::Config(const Config &right)

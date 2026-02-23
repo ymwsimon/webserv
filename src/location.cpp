@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/22 17:38:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 17:14:49 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ Location::Location(int i)
 		cgi.insert(std::make_pair("bla", "/home/user/cpp/webserv/cgi_tester"));
 		// cgi.insert(std::make_pair("bla", "/home/mayeung/42/commoncore/webserv/cgi_tester"));
 		// cgi.insert(std::make_pair("html", "aaa"));
+		// redirect = "http://google.com";
 	}
 	else if (i == 2)
 	{

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:35:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/17 09:37:50 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/23 13:36:54 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ class Client
 		std::deque<Response>	responses;
 		Service					*service;
 		int						socketFd;
+		bool					clientError;
 		Byte					buf[BUFFER_SIZE];
 		Client();
 		void					processRequest();
