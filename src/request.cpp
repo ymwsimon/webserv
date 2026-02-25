@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/20 22:55:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/25 18:43:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -245,8 +245,12 @@ void	Request::parseBody()
 		std::cout <<"incoming size:"<<incomingData.size()<<std::endl;
 		std::cout <<"body length:"<<bodyLength<<std::endl;
 		copyUpTo = incomingData.end();
-		if (incomingData.size() + body.size() > bodyLength)
+		if (incomingData.size() + body.size() >= bodyLength)
 			copyUpTo = incomingData.begin() + (bodyLength - body.size());
+		newDataStart = copyUpTo;
+		if (searchPattern(copyUpTo, incomingData.end(), CRLF) != incomingData.end()
+			&& searchPattern(copyUpTo, incomingData.end(), CRLF) == copyUpTo)
+			newDataStart = copyUpTo + CRLF.size();
 		if (!isChunkMode())
 		{
 			Bytes	data;
@@ -265,7 +269,6 @@ void	Request::parseBody()
 					setStatusCode(INTERNAL_ERROR);
 			}
 		}
-		newDataStart = copyUpTo;
 	}
 	if ((fileSize(bodyFilePath) >= (long long int)bodyLength)
 		|| !(isPostMethod() || isPutMethod()))

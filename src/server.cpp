@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 10:43:16 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/25 12:41:11 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,12 +23,18 @@ Server::Server()
 	std::cout << "socket fd for service " << s.getSocketFd() << std::endl;
 	epollFd = epoll_create(1);
 	if (epollFd < 0)
+	{
+		g_error = 1;
 		std::cout << "error create epoll" << std::endl;
+	}
 	std::cout << "epoll fd " << epollFd << std::endl;
 	evt.data.fd = s.getSocketFd();
 	evt.events = EPOLLIN | EPOLLOUT;
 	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, s.getSocketFd(), &evt) < 0)
+	{
+		g_error = 1;
 		std::cout << "error add socket to epoll" << std::endl;
+	}
 }
 
 Server::Server(const Server &right)
@@ -41,8 +47,21 @@ Server::~Server()
 	// for (std::map<int, Client*>::iterator it = cgiPipeFd.begin(); it != cgiPipeFd.end(); ++it)
 	// 	epollOperation(it->first, EPOLL_CTL_DEL, false);
 	// for (std::map<int, Client>::iterator it = clientsConnection.begin(); it != clientsConnection.end(); ++it)
+	// {
+	// 	if (!it->second.getResponses().empty())
+	// 	{
+	// 		// if (it->second.getResponses().front().isCGI())
+	// 		// 	it->second.processResponseCgi(KILL_PROCESS);
+	// 		if (cgiPipeFd.count(it->second.getResponseCgiInPipeFd()) > 0)
+	// 			epollOperation(it->second.getResponseCgiInPipeFd(), EPOLL_CTL_DEL, false);
+	// 		if (cgiPipeFd.count(it->second.getResponseCgiOutPipeFd()) > 0)
+	// 			epollOperation(it->second.getResponseCgiOutPipeFd(), EPOLL_CTL_DEL, false);		
+	// 	}
 	// 	epollOperation(it->first, EPOLL_CTL_DEL, true);
+	// }
 	socketServices.clear();
+	// for (std::vector<Service>::iterator it = services.begin(); it != services.end(); ++it)
+	// 	close(it->getSocketFd());
 	services.clear();
 	configs.clear();
 	cgiPipeFd.clear();
@@ -113,7 +132,13 @@ void	Server::run()
 			{
 				if (clientsConnection.count(evt.data.fd) > 0)
 				{
+					Client	&c = clientsConnection.at(evt.data.fd);
+
 					std::cout<<"fd from client closed:"<<evt.data.fd<<std::endl;
+					if (cgiPipeFd.count(c.getResponseCgiInPipeFd()))
+						epollOperation(c.getResponseCgiInPipeFd(), EPOLL_CTL_DEL, false);
+					if (cgiPipeFd.count(c.getResponseCgiOutPipeFd()))
+						epollOperation(c.getResponseCgiOutPipeFd(), EPOLL_CTL_DEL, false);
 					epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
 				}
 				else
@@ -136,23 +161,34 @@ void	Server::run()
 			}
 			if (evt.events & EPOLLERR)
 			{
-				g_error = 1;
 				std::cout << "error fd:" << evt.data.fd << std::endl;
+				if (cgiPipeFd.count(evt.data.fd) > 0)
+					epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
+				else if (clientsConnection.count(evt.data.fd) > 0)
+				{
+					Client	&c = clientsConnection.at(evt.data.fd);
+
+					if (cgiPipeFd.count(c.getResponseCgiInPipeFd()))
+						epollOperation(c.getResponseCgiInPipeFd(), EPOLL_CTL_DEL, false);
+					if (cgiPipeFd.count(c.getResponseCgiOutPipeFd()))
+						epollOperation(c.getResponseCgiOutPipeFd(), EPOLL_CTL_DEL, false);
+					epollOperation(evt.data.fd, EPOLL_CTL_DEL, true);
+				}
 			}
 		}
 		std::vector<int>	toDelete;
 		for (std::map<int, Client*>::iterator it = cgiPipeFd.begin(); it != cgiPipeFd.end(); ++it)
 		{
-			if (it->first == it->second->getResponseCgiInPipeFd()
-				&& it->second->timeToCloseCgiInPipe())
+			if ((it->first == it->second->getResponseCgiInPipeFd()
+				&& it->second->timeToCloseCgiInPipe()) || it->second->getClientError())
 			{
 				std::cout << "time to close cgi in pipe fd:"
 					<< it->second->getResponses().front().getCgiInFd()
 					<< std::endl;
 				toDelete.push_back(it->first);
 			}
-			if (it->first == it->second->getResponseCgiOutPipeFd()
-				&& it->second->timeToRemoveCgiPipeFromEpoll())
+			if ((it->first == it->second->getResponseCgiOutPipeFd()
+				&& it->second->timeToRemoveCgiPipeFromEpoll()) || it->second->getClientError())
 			{
 				std::cout<<"time to remove cgi out fd from epoll:"
 					<<it->second->getResponses().front().getCgiOutFd()<<std::endl;
@@ -164,24 +200,38 @@ void	Server::run()
 
 		for (std::map<int, Client>::iterator it = clientsConnection.begin(); it != clientsConnection.end(); ++it)
 		{
-			it->second.processRequestResponse();
-			if (it->second.isOkToRemoveRequestResponse())
+			if (it->second.getClientError())
 			{
-				pid_t	p = it->second.getResponses().front().getPid();
-				if (p)
-				{
-					std::cout<<"to be remove pid:"<<p<<std::endl;
-					std::cout<<"wait res:"<<it->second.getResponses().front().getWaitRes() <<std::endl;
-					std::cout<<"wait status:"<<it->second.getResponses().front().getWaitStatus() <<std::endl;
-				}
-				it->second.removeReqResPair();
+				Client	&c = it->second;
+
+				if (cgiPipeFd.count(c.getResponseCgiInPipeFd()))
+					epollOperation(c.getResponseCgiInPipeFd(), EPOLL_CTL_DEL, false);
+				if (cgiPipeFd.count(c.getResponseCgiOutPipeFd()))
+					epollOperation(c.getResponseCgiOutPipeFd(), EPOLL_CTL_DEL, false);
+				std::cout<< "error client removed"<<std::endl;
+				epollOperation(it->first, EPOLL_CTL_DEL, true);
 			}
-			if (it->second.timeToAddCgiPipeToEpoll())
+			else
 			{
-				std::cout<<"client fd add cgi pipe fd to epoll:" << it->first<<std::endl;
-				epollOperation(it->first, EPOLL_CTL_ADD, false);
-				it->second.setCgiStageToWaiting();
-				std::cout<<"client fd add cgi pipe fd to epoll fin"<<std::endl;
+				it->second.processRequestResponse();
+				if (it->second.isOkToRemoveRequestResponse())
+				{
+					pid_t	p = it->second.getResponses().front().getPid();
+					if (p)
+					{
+						std::cout<<"to be remove pid:"<<p<<std::endl;
+						std::cout<<"wait res:"<<it->second.getResponses().front().getWaitRes() <<std::endl;
+						std::cout<<"wait status:"<<it->second.getResponses().front().getWaitStatus() <<std::endl;
+					}
+					it->second.removeReqResPair();
+				}
+				if (it->second.timeToAddCgiPipeToEpoll())
+				{
+					std::cout<<"client fd add cgi pipe fd to epoll:" << it->first<<std::endl;
+					epollOperation(it->first, EPOLL_CTL_ADD, false);
+					it->second.setCgiStageToWaiting();
+					std::cout<<"client fd add cgi pipe fd to epoll fin"<<std::endl;
+				}
 			}
 		}
 	}

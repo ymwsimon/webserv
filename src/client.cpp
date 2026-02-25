@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 16:13:28 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/25 18:42:31 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,6 @@ Client	&Client::operator=(const Client &right)
 
 int	Client::sendData(struct epoll_event *evt)
 {
-	// processResponse();
 	if (isOkToSendData())
 	{
 		Request		&request = requests.front();
@@ -60,13 +59,6 @@ int	Client::sendData(struct epoll_event *evt)
 				&& fileExist(response.getBodyFilePath()))
 				std::remove(response.getBodyFilePath().c_str());
 		}
-		// std::cout << response.getStatusCode() << std::endl;;
-		// std::cout << response.getResultPage().size() << std::endl;
-		// std::cout << "sending out data" << std::endl;
-		// std::cout << "content" << std::endl;
-		// for (size_t i = 0; i < response.getResultPage().size() && i < 200; ++i)
-		// 	std::cout << response.getResultPage()[i];
-		// std::cout << std::endl;
 		size_t	size = std::min((size_t)TRANSFER_SIZE, response.getResultPage().size());
 		ssize_t	sentSize;
 
@@ -78,6 +70,9 @@ int	Client::sendData(struct epoll_event *evt)
 		}
 		else
 		{
+			// for (size_t i = 0; i < response.getResultPage().size() && i < 500; ++i)
+			// 	std::cout<<response.getResultPage()[i];
+			// std::cout<<std::endl;
 			// writeOutData(sentSize);
 			response.setResultSent(true);
 			response.removeNCharFromResultPage(sentSize);
@@ -96,31 +91,38 @@ int Client::recvData(struct epoll_event *evt)
 	if (readSize > 0)
 	{
 		incomingData.insert(incomingData.end(), buf, buf + readSize);
-		
+		// writeIncomingData(readSize);
 		if (!responses.empty() && responses.front().isCGI() && responses.front().isWaitingStage())
 			responses.front().updateCgiActiveTime();
 		
 	}
 	if (readSize < 0)
-		std::cerr<<"readsize error"<<std::endl;
+	{
+		clientError = true;
+	}
 	if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
 		return 0;
 	return readSize;
 }
 
-void	Client::processResponseCgi(int op)
+ssize_t	Client::processResponseCgi(int op)
 {
+	ssize_t		res = 0;
+
 	if (!responses.empty())
 	{
 		Response	&response = responses.front();
 
 		if (op == EXTRACT_PIPE)
-			response.extractResultFromCgiPipe();
+			res = response.extractResultFromCgiPipe();
 		else if (op == WRITE_PIPE)
-			response.writeDataToCgiPipe();
+			res = response.writeDataToCgiPipe();
 		else
-			response.processCgi(op);
+			res = response.processCgi(op);
+		if (res < 0)
+			clientError = true;
 	}
+	return res;
 }
 
 Bytes::const_iterator	&Client::searchForNewLine(Bytes::const_iterator &it)
@@ -216,8 +218,8 @@ bool	Client::timeToAddCgiPipeToEpoll() const
 bool	Client::timeToRemoveCgiPipeFromEpoll() const
 {
 	return !responses.empty()
-		&& responses.front().isFinishWaitingStage()
-		&& responses.front().isCgiOutPipeDrained();
+		&& ((responses.front().isFinishWaitingStage()
+		&& responses.front().isCgiOutPipeDrained()) || clientError);
 		// && responses.front().getCgiRes().empty()
 		// && responses.front().getResultPage().empty();
 }
@@ -288,6 +290,11 @@ int	Client::getSocketFd() const
 	return socketFd;
 }
 
+bool	Client::getClientError() const
+{
+	return clientError;
+}
+
 void	Client::removeReqResPair()
 {
 	std::cout<<"removing req response"<<std::endl;
@@ -307,4 +314,9 @@ void	Client::setCgiStageToWaiting()
 {
 	if (responses.front().isAddFdStage())
 		responses.front().setCgiStage(WAITING_HEADER);
+}
+
+void	Client::setClientError(bool err)
+{
+	clientError = err;
 }

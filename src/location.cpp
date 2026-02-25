@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 17:14:49 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/24 11:12:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ Location::Location(int i)
 		routeStr = "/";
 		splitRes = splitPath(routeStr);
 		route = splitRes;
-		rootFolder = "./data/www";
+		rootFolder = "/home/user/cpp/webserv/data/www";
 		// indexPages.push_back("index.html");
 		// indexPages.push_back("b.html");
 		// allowedMethod = GET | POST;
@@ -63,7 +63,7 @@ Location::Location(int i)
 		routeStr = "/post_body/";
 		splitRes = splitPath(routeStr);
 		route = splitRes;
-		rootFolder = "./data/www";
+		rootFolder = "/home/user/cpp/webserv/data/www";
 		indexPages.push_back("index.html");
 		indexPages.push_back("b.html");
 		allowedMethod = POST;
@@ -82,7 +82,7 @@ Location::Location(int i)
 		routeStr = "/directory/";
 		splitRes = splitPath(routeStr);
 		route = splitRes;
-		rootFolder = "./data/www/YoupiBanane";
+		rootFolder = "/home/user/cpp/webserv/data/www/YoupiBanane";
 		indexPages.push_back("youpi.bad_extension");
 		allowedMethod = GET | POST;
 		maxBodySize = (size_t)1024 * 1024 * 1024 * 2;

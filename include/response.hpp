@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 14:50:42 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/24 17:43:29 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,7 @@ class Response
 		std::map<std::string, std::string>	headers;
 		size_t								locationMatchLength;
 		std::string							bodyFilePath;
+		std::string							cgiExeBasePath;
 		Byte								buf[BUFFER_SIZE];
 		bool								resultSent;
 		bool								cgiOutPipeDrained;
@@ -144,9 +145,9 @@ class Response
 		void				extractHeader(Bytes::const_iterator &crlfPos);
 		void				appendBodyForChunkMode();
 		void				startCgi();
-		void				processCgi(int op);
-		long long			extractResultFromCgiPipe();
-		void				writeDataToCgiPipe();
+		ssize_t				processCgi(int op);
+		ssize_t				extractResultFromCgiPipe();
+		ssize_t				writeDataToCgiPipe();
 		void				prepareArgEnv(std::string &exe, std::vector<std::string> &strs, std::vector<char *> &args, std::vector<char *> &env);
 		void				mergeEnvStrs(std::map<std::string, std::string> &allHeader, std::vector<std::string> &strs);
 		void				setStatusCode(int code);

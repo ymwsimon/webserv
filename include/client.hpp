@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:35:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 13:36:54 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/24 17:52:02 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ class Client
 		Client						&operator=(const Client &right);
 		int							sendData(struct epoll_event *evt);
 		int 						recvData(struct epoll_event *evt);
-		void						processResponseCgi(int op);
+		ssize_t						processResponseCgi(int op);
 		bool						timeToCloseCgiInPipe() const;
 		bool						timeToAddCgiPipeToEpoll() const;
 		bool						timeToRemoveCgiPipeFromEpoll() const;
@@ -58,7 +58,9 @@ class Client
 		int							getResponseCgiInPipeFd() const;
 		int							getResponseCgiOutPipeFd() const;
 		int							getSocketFd() const;
+		bool						getClientError() const;
 		void						removeReqResPair();
 		void						processRequestResponse();
 		void						setCgiStageToWaiting();
+		void						setClientError(bool err);
 };
