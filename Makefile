@@ -6,6 +6,7 @@ SRCS = 	client \
 		http \
 		location \
 		main \
+		parser \
 		request \
 		response \
 		server \

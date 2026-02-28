@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 21:02:21 by mayeung           #+#    #+#             */
-/*   Updated: 2025/12/10 17:50:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/27 15:39:01 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ class Config
 		std::map<int, std::string> 		errorPages;
 		std::vector<Location>			locations;
 		std::string						listenAddress;
-		std::string						serverName;
 		int								port;
 	public:
 		Config();
@@ -32,7 +31,12 @@ class Config
 		const std::vector<Location>			&getLocations() const;
 		const std::map<int, std::string> 	&getErrorPages() const;
 		const std::string					&getListenAddress() const;
-		const std::string					&getServerName() const;
 		const int							&getPort() const;
 		const Location						*getLocationMatch(const std::vector<std::string> &paths) const;
+		void								setListenAddress(std::string str);
+		void								setPort(int p);
+		void								printConfig();
+		bool								addErrorPage(int code, std::string path);
+		bool								addLocation(Location &l);
+
 };

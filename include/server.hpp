@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 17:31:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/17 10:55:22 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/27 23:00:13 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "config.hpp"
 #include "client.hpp"
 #include "service.hpp"
+#include "parser.hpp"
 #include <sys/epoll.h>
 #include <vector>
 #include <map>
@@ -45,4 +46,7 @@ class Server
 		const std::map<int, Service*>	&getServices() const;
 		const std::map<int, Client>		&getClients() const;
 		const int						&getEpollFd() const;
+		void							addConfig(Config &c);
+		bool							readParseConfig(const char *fileName);
+		void							printConfig();
 };

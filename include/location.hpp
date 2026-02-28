@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 14:22:07 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/22 17:37:45 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/27 11:29:54 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,20 +26,11 @@ class Location
 		std::vector<std::string>			route;
 		std::string							rootFolder;
 		std::vector<std::string>			indexPages;
-		std::string							uploadDir;
 		std::string							redirect;
 		int									allowedMethod;
 		size_t								maxBodySize;
 		bool								autoIndex;
 	public:
-		enum method
-		{
-			GET = 1,
-			POST = 2,
-			DELETE = 4,
-			PUT = 8,
-			HEAD = 16,
-		};
 		Location();
 		Location(int i);
 		Location(const Location &right);
@@ -49,7 +40,6 @@ class Location
 		const std::vector<std::string>	&getRoute() const;
 		const std::string				&getRootFolder() const;
 		const std::vector<std::string>	&getIndexPages() const;
-		const std::string				&getuploadDir() const;
 		bool							getAutoIndex() const;
 		bool							hasCGIConfig() const;
 		int								getAllowedMethod() const;
@@ -58,6 +48,12 @@ class Location
 		void							setRouteStr(std::string str);
 		void							setRoutePaths(std::vector<std::string> p);
 		void							setRootFolder(std::string str);
+		void							setRedirect(std::string str);
+		void							setAllowedMethod(int m);
+		void							setMaxBodySize(int s);
+		void							setAutoIndex(bool b);
+		void							addIndexPage(std::string str);
+		void							addCgiSetting(std::string ext, std::string path);
 		void							printLocation() const;
 		int								getRouteMatchLength(const std::vector<std::string> &paths) const;
 		std::string						findValidIndexPage(std::string &folderPathStr) const;

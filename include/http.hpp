@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:46:32 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 10:21:59 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/26 18:29:37 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,15 @@ enum e_HTTPStatusCode
 	Length_Required = 411,
 	Content_Too_Large = 413,
 	INTERNAL_ERROR = 500,
+};
+
+enum method
+{
+	GET = 1,
+	POST = 2,
+	DELETE = 4,
+	PUT = 8,
+	HEAD = 16,
 };
 
 const std::string	&getStatusMessage(int code);

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/16 16:29:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/12 19:12:46 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/28 08:53:30 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,8 +70,10 @@ std::string	extractFileExt(std::string fullPath)
 
 std::string	trim(std::string &str)
 {
-	str.erase(str.find_last_not_of(' ') + 1);
-	str.erase(0, str.find_first_not_of(' '));
+	while (!str.empty() && isspace(str[0]))
+		str.erase(0, 1);
+	while (!str.empty() && isspace(str[str.length() - 1]))
+		str.erase(str.length() - 1);
 	return str;
 }
 
@@ -173,6 +175,11 @@ bool	fileWithExt(const std::string &filePath, std::string ext)
 	return false;
 }
 
+bool		stringStartWith(const std::string &str, std::string pattern)
+{
+	return std::search(str.begin(), str.end(), pattern.begin(), pattern.end()) == str.begin();
+}
+
 off_t	fileSize(const std::string &filePath)
 {
 	struct stat	fileInfo;
@@ -205,10 +212,34 @@ char	transformHttpHeader(char c)
 	return c;
 }
 
+bool	digitOnly(std::string str)
+{
+	for (size_t i = 0; i < str.size(); ++i)
+		if (!isdigit(str[i]))
+			return false;
+	return true;
+}
+
 int	toInt(std::string str)
 {
 	std::stringstream	ss(str);
 	int					res;
+
+	try
+	{
+		ss >> res;
+	}
+	catch(const std::exception& e)
+	{
+		return -1;
+	}
+	return res;
+}
+
+long long	toLongLong(std::string str)
+{
+	std::stringstream	ss(str);
+	long long			res;
 
 	try
 	{
@@ -347,3 +378,4 @@ void		setToNonBlock(int fd)
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
 		std::cout<<"error when set to non blocking"<<std::endl;
 }
+

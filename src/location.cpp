@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/24 11:12:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/27 11:29:58 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ Location::Location()
 {
 	autoIndex = false;
 	allowedMethod = 0;
+	maxBodySize = __INT_MAX__;
 	// std::vector<std::string>	splitRes;
 
 	// routeStr = "/";
@@ -113,7 +114,6 @@ Location	&Location::operator=(const Location &right)
 		route = right.route;
 		rootFolder = right.rootFolder;
 		indexPages = right.indexPages;
-		uploadDir = right.uploadDir;
 		redirect = right.redirect;
 		allowedMethod = right.allowedMethod;
 		maxBodySize = right.maxBodySize;
@@ -158,11 +158,6 @@ const std::vector<std::string>	&Location::getIndexPages() const
 	return indexPages;
 }
 
-const std::string	&Location::getuploadDir() const
-{
-	return uploadDir;
-}
-
 bool	Location::getAutoIndex() const
 {
 	return autoIndex;
@@ -198,6 +193,36 @@ void	Location::setRootFolder(std::string str)
 	rootFolder = str;
 }
 
+void	Location::setRedirect(std::string str)
+{
+	redirect = str;
+}
+
+void	Location::setAllowedMethod(int m)
+{
+	allowedMethod = m;
+}
+
+void	Location::setMaxBodySize(int size)
+{
+	maxBodySize = size;
+}
+
+void	Location::setAutoIndex(bool b)
+{
+	autoIndex = b;
+}
+
+void	Location::addIndexPage(std::string str)
+{
+	indexPages.insert(indexPages.end(), str);
+}
+
+void	Location::addCgiSetting(std::string ext, std::string path)
+{
+	cgi.insert(std::make_pair(ext, path));
+}
+
 void	Location::printLocation() const
 {
 	std::cout << "\t\tRoute:";
@@ -205,9 +230,18 @@ void	Location::printLocation() const
 		std::cout << " ,"[i != 0] << route[i];
 	std::cout << std::endl;
 	std::cout << "\t\tRoot folder: " << rootFolder << std::endl;
+	std::cout << "\t\tRoute str: " << routeStr << std::endl;
+	std::cout << "\t\tAuto index:" << autoIndex << std::endl;
+	std::cout << "\t\tRedirect:" << redirect << std::endl;
+	std::cout << "\t\tAllowed method:" << allowedMethod << std::endl;
+	std::cout << "\t\tMax body size:" << maxBodySize << std::endl;
 	std::cout << "\t\tIndex page:";
 	for (size_t i = 0; i < indexPages.size(); ++i)
 		std::cout << " " << indexPages[i];
+	std::cout << std::endl;
+	std::cout << "\t\tCGI:";
+	for (std::map<std::string, std::string>::const_iterator i = cgi.begin(); i != cgi.end(); ++i)
+		std::cout << i->first << " " << i->second << std::endl;
 	std::cout << std::endl;
 }
 

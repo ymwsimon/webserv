@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 19:36:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/23 17:42:45 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/27 11:48:06 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@
 #include "http.hpp"
 #define BUFFER_SIZE 65536
 #define CHUNK_SIZE 100000
-// #define PIPE_BUFFER_SIZE 65536
+#define BODY_SIZE_LIMIT 500000000
 #define TRANSFER_SIZE 1000000
 
 typedef unsigned char Byte;
@@ -76,11 +76,14 @@ bool		fileReadOK(const std::string &filePath);
 bool		fileExeOK(const std::string &filePath);
 bool		fileWriteOK(const std::string &filePath);
 bool		fileWithExt(const std::string &filePath, std::string ext);
+bool		stringStartWith(const std::string &str, std::string pattern);
 off_t		fileSize(const std::string &filePath);
 std::string	toString(long long n);
 std::string	stringToLowerCase(std::string str);
 char		transformHttpHeader(char c);
+bool		digitOnly(std::string str);
 int			toInt(std::string str);
+long long	toLongLong(std::string str);
 unsigned long	hexToUL(std::string str);
 std::string	ulToHex(unsigned long n);
 std::string	llToHex(long long n);

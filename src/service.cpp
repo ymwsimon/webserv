@@ -6,17 +6,17 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/22 15:34:33 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/27 11:38:07 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/service.hpp"
 
-Service::Service(Config config)
+Service::Service(Config &config) : serviceConfig(config)
 {
 	int					op = 1;
 
-	serviceConfig = config;
+	// serviceConfig = config;
 	initAddrInfo();
 	socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
 	if (socketFd < 0)
@@ -30,7 +30,7 @@ Service::Service(Config config)
 		std::cout << "error listen socket" << std::endl;
 }
 
-Service::Service(const Service &right)
+Service::Service(const Service &right) : serviceConfig(right.serviceConfig)
 {
 	*this = right;
 }

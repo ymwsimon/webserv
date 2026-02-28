@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/25 12:41:11 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/02/28 08:52:55 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,27 +14,27 @@
 
 Server::Server()
 {
-	struct epoll_event 	evt;
+	// struct epoll_event 	evt;
 
-	configs.push_back(Config());
-	services.push_back(Service(configs.front()));
-	socketServices.insert(std::make_pair(services.front().getSocketFd(), &services.front()));
-	Service	&s = services.front();
-	std::cout << "socket fd for service " << s.getSocketFd() << std::endl;
-	epollFd = epoll_create(1);
-	if (epollFd < 0)
-	{
-		g_error = 1;
-		std::cout << "error create epoll" << std::endl;
-	}
-	std::cout << "epoll fd " << epollFd << std::endl;
-	evt.data.fd = s.getSocketFd();
-	evt.events = EPOLLIN | EPOLLOUT;
-	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, s.getSocketFd(), &evt) < 0)
-	{
-		g_error = 1;
-		std::cout << "error add socket to epoll" << std::endl;
-	}
+	// configs.push_back(Config());
+	// services.push_back(Service(configs.front()));
+	// socketServices.insert(std::make_pair(services.front().getSocketFd(), &services.front()));
+	// Service	&s = services.front();
+	// std::cout << "socket fd for service " << s.getSocketFd() << std::endl;
+	// epollFd = epoll_create(1);
+	// if (epollFd < 0)
+	// {
+	// 	g_error = 1;
+	// 	std::cout << "error create epoll" << std::endl;
+	// }
+	// std::cout << "epoll fd " << epollFd << std::endl;
+	// evt.data.fd = s.getSocketFd();
+	// evt.events = EPOLLIN | EPOLLOUT;
+	// if (epoll_ctl(epollFd, EPOLL_CTL_ADD, s.getSocketFd(), &evt) < 0)
+	// {
+	// 	g_error = 1;
+	// 	std::cout << "error add socket to epoll" << std::endl;
+	// }
 }
 
 Server::Server(const Server &right)
@@ -340,4 +340,48 @@ const std::map<int, Client>	&Server::getClients() const
 const int	&Server::getEpollFd() const
 {
 	return epollFd;
+}
+
+void	Server::addConfig(Config &c)
+{
+	configs.push_back(c);
+}
+
+bool	Server::readParseConfig(const char *fileName)
+{
+	std::stringstream	ss;
+	std::string			str;
+	std::string			configString;
+
+	
+	if (readConfigFile(fileName, configString))
+		std::cout << "read ok" << std::endl;
+	else
+		std::cout << "read file error" << std::endl;
+	{
+		// std::stringstream	ss;
+		// std::string			str;
+		// Config				c;
+		// Location			l;
+		
+		// ss << configString;
+		// // ss << "location / {\n autoIndex on; }\n";
+		// if (!configParser(ss, c, str))
+		// 	std::cout << "no" << std::endl;
+		// else
+		// {
+		// 	std::cout << "ok" << std::endl;
+		// 	c.printConfig();
+		// 	// l.printLocation();
+		// }
+		// std::getline(ss, str, ' ');
+		// std::cout << str;// << std::endl;
+	}
+	return true;
+}
+
+void	Server::printConfig()
+{
+	for (size_t i = 0; i < configs.size(); ++i)
+		configs[i].printConfig();
 }
