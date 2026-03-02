@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/25 18:46:13 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/02 12:05:46 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -856,7 +856,7 @@ void	Response::updateResultPage()
 		processCgi(PROCESS_DATA);
 	if (statusOK() && resultType == FILE)
 		getFileResponse();
-	if (resultType == ERR_PAGE && (!statusOK() || resultPage.empty()))
+	if ((resultType == REDIRECT || resultType == ERR_PAGE) && (!statusOK() || resultPage.empty()))
 		stringToBytes(genHttpResponse(statusCode, headers, isHeadMethod(), res), resultPage);
 	if (isStatusCodeinCustomErrorPage() && !prevStatusCode.count(statusCode))
 	{
