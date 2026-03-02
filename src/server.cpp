@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/02 00:36:39 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/02 13:11:17 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -399,6 +399,11 @@ bool	Server::initService()
 	for (size_t i = 0; i < configs.size(); ++i)
 	{
 		services.push_back(Service(configs[i]));
+		if (!services[i].getInitOk())
+		{
+			services.pop_back();
+			return false;
+		}
 		socketServices.insert(std::make_pair(services[i].getSocketFd(), &services[i]));
 		evt.data.fd = services[i].getSocketFd();
 		evt.events = EPOLLIN | EPOLLOUT;

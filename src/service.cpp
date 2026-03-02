@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/02 00:36:52 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/02 13:17:46 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,19 +14,33 @@
 
 Service::Service(Config &config) : serviceConfig(config)
 {
-	int					op = 1;
+	int	op = 1;
 
-	initAddrInfo();
-	socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
-	if (socketFd < 0)
-		std::cout << "error create socket" << std::endl;
-	std::cout<< "SocketFD " << socketFd << std::endl;
-	if (setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &op, sizeof(op)) < 0)
-		std::cout << "error set socket op" << std::endl;
-	if (bind(socketFd, addrInfo->ai_addr, addrInfo->ai_addrlen) < 0)
-		std::cout << "error bind socket" << std::endl;
-	if (listen(socketFd, 300) < 0)
-		std::cout << "error listen socket" << std::endl;
+	initOk = true;
+	if (initAddrInfo())
+	{
+		socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
+		if (socketFd < 0)
+		{
+			initOk = false;
+			std::cout << "error create socket" << std::endl;
+		}
+		if (initOk && setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &op, sizeof(op)) < 0)
+		{
+			initOk = false;
+			std::cout << "error set socket op" << std::endl;
+		}
+		if (initOk && bind(socketFd, addrInfo->ai_addr, addrInfo->ai_addrlen) < 0)
+		{
+			initOk = false;
+			std::cout << "error bind socket" << std::endl;
+		}
+		if (initOk && listen(socketFd, 300) < 0)
+		{
+			initOk = false;
+			std::cout << "error listen socket" << std::endl;
+		}
+	}
 }
 
 Service::Service(const Service &right) : serviceConfig(right.serviceConfig)
@@ -36,6 +50,8 @@ Service::Service(const Service &right) : serviceConfig(right.serviceConfig)
 
 Service::~Service()
 {
+	// if (socketFd != -1)
+	// 	close(socketFd);
 	freeaddrinfo(addrInfo);
 }
 
@@ -46,12 +62,13 @@ Service	&Service::operator=(const Service &right)
 		serviceConfig = right.serviceConfig;
 		addrLen = right.addrLen;
 		socketFd = right.socketFd;
+		initOk = right.initOk;
 		initAddrInfo();
 	}
 	return *this;
 }
 
-void	Service::initAddrInfo()
+bool	Service::initAddrInfo()
 {
 	struct addrinfo		addr;
 
@@ -61,12 +78,17 @@ void	Service::initAddrInfo()
 	addr.ai_flags = AI_PASSIVE;
 	addr.ai_protocol = 0;
 	if (getaddrinfo(serviceConfig.getListenAddress().c_str(), toString(serviceConfig.getPort()).c_str(), &addr, &addrInfo))
+	{
 		std::cout << "error get addrinfo" << std::endl;
+		initOk = false;
+		return false;
+	}
+	return true;
 }
 
 struct addrinfo	*Service::getAddrInfo() const
 {
-	return addrInfo;	
+	return addrInfo;
 }
 
 const u_int32_t	&Service::getAddrLen() const
@@ -82,6 +104,11 @@ const int	&Service::getSocketFd() const
 const Config	&Service::getServiceConfig() const
 {
 	return serviceConfig;
+}
+
+bool	Service::getInitOk() const
+{
+	return initOk;
 }
 
 const Location	*Service::findMatchingRoute(const std::vector<std::string> &paths) const

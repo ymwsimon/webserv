@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 21:58:23 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/27 11:37:34 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/02 13:06:39 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,9 +26,10 @@ class Service
 		struct addrinfo		*addrInfo;
 		u_int32_t			addrLen;
 		int					socketFd;
+		bool				initOk;
 		Config				&serviceConfig;
 		Service();
-		void				initAddrInfo();
+		bool				initAddrInfo();
 	public:
 		Service(Config &config);
 		Service(const Service &right);
@@ -38,5 +39,6 @@ class Service
 		const u_int32_t	&getAddrLen() const;
 		const int		&getSocketFd() const;
 		const Config	&getServiceConfig() const;
+		bool			getInitOk() const;
 		const Location	*findMatchingRoute(const std::vector<std::string> &paths) const;
 };
