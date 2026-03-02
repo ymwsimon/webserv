@@ -630,8 +630,8 @@ ssize_t	Response::extractResultFromCgiPipe()
 		// std::cout << "read size: " << readSize << std::endl;
 		// std::cout << "read from cgi out fd: " << cgiOutFd << std::endl;
 	}
-	// if (readSize == -1)
-	// 	std::cerr<<"readsize -1"<<std::endl;
+	if (readSize == -1)
+		cgiOutPipeDrained = true;
 	if (readSize == 0)
 	{
 		std::cout<<"pipe fd drained:"<<cgiOutFd<<std::endl;

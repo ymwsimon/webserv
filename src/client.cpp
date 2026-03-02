@@ -45,7 +45,7 @@ Client	&Client::operator=(const Client &right)
 
 int	Client::sendData(struct epoll_event *evt)
 {
-	if (isOkToSendData())
+	if (isOkToSendData() && !clientError)
 	{
 		Request		&request = requests.front();
 		Response	&response = responses.front();
@@ -85,8 +85,9 @@ int Client::recvData(struct epoll_event *evt)
 {
 	int		readSize = 0;
 
+	if (clientError)
+		return -1;
 	readSize = recv(evt->data.fd, buf, BUFFER_SIZE, 0);
-
 	// std::cout << "read size from socket: " << readSize << std::endl;
 	if (readSize > 0)
 	{
@@ -100,7 +101,7 @@ int Client::recvData(struct epoll_event *evt)
 	{
 		clientError = true;
 	}
-	if (!readSize || (readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
+	if ((readSize == 1 && (buf[0] == EOT || buf[0] == ((unsigned char)EOF))))
 		return 0;
 	return readSize;
 }

@@ -44,15 +44,27 @@ int	main(int argc, char **argv)
 				if (server.initService())
 					server.run();
 				else
+				{
 					std::cout << "server init fail"<<std::endl;
+					g_error = 1;
+				}
 			}
 			else
+			{
 				std::cout << "server parse not ok"<<std::endl;
+				g_error =1;
+			}
 		}
 		else
+		{
 			std::cout << "read file error" << std::endl;
+			g_error =1;
+		}
 	}
 	else
+	{
 		std::cout << "too many argument"<<std::endl;
+		g_error = 1;
+	}
 	return g_error;
 }
