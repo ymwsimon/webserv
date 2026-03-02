@@ -34,13 +34,13 @@ bool	lineEndWith(std::stringstream &ss, std::string &str, char end)
 	return true;
 }
 
-bool	readConfigFile(const char *fileName, std::string &str)
+bool	readConfigFile(std::string fileName, std::string &str)
 {
 	char	buf[(BUFFER_SIZE * 2)];
 
 	if (!fileExist(fileName) || !fileWithExt(fileName, "conf") || fileSize(fileName) > (BUFFER_SIZE * 2))
 		return false;
-	std::ifstream		file(fileName, std::ios::in);
+	std::ifstream		file(fileName.c_str(), std::ios::in);
 
 	if (file.bad())
 	{
@@ -99,8 +99,7 @@ bool	locationParseOk(std::set<std::string> &seen)
 
 bool	configParseOk(std::set<std::string> &seen)
 {
-	(void)seen;
-	return true;
+	return seen.count("listen") && seen.count("location");
 }
 
 bool	locationContentParser(std::stringstream &ss, Location &res, std::set<std::string> &seen,
@@ -289,11 +288,11 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 	}
 	else if (str == "listen" && !seen.count(str))
 	{
+		seen.insert(str);
 		size_t	pos;
 	
 		if (!lineEndWith(ss, str, ';'))
 			return false;
-		seen.insert(str);
 
 		pos = str.find_first_of(':');
 		if (pos == std::string::npos)
@@ -315,9 +314,9 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 	}
 	else if (str == "location")
 	{
+		seen.insert(str);
 		Location	l;
 
-		seen.insert(str);
 		putStrBack(ss, "location ");
 		if (!locationParser(ss, l, str))
 			return false;
@@ -343,6 +342,8 @@ bool	configParser(std::stringstream &ss, Config &res, std::string &str)
 	std::cout << "config final str:"<< str << std::endl;
 	if (str[0] != '}')
 		return false;
+	if (!configParseOk(seenKeyword))
+		return false;
 	str.erase(0, 1);
 	// trim(str);
 	if (!str.empty())
@@ -359,6 +360,8 @@ bool	serverConfigParser(Server &res, std::string configFileStr)
 	std::stringstream	ss;
 	std::string			str;
 
+	if (configFileStr.empty())
+		return false;
 	ss << configFileStr;
 	while (!ss.eof())
 	{

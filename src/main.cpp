@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 19:29:27 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/01 23:35:09 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/02 10:16:27 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,10 +32,10 @@ int	main(int argc, char **argv)
 	if (argc == 1 || argc == 2)
 	{
 		if (argc == 1)
-			path = "test.conf";
+			path = "config/test.conf";
 		else if (argc == 2)
 			path = argv[1];
-		if (readConfigFile("test.conf", configString))
+		if (readConfigFile(path, configString))
 		{
 			std::cout << "read ok" << std::endl;
 			if (serverConfigParser(server, configString))
