@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 17:31:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/27 23:00:13 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/01 23:26:24 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,4 +49,5 @@ class Server
 		void							addConfig(Config &c);
 		bool							readParseConfig(const char *fileName);
 		void							printConfig();
+		bool							initService();
 };

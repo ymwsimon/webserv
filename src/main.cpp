@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 19:29:27 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/27 23:01:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/01 23:35:09 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,55 +24,35 @@ void	signalHandler(int sig)
 
 int	main(int argc, char **argv)
 {
-	Server	server;
+	Server		server;
 	std::string	configString;
-	std::stringstream	ss;
-	std::string			str;
+	std::string	path;
 	
 	signal(SIGINT, signalHandler);
-	if (readConfigFile("test.conf", configString))
+	if (argc == 1 || argc == 2)
 	{
-		std::cout << "read ok" << std::endl;
-		// std::cout << ss;
-		// while (!ss.eof())
-		// {
-		// 	std::string	str;
-
-		// 	std::getline(ss, str);
-		// 	std::cout << str << std::endl;
-		// }
+		if (argc == 1)
+			path = "test.conf";
+		else if (argc == 2)
+			path = argv[1];
+		if (readConfigFile("test.conf", configString))
+		{
+			std::cout << "read ok" << std::endl;
+			if (serverConfigParser(server, configString))
+			{
+				server.printConfig();
+				if (server.initService())
+					server.run();
+				else
+					std::cout << "server init fail"<<std::endl;
+			}
+			else
+				std::cout << "server parse not ok"<<std::endl;
+		}
+		else
+			std::cout << "read file error" << std::endl;
 	}
 	else
-		std::cout << "read file error" << std::endl;
-	ss << configString;
-	if (serverConfigParser(ss, server, str))
-	{
-		std::cout << "server parse ok"<<std::endl;
-		server.printConfig();
-	}
-	else
-		std::cout << "server parse not ok"<<std::endl;
-	// {
-	
-	// 	Config				c;
-	// 	// Location			l;
-		
-	// 	ss << configString;
-	// 	// ss << "location / {\n autoIndex on; }\n";
-	// 	if (!configParser(ss, c, str))
-	// 		std::cout << "no" << std::endl;
-	// 	else
-	// 	{
-	// 		std::cout << "ok" << std::endl;
-	// 		c.printConfig();
-	// 		// l.printLocation();
-	// 	}
-	// 	// std::getline(ss, str, ' ');
-	// 	// std::cout << str;// << std::endl;
-	// }
-	
-	// server.run();
-	(void)argc;
-	(void)argv;
+		std::cout << "too many argument"<<std::endl;
 	return g_error;
 }

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 18:17:40 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/27 11:38:07 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/02 00:36:52 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,6 @@ Service::Service(Config &config) : serviceConfig(config)
 {
 	int					op = 1;
 
-	// serviceConfig = config;
 	initAddrInfo();
 	socketFd = socket(addrInfo->ai_family, addrInfo->ai_socktype, addrInfo->ai_protocol);
 	if (socketFd < 0)

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/28 08:52:55 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/02 00:36:39 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,6 @@
 
 Server::Server()
 {
-	// struct epoll_event 	evt;
-
 	// configs.push_back(Config());
 	// services.push_back(Service(configs.front()));
 	// socketServices.insert(std::make_pair(services.front().getSocketFd(), &services.front()));
@@ -384,4 +382,32 @@ void	Server::printConfig()
 {
 	for (size_t i = 0; i < configs.size(); ++i)
 		configs[i].printConfig();
+}
+
+bool	Server::initService()
+{
+	struct epoll_event 	evt;
+
+	epollFd = epoll_create(1);
+	if (epollFd < 0)
+	{
+		g_error = 1;
+		std::cout << "error create epoll" << std::endl;
+		return false;
+	}
+	std::cout << "epoll fd " << epollFd << std::endl;
+	for (size_t i = 0; i < configs.size(); ++i)
+	{
+		services.push_back(Service(configs[i]));
+		socketServices.insert(std::make_pair(services[i].getSocketFd(), &services[i]));
+		evt.data.fd = services[i].getSocketFd();
+		evt.events = EPOLLIN | EPOLLOUT;
+		if (epoll_ctl(epollFd, EPOLL_CTL_ADD, evt.data.fd, &evt) < 0)
+		{
+			g_error = 1;
+			std::cout << "error add socket to epoll" << std::endl;
+			return false;
+		}
+	}
+	return true;
 }

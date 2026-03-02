@@ -81,11 +81,11 @@ bool	httpMethodParser(std::string str, Location &res)
 		if (method == "DELETE" && m & DELETE)
 			return false;
 		if (method == "GET")
-			m &= GET;
+			m |= GET;
 		if (method == "POST")
-			m &= POST;
+			m |= POST;
 		if (method == "DELETE")
-			m &= DELETE;
+			m |= DELETE;
 		i = e + 1;
 	}
 	res.setAllowedMethod(m);
@@ -95,6 +95,12 @@ bool	httpMethodParser(std::string str, Location &res)
 bool	locationParseOk(std::set<std::string> &seen)
 {
 	return seen.count("root");
+}
+
+bool	configParseOk(std::set<std::string> &seen)
+{
+	(void)seen;
+	return true;
 }
 
 bool	locationContentParser(std::stringstream &ss, Location &res, std::set<std::string> &seen,
@@ -213,9 +219,42 @@ bool	locationParser(std::stringstream &ss, Location &res, std::string &str)
 	return locationParseOk(seenKeyword);
 }
 
+bool	ipAddrPartOk(std::string &str, size_t &start, size_t &pos, bool findDot)
+{
+	std::string	valStr;
+	int			val;
+
+	if (findDot)
+	{
+		pos = str.find('.', start);
+		if (pos == std::string::npos)
+			return false;
+	}
+	else
+		pos = str.size();
+	valStr = str.substr(start, pos - start);
+	if (!digitOnly(valStr))
+		return false;
+	val = toInt(valStr);
+	if (val < 0 || val > 255)
+		return false;
+	start = pos + 1;
+	return true;
+}
+
 bool	ipAddressStrOk(std::string str)
 {
-	(void)str;
+	size_t		start = 0;
+	size_t		pos = 0;
+
+	if (!ipAddrPartOk(str, start, pos, true))
+		return false;
+	if (!ipAddrPartOk(str, start, pos, true))
+		return false;
+	if (!ipAddrPartOk(str, start, pos, true))
+		return false;
+	if (!ipAddrPartOk(str, start, pos, false))
+		return false;
 	return true;
 }
 
@@ -250,17 +289,27 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 	}
 	else if (str == "listen" && !seen.count(str))
 	{
+		size_t	pos;
+	
 		if (!lineEndWith(ss, str, ';'))
 			return false;
 		seen.insert(str);
 
-		size_t		pos = str.find_first_of(':');
+		pos = str.find_first_of(':');
+		if (pos == std::string::npos)
+			return false;
 		std::string	ipAddress = str.substr(0, pos);
-		std::string	portStr = str.substr(pos, str.length());
+		std::string	portStr = str.substr(pos + 1, str.length());
 		int			port;
 		trim(ipAddress);
 		trim(portStr);
+		if (ipAddress.empty() || portStr.empty())
+			return false;
+		if (!ipAddressStrOk(ipAddress))
+			return false;
 		port = toInt(portStr);
+		if (port <= 0 || port > 65535)
+			return false;
 		res.setListenAddress(ipAddress);
 		res.setPort(port);
 	}
@@ -268,6 +317,7 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 	{
 		Location	l;
 
+		seen.insert(str);
 		putStrBack(ss, "location ");
 		if (!locationParser(ss, l, str))
 			return false;
@@ -303,10 +353,13 @@ bool	configParser(std::stringstream &ss, Config &res, std::string &str)
 	return true;
 }
 
-bool	serverConfigParser(std::stringstream &ss, Server &res, std::string &str)
+bool	serverConfigParser(Server &res, std::string configFileStr)
 {
-	size_t	i = 1;
+	size_t				i = 1;
+	std::stringstream	ss;
+	std::string			str;
 
+	ss << configFileStr;
 	while (!ss.eof())
 	{
 		Config	c;

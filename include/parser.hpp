@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/12 21:11:33 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/27 22:58:08 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/01 23:29:00 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,4 +30,4 @@ class Server;
 bool	readConfigFile(const char *fileName, std::string &str);
 bool	locationParser(std::stringstream &ss, Location &res, std::string &str);
 bool	configParser(std::stringstream &ss, Config &res, std::string &str);
-bool	serverConfigParser(std::stringstream &ss, Server &res, std::string &str);
+bool	serverConfigParser(Server &res, std::string str);

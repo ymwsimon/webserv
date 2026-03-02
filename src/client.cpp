@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/25 18:54:22 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/01 21:07:53 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,8 +158,8 @@ void	Client::processResponse()
 		Request		&request = requests.front();
 		Response	&response = responses.front();
 
-		if (!responses.empty() && response.isFinishWaitingStage() && response.getCgiRes().empty())
-			return ;
+		// if (!responses.empty() && response.isFinishWaitingStage() && response.getCgiRes().empty())
+		// 	return ;
 		if (responses.empty())
 		{
 			responses.push_back(Response(service, request));
