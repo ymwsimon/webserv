@@ -74,6 +74,10 @@ bool	httpMethodParser(std::string str, Location &res)
 		std::string	method(str, i, e - i);
 
 		trim(method);
+		if (method.empty())
+			return false;
+		if (method != "GET" && method != "POST" && method != "DELETE")
+			return false;
 		if (method == "GET" && m & GET)
 			return false;
 		if (method == "POST" && m & POST)
@@ -86,6 +90,8 @@ bool	httpMethodParser(std::string str, Location &res)
 			m |= POST;
 		if (method == "DELETE")
 			m |= DELETE;
+		if (e == str.length() - 1)
+			return false;
 		i = e + 1;
 	}
 	res.setAllowedMethod(m);
@@ -115,13 +121,13 @@ bool	locationContentParser(std::stringstream &ss, Location &res, std::set<std::s
 		if (!lineEndWith(ss, str, ';'))
 			return false;
 		size_t		pos = str.find_first_of(' ');
-		std::string	ext = str.substr(0, pos);
-		std::string	path = str.substr(pos, str.length());
-
-		trim(ext);
-		trim(path);		
 		if (pos == std::string::npos)
 			return false;
+
+		std::string	ext = str.substr(0, pos);
+		std::string	path = str.substr(pos, str.length());
+		trim(ext);
+		trim(path);		
 		if (res.getCGIConfig().count(ext))
 			return false;
 		if (ext.empty() || path.empty())
@@ -156,8 +162,6 @@ bool	locationContentParser(std::stringstream &ss, Location &res, std::set<std::s
 	{
 		seen.insert(str);
 		if (!lineEndWith(ss, str, ';'))
-			return false;
-		if (!httpMethodParser(str, res))
 			return false;
 		if (!httpMethodParser(str, res))
 			return false;
@@ -262,7 +266,7 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 {
 	std::getline(ss, str, ' ');
 	trim(str);
-	std::cout <<"confgi content first str:" << str <<std::endl;
+	std::cout <<"config content first str:" << str <<std::endl;
 	if (str.empty())
 		return true;
 	if (str == "error_page")
@@ -270,6 +274,8 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 		if (!lineEndWith(ss, str, ';'))
 			return false;
 		size_t		pos = str.find_first_of(' ');
+		if (pos == std::string::npos)
+			return false;
 		std::string	codeStr = str.substr(0, pos);
 		int			code;
 		std::string	path = str.substr(pos, str.length());
@@ -277,8 +283,6 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 		trim(codeStr);
 		trim(path);
 		code = toInt(codeStr);
-		if (pos == std::string::npos)
-			return false;
 		if (!digitOnly(codeStr))
 			return false;
 		if (codeStr.empty() || path.empty())

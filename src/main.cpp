@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 19:29:27 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/02 10:16:27 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/03 17:27:25 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,47 +24,55 @@ void	signalHandler(int sig)
 
 int	main(int argc, char **argv)
 {
-	Server		server;
-	std::string	configString;
-	std::string	path;
-	
-	signal(SIGINT, signalHandler);
-	if (argc == 1 || argc == 2)
+	try
 	{
-		if (argc == 1)
-			path = "config/test.conf";
-		else if (argc == 2)
-			path = argv[1];
-		if (readConfigFile(path, configString))
+		Server		server;
+		std::string	configString;
+		std::string	path;
+		
+		signal(SIGINT, signalHandler);
+		if (argc == 1 || argc == 2)
 		{
-			std::cout << "read ok" << std::endl;
-			if (serverConfigParser(server, configString))
+			if (argc == 1)
+				path = "config/test.conf";
+			else if (argc == 2)
+				path = argv[1];
+			if (readConfigFile(path, configString))
 			{
-				server.printConfig();
-				if (server.initService())
-					server.run();
+				std::cout << "read ok" << std::endl;
+				if (serverConfigParser(server, configString))
+				{
+					server.printConfig();
+					if (server.initService())
+						server.run();
+					else
+					{
+						std::cout << "server init fail"<<std::endl;
+						g_error = 1;
+					}
+				}
 				else
 				{
-					std::cout << "server init fail"<<std::endl;
-					g_error = 1;
+					std::cout << "server parse not ok"<<std::endl;
+					g_error =1;
 				}
 			}
 			else
 			{
-				std::cout << "server parse not ok"<<std::endl;
+				std::cout << "read file error" << std::endl;
 				g_error =1;
 			}
 		}
 		else
 		{
-			std::cout << "read file error" << std::endl;
-			g_error =1;
+			std::cout << "too many argument"<<std::endl;
+			g_error = 1;
 		}
+
 	}
-	else
+	catch(const std::exception& e)
 	{
-		std::cout << "too many argument"<<std::endl;
-		g_error = 1;
+		std::cerr << e.what() << '\n';
 	}
 	return g_error;
 }

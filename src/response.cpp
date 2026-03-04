@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/02 12:05:46 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/04 10:13:59 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -560,8 +560,8 @@ ssize_t	Response::processCgi(int op)
 			}
 			return -1;
 		}
-		if ((!waitRes && std::difftime(std::time(NULL), cgiLastActiveTime) > cgiWaitTime))
-			// || op == KILL_PROCESS)
+		if ((!waitRes && std::difftime(std::time(NULL), cgiLastActiveTime) > cgiWaitTime)
+			|| op == KILL_PROCESS)
 		{
 			std::cout << "time to kill cgiPid: " << cgiPid << std::endl;
 			kill(cgiPid, SIGKILL);

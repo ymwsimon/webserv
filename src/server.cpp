@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/02 13:11:17 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/04 12:00:21 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -299,7 +299,8 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 		}
 		else if (clientsConnection.count(fd) > 0)
 		{
-			if (clientsConnection.count(fd) > 0 && needToStop)
+			(void)needToStop;
+			if (needToStop)
 				clientsConnection.at(fd).processResponseCgi(KILL_PROCESS);
 			clientsConnection.erase(fd);
 			std::cout<<"client fd removed from epoll:"<<fd<<std::endl;

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 17:01:00 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/27 11:29:58 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/04 10:01:48 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ Location::Location()
 {
 	autoIndex = false;
 	allowedMethod = 0;
-	maxBodySize = __INT_MAX__;
+	maxBodySize = BODY_SIZE_LIMIT;
 	// std::vector<std::string>	splitRes;
 
 	// routeStr = "/";
