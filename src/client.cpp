@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 20:22:41 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/01 21:07:53 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/05 22:01:46 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,7 +68,7 @@ int	Client::sendData(struct epoll_event *evt)
 			std::cout << "error send data out" << std::endl;
 			clientError = true;
 		}
-		else
+		else if (sentSize > 0)
 		{
 			// for (size_t i = 0; i < response.getResultPage().size() && i < 500; ++i)
 			// 	std::cout<<response.getResultPage()[i];
@@ -77,8 +77,9 @@ int	Client::sendData(struct epoll_event *evt)
 			response.setResultSent(true);
 			response.removeNCharFromResultPage(sentSize);
 		}
+		return sentSize;
 	}
-	return 1;
+	return 0;
 }
 
 int Client::recvData(struct epoll_event *evt)

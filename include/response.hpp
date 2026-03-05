@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/13 18:45:26 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/24 17:43:29 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/05 16:55:41 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@
 #include "utils.hpp"
 
 const int	cgiWaitTime = 3;
-
+extern int	g_error;
 enum e_cgiStage
 {
 	INIT,

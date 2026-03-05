@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/04 18:16:59 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/05 20:31:08 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -501,9 +501,9 @@ void	Response::startCgi()
 		mergeEnvStrs(allHeaders, strs);
 		prepareArgEnv(exe, strs, args, env);
 		if (close(outPipeFd[0]) < 0 || close(inPipeFd[1]) < 0)
-			std::exit(1);
+			g_error = 1;
 		if (dup2(outPipeFd[1], STDOUT_FILENO) < 0 || dup2(inPipeFd[0], STDIN_FILENO) < 0)
-			std::exit(1);
+			g_error = 1;
 		if (!request.isChunkMode())
 		{
 			int	fd;
@@ -513,12 +513,12 @@ void	Response::startCgi()
 				|| fd < 0
 				|| dup2(fd, STDIN_FILENO) < 0
 				|| close(fd) < 0)
-				std::exit(1);
+					g_error = 1;
 		}
 		if (!cgiExeBasePath.empty() && chdir(cgiExeBasePath.c_str()) < 0)
-			std::exit(1);
+			g_error = 1;
 		execve(exe.c_str(), (char *const*)args.data(), (char *const*)env.data());
-		std::exit(1);
+		g_error = 1;
 	}
 	else
 	{
