@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 14:05:04 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/04 10:13:59 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/04 18:16:59 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -818,7 +818,7 @@ void	Response::routeMatchingCheckLocationLimitationDetermineType()
 	checkBodySize();
 	if (statusOK() && matchLocation && resultType == NONE)
 		determineResType();
-	if (statusOK() && !fileWriteOK(resourcePath) && resultType == DELETE_RESOURCE)
+	if (statusOK() && fileExist(resourcePath) && !fileWriteOK(resourcePath) && resultType == DELETE_RESOURCE)
 		(logMessage(std::cout, "file not writable"), setStatusCodeResType(FORBIDDEN, ERR_PAGE));
 	if (statusOK() && matchLocation && !matchLocation->getRedirect().empty())
 	{

@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 19:25:58 by mayeung           #+#    #+#             */
-/*   Updated: 2026/03/04 12:00:21 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/05 12:35:34 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 Server::Server()
 {
+	epollFd = -1;
 	// configs.push_back(Config());
 	// services.push_back(Service(configs.front()));
 	// socketServices.insert(std::make_pair(services.front().getSocketFd(), &services.front()));
@@ -64,7 +65,8 @@ Server::~Server()
 	configs.clear();
 	cgiPipeFd.clear();
 	clientsConnection.clear();
-	close(epollFd);
+	if (epollFd != -1)
+		close(epollFd);
 }
 
 Server	&Server::operator=(const Server &right)

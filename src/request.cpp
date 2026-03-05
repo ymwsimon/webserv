@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 23:12:55 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/25 18:43:01 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/05 11:29:02 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,32 +75,6 @@ std::string	Request::parseReqLineSegment(const Bytes &delimiter)
 	if (it != newDataEnd)
 	{
 		res = std::string(newDataStart, it);
-		if (requestStatus == METHOD)
-		{
-			if (std::find(validMethod.begin(), validMethod.end(), res) == validMethod.end())
-			{
-				setStatusCode(BAD_REQUEST);
-				requestStatus = COMPLETE;
-			}
-		}
-		else if (requestStatus == ROUTE)
-		{
-			if (res.empty() || res[0] != '/')
-			{
-				setStatusCode(BAD_REQUEST);
-				requestStatus = COMPLETE;
-			}
-		}
-		else if (requestStatus == HTTPVERSION)
-		{
-			// std::cout << "http version: " << res << std::endl;
-			// if (std::find(validHttpVersion.begin(), validHttpVersion.end(), res) == validHttpVersion.end())
-			// if (res.empty())
-			// {
-			// 	setStatusCode(BAD_REQUEST);
-			// 	requestStatus = COMPLETE;
-			// }
-		}
 		newDataStart = it + delimiter.size();
 		if (requestStatus != COMPLETE)
 			++requestStatus;
@@ -119,6 +93,13 @@ void	Request::parseRequestLine()
 	route = parseReqLineSegment(SPACE);
 	splitRoute();
 	httpVer = parseReqLineSegment(CRLF);
+	if (std::find(validMethod.begin(), validMethod.end(), method) == validMethod.end())
+		setStatusCode(Not_Implemented);
+	if (method.empty()
+		|| route.empty() || route[0] != '/'
+		|| std::find(validHttpVersion.begin(), validHttpVersion.end(), httpVer) == validHttpVersion.end()
+		|| httpVer.empty())
+		setStatusCode(BAD_REQUEST);
 }
 
 void	Request::extractContentLength(std::string &len)
@@ -405,8 +386,8 @@ void	Request::parseRequest()
 		if (requestStatus == METHOD)
 		{
 			std::cout << "parse request line" << std::endl;
-			if (it != newDataStart)
-				parseRequestLine();
+			// if (it != newDataStart)
+			parseRequestLine();
 			newDataStart = it + CRLF.size();
 		}
 		else if (requestStatus == HEADERS)
@@ -422,8 +403,6 @@ void	Request::parseRequest()
 		else if (requestStatus == CHUNK_DATA)
 			parseChunkData();
 	}
-	if (requestStatus == COMPLETE && std::find(validHttpVersion.begin(), validHttpVersion.end(), httpVer) == validHttpVersion.end())
-		setStatusCode(BAD_REQUEST);
 }
 
 bool	Request::complete() const

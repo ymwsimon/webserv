@@ -6,7 +6,7 @@
 /*   By: mayeung <mayeung@student.42london.com>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/02 23:46:32 by mayeung           #+#    #+#             */
-/*   Updated: 2026/02/26 18:29:37 by mayeung          ###   ########.fr       */
+/*   Updated: 2026/03/04 22:54:18 by mayeung          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ enum e_HTTPStatusCode
 	Length_Required = 411,
 	Content_Too_Large = 413,
 	INTERNAL_ERROR = 500,
+	Not_Implemented = 501,
 };
 
 enum method
