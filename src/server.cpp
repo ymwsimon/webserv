@@ -384,7 +384,7 @@ bool	Server::readParseConfig(const char *fileName)
 void	Server::printConfig()
 {
 	for (size_t i = 0; i < configs.size(); ++i)
-		configs[i].printConfig();
+		configs.at(i).printConfig();
 }
 
 bool	Server::initService()
@@ -399,16 +399,17 @@ bool	Server::initService()
 		return false;
 	}
 	std::cout << "epoll fd " << epollFd << std::endl;
+	services.reserve(configs.size());
 	for (size_t i = 0; i < configs.size(); ++i)
 	{
-		services.push_back(Service(configs[i]));
-		if (!services[i].getInitOk())
+		services.push_back(Service(configs.at(i)));
+		if (!services.at(i).getInitOk())
 		{
-			services.pop_back();
+			services.clear();
 			return false;
 		}
-		socketServices.insert(std::make_pair(services[i].getSocketFd(), &services[i]));
-		evt.data.fd = services[i].getSocketFd();
+		socketServices.insert(std::make_pair(services.at(i).getSocketFd(), &services.at(i)));
+		evt.data.fd = services.at(i).getSocketFd();
 		evt.events = EPOLLIN | EPOLLOUT;
 		if (epoll_ctl(epollFd, EPOLL_CTL_ADD, evt.data.fd, &evt) < 0)
 		{
