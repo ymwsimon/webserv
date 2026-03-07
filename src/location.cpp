@@ -252,10 +252,8 @@ std::string	Location::findValidIndexPage(std::string &folderPathStr) const
 	for (size_t i = 0; i < indexPages.size(); ++i)
 	{
 		fullPath = folderPathStr + indexPages[i];
-		std::cout << "try opening " << fullPath << std::endl;
 		if (isRegularFile(fullPath) || fileExist(fullPath) || isOneOfCGIConfig(fullPath))
 			return fullPath;
-		std::cout << "open fail" << std::endl;
 	}
 	return "";
 }
@@ -275,15 +273,11 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 	std::string			body;
 	std::string			tmp;
 
-	std::cout << "try to open dir " << folderPathStr << std::endl;
 	dir = opendir(folderPathStr.c_str());
 	if (dir)
 	{
-		std::cout << "generating index page.." << std::endl;
 		for (dirEntry = readdir(dir); dirEntry; dirEntry = readdir(dir))
 		{
-			// std::cout << "reading .. path: ";
-			// std::cout << dirEntry->d_name << std::endl;
 			tmp = std::string(dirEntry->d_name);
 			body += appendHtmlTag("p", tmp);
 		}
@@ -299,8 +293,6 @@ Bytes	Location::generateIndexPages(std::string &folderPathStr, std::string route
 		res += genHtmlTagStart(DOCTYPE + " " + HTML);
 		res = genHttpResponse(200, res);
 	}
-	// std::cout << "res page" << std::endl << res << std::endl
-		// << "\tsize:" << std::distance(res.begin(), res.end()) << std::endl;
 	return Bytes(res.begin(), res.end());
 }
 

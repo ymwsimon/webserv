@@ -15,25 +15,6 @@
 Server::Server()
 {
 	epollFd = -1;
-	// configs.push_back(Config());
-	// services.push_back(Service(configs.front()));
-	// socketServices.insert(std::make_pair(services.front().getSocketFd(), &services.front()));
-	// Service	&s = services.front();
-	// std::cout << "socket fd for service " << s.getSocketFd() << std::endl;
-	// epollFd = epoll_create(1);
-	// if (epollFd < 0)
-	// {
-	// 	g_error = 1;
-	// 	std::cout << "error create epoll" << std::endl;
-	// }
-	// std::cout << "epoll fd " << epollFd << std::endl;
-	// evt.data.fd = s.getSocketFd();
-	// evt.events = EPOLLIN | EPOLLOUT;
-	// if (epoll_ctl(epollFd, EPOLL_CTL_ADD, s.getSocketFd(), &evt) < 0)
-	// {
-	// 	g_error = 1;
-	// 	std::cout << "error add socket to epoll" << std::endl;
-	// }
 }
 
 Server::Server(const Server &right)
@@ -43,24 +24,7 @@ Server::Server(const Server &right)
 
 Server::~Server()
 {
-	// for (std::map<int, Client*>::iterator it = cgiPipeFd.begin(); it != cgiPipeFd.end(); ++it)
-	// 	epollOperation(it->first, EPOLL_CTL_DEL, false);
-	// for (std::map<int, Client>::iterator it = clientsConnection.begin(); it != clientsConnection.end(); ++it)
-	// {
-	// 	if (!it->second.getResponses().empty())
-	// 	{
-	// 		// if (it->second.getResponses().front().isCGI())
-	// 		// 	it->second.processResponseCgi(KILL_PROCESS);
-	// 		if (cgiPipeFd.count(it->second.getResponseCgiInPipeFd()) > 0)
-	// 			epollOperation(it->second.getResponseCgiInPipeFd(), EPOLL_CTL_DEL, false);
-	// 		if (cgiPipeFd.count(it->second.getResponseCgiOutPipeFd()) > 0)
-	// 			epollOperation(it->second.getResponseCgiOutPipeFd(), EPOLL_CTL_DEL, false);		
-	// 	}
-	// 	epollOperation(it->first, EPOLL_CTL_DEL, true);
-	// }
 	socketServices.clear();
-	// for (std::vector<Service>::iterator it = services.begin(); it != services.end(); ++it)
-	// 	close(it->getSocketFd());
 	services.clear();
 	configs.clear();
 	cgiPipeFd.clear();
@@ -108,7 +72,6 @@ void	Server::run()
 				}
 				else if (socketServices.count(evt.data.fd) > 0)
 				{
-					std::cout << "incoming fd:" << evt.data.fd << std::endl;
 					if (!epollOperation(evt.data.fd, EPOLL_CTL_ADD, false))
 						std::cout << "error accept new socket to epoll" << std::endl;
 				}
@@ -134,7 +97,6 @@ void	Server::run()
 				{
 					Client	&c = clientsConnection.at(evt.data.fd);
 
-					std::cout<<"fd from client closed:"<<evt.data.fd<<std::endl;
 					if (cgiPipeFd.count(c.getResponseCgiInPipeFd()))
 						epollOperation(c.getResponseCgiInPipeFd(), EPOLL_CTL_DEL, false);
 					if (cgiPipeFd.count(c.getResponseCgiOutPipeFd()))
@@ -145,23 +107,17 @@ void	Server::run()
 				{
 					if (cgiPipeFd.at(evt.data.fd)->getResponseCgiOutPipeFd() == evt.data.fd)
 					{
-						std::cout << "drain pipe"<<std::endl;
 						cgiPipeFd.at(evt.data.fd)->processResponseCgi(EXTRACT_PIPE);
 					}
 					if (cgiPipeFd.at(evt.data.fd)->getResponseCgiOutPipeFd() != evt.data.fd ||
 						cgiPipeFd.at(evt.data.fd)->timeToRemoveCgiPipeFromEpoll())
 					{
-						if (cgiPipeFd.at(evt.data.fd)->getResponseCgiOutPipeFd() == evt.data.fd)
-							std::cout<<"cgiout fd hungup:"<<evt.data.fd<<std::endl;
-						else
-							std::cout<<"cgiin fd hungup:"<<evt.data.fd<<std::endl;
 						epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
 					}
 				}
 			}
 			if (evt.events & EPOLLERR)
 			{
-				std::cout << "error fd:" << evt.data.fd << std::endl;
 				if (cgiPipeFd.count(evt.data.fd) > 0)
 					epollOperation(evt.data.fd, EPOLL_CTL_DEL, false);
 				else if (clientsConnection.count(evt.data.fd) > 0)
@@ -182,16 +138,11 @@ void	Server::run()
 			if ((it->first == it->second->getResponseCgiInPipeFd()
 				&& it->second->timeToCloseCgiInPipe()) || it->second->getClientError())
 			{
-				std::cout << "time to close cgi in pipe fd:"
-					<< it->second->getResponses().front().getCgiInFd()
-					<< std::endl;
 				toDelete.push_back(it->first);
 			}
 			if ((it->first == it->second->getResponseCgiOutPipeFd()
 				&& it->second->timeToRemoveCgiPipeFromEpoll()) || it->second->getClientError())
 			{
-				std::cout<<"time to remove cgi out fd from epoll:"
-					<<it->second->getResponses().front().getCgiOutFd()<<std::endl;
 				toDelete.push_back(it->first);
 			}
 		}
@@ -208,7 +159,6 @@ void	Server::run()
 					epollOperation(c.getResponseCgiInPipeFd(), EPOLL_CTL_DEL, false);
 				if (cgiPipeFd.count(c.getResponseCgiOutPipeFd()))
 					epollOperation(c.getResponseCgiOutPipeFd(), EPOLL_CTL_DEL, false);
-				std::cout<< "error client removed"<<std::endl;
 				epollOperation(it->first, EPOLL_CTL_DEL, true);
 			}
 			else
@@ -216,21 +166,12 @@ void	Server::run()
 				it->second.processRequestResponse();
 				if (it->second.isOkToRemoveRequestResponse())
 				{
-					pid_t	p = it->second.getResponses().front().getPid();
-					if (p)
-					{
-						std::cout<<"to be remove pid:"<<p<<std::endl;
-						std::cout<<"wait res:"<<it->second.getResponses().front().getWaitRes() <<std::endl;
-						std::cout<<"wait status:"<<it->second.getResponses().front().getWaitStatus() <<std::endl;
-					}
 					it->second.removeReqResPair();
 				}
 				if (it->second.timeToAddCgiPipeToEpoll())
 				{
-					std::cout<<"client fd add cgi pipe fd to epoll:" << it->first<<std::endl;
 					epollOperation(it->first, EPOLL_CTL_ADD, false);
 					it->second.setCgiStageToWaiting();
-					std::cout<<"client fd add cgi pipe fd to epoll fin"<<std::endl;
 				}
 			}
 		}
@@ -253,8 +194,6 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 				std::cout << "error accept new connection" << std::endl;
 				return false;
 			}
-			// setToNonBlock(newEvt.data.fd);
-			std::cout<<"new client fd:"<<newEvt.data.fd<<std::endl;
 			newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 			clientsConnection.insert(std::make_pair(newEvt.data.fd, Client(socketServices.at(fd), newEvt.data.fd)));
 			if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)
@@ -266,7 +205,6 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 		else if (clientsConnection.count(fd) > 0)
 		{
 			newEvt.data.fd = clientsConnection.at(fd).getResponses().front().getCgiOutFd();
-			std::cout<<"new cgi out fd to epoll:"<<newEvt.data.fd<<std::endl;
 			newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 			cgiPipeFd.insert(std::make_pair(newEvt.data.fd, &clientsConnection.at(fd)));
 			if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)
@@ -277,7 +215,6 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 			if (clientsConnection.at(fd).getRequests().front().isChunkMode())
 			{
 				newEvt.data.fd = clientsConnection.at(fd).getResponses().front().getCgiInFd();
-				std::cout<<"new cgi int fd to epoll:"<<newEvt.data.fd<<std::endl;
 				newEvt.events = EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 				cgiPipeFd.insert(std::make_pair(newEvt.data.fd, &clientsConnection.at(fd)));
 				if (epoll_ctl(epollFd, op, newEvt.data.fd, &newEvt) < 0)
@@ -297,15 +234,12 @@ bool	Server::epollOperation(int fd, int op, bool needToStop)
 			else
 				newEvt.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 			cgiPipeFd.erase(fd);
-			std::cout<<"pipe fd removed from epoll:"<<fd<<std::endl;
 		}
 		else if (clientsConnection.count(fd) > 0)
 		{
-			(void)needToStop;
 			if (needToStop)
 				clientsConnection.at(fd).processResponseCgi(KILL_PROCESS);
 			clientsConnection.erase(fd);
-			std::cout<<"client fd removed from epoll:"<<fd<<std::endl;
 			newEvt.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
 		}
 		newEvt.data.fd = fd;
@@ -348,38 +282,6 @@ void	Server::addConfig(Config &c)
 	configs.push_back(c);
 }
 
-bool	Server::readParseConfig(const char *fileName)
-{
-	std::stringstream	ss;
-	std::string			str;
-	std::string			configString;
-
-	
-	if (readConfigFile(fileName, configString))
-		std::cout << "read ok" << std::endl;
-	else
-		std::cout << "read file error" << std::endl;
-	{
-		// std::stringstream	ss;
-		// std::string			str;
-		// Config				c;
-		// Location			l;
-		
-		// ss << configString;
-		// // ss << "location / {\n autoIndex on; }\n";
-		// if (!configParser(ss, c, str))
-		// 	std::cout << "no" << std::endl;
-		// else
-		// {
-		// 	std::cout << "ok" << std::endl;
-		// 	c.printConfig();
-		// 	// l.printLocation();
-		// }
-		// std::getline(ss, str, ' ');
-		// std::cout << str;// << std::endl;
-	}
-	return true;
-}
 
 void	Server::printConfig()
 {
@@ -398,7 +300,6 @@ bool	Server::initService()
 		std::cout << "error create epoll" << std::endl;
 		return false;
 	}
-	std::cout << "epoll fd " << epollFd << std::endl;
 	services.reserve(configs.size());
 	for (size_t i = 0; i < configs.size(); ++i)
 	{

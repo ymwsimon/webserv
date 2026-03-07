@@ -220,11 +220,8 @@ void	Request::parseBody()
 {
 	Bytes::iterator	copyUpTo;
 
-	std::cout<<"parse body"<<std::endl;
 	if (isPostMethod() || isPutMethod())
 	{
-		std::cout <<"incoming size:"<<incomingData.size()<<std::endl;
-		std::cout <<"body length:"<<bodyLength<<std::endl;
 		copyUpTo = incomingData.end();
 		if (incomingData.size() + body.size() >= bodyLength)
 			copyUpTo = incomingData.begin() + (bodyLength - body.size());
@@ -237,7 +234,6 @@ void	Request::parseBody()
 			Bytes	data;
 			int		fd;
 
-			std::cout<<"not chunk req parse body"<<std::endl;
 			fd = open(bodyFilePath.c_str(), O_WRONLY | O_APPEND, 0777);
 			if (fd < 0)
 				setStatusCode(INTERNAL_ERROR);
@@ -255,7 +251,6 @@ void	Request::parseBody()
 		|| !(isPostMethod() || isPutMethod()))
 	{
 		requestStatus = COMPLETE;
-		std::cout<<"parse req fin"<<std::endl;
 	}
 }
 
@@ -268,7 +263,6 @@ void	Request::parseChunkLength()
 	expectedChunkSize = hexToLL(std::string(static_cast<Bytes::const_iterator>(incomingData.begin()), it));
 	if (expectedChunkSize == -1)
 	{
-		std::cout<<"chunk size error"<<std::endl;
 		statusCode = Length_Required;
 		requestStatus = COMPLETE;
 	}
@@ -287,52 +281,23 @@ void	Request::parseChunkData()
 			incomingData.begin() + expectedChunkSize + CRLF.size(), CRLF)
 				== incomingData.begin() + expectedChunkSize + CRLF.size())
 		{
-			std::cout<<"need new line"<<std::endl;
 			statusCode = BAD_REQUEST;
 			requestStatus = COMPLETE;
 		}
 		else
 		{
-			// if (bodyFd == -1 && statusOK())
-			// 	bodyFd = open(bodyFilePath.c_str(), O_APPEND | O_CREAT | O_WRONLY, 0700);
-
-			// if (bodyFd < 0)
-			// 	statusCode = INTERNAL_ERROR;
-			// else
-			// {
-				bodyLength += expectedChunkSize;
-				newDataStart = incomingData.begin() + expectedChunkSize + CRLF.size();
-				if (!expectedChunkSize)
-				{
-					std::cout <<"end chunk recieve"<<std::endl;
-					requestStatus = COMPLETE;
-					// newDataStart = incomingData.begin() + CRLF.size();
-					// if (!body.empty() && write(bodyFd, body.data(), body.size()) < 0)
-					// 	statusCode = INTERNAL_ERROR;
-					// if (close(bodyFd) < 0)
-					// 	statusCode = INTERNAL_ERROR;
-				}
-				else
-				{
-					// std::cout<<"chunk with size added:"<<expectedChunkSize<<std::endl;
-					body.insert(body.end(), incomingData.begin(), incomingData.begin() + expectedChunkSize);
-					// std::cout<<"new req body size:"<<body.size()<<std::endl;
-					// std::cout<<"n byte inserted to body:" << expectedChunkSize<<std::endl;
-					// if (body.size() >= BUFFER_SIZE * 5)
-					// {
-					// 	if (write(bodyFd, body.data(), body.size()) < 0)
-					// 	{
-					// 		statusCode = INTERNAL_ERROR;
-					// 		requestStatus = COMPLETE;
-					// 	}
-					// 	body.clear();
-					// }
-					// if (requestStatus == CHUNK_DATA)
-					requestStatus = CHUNK_LENGTH;
-					// newDataStart = incomingData.begin() + expectedChunkSize + CRLF.size();
-					expectedChunkSize = -1;
-				}
-			// }
+			bodyLength += expectedChunkSize;
+			newDataStart = incomingData.begin() + expectedChunkSize + CRLF.size();
+			if (!expectedChunkSize)
+			{
+				requestStatus = COMPLETE;
+			}
+			else
+			{
+				body.insert(body.end(), incomingData.begin(), incomingData.begin() + expectedChunkSize);
+				requestStatus = CHUNK_LENGTH;
+				expectedChunkSize = -1;
+			}
 		}
 	}
 }
@@ -353,11 +318,9 @@ void	Request::parseRequest()
 			if (switchToChunkMode())
 			{
 				chunkMode = true;
-				std::cout << "change to chunk mode start" << std::endl;
 				requestStatus = CHUNK_LENGTH;
 				if (headers.count(CONTENT_LENGTH) > 0)
 					headers.erase(CONTENT_LENGTH);
-				std::cout << "change to chunk mode fin" << std::endl;
 			}
 			else if (bodyFilePath.empty())
 			{
@@ -385,14 +348,11 @@ void	Request::parseRequest()
 		}
 		if (requestStatus == METHOD)
 		{
-			std::cout << "parse request line" << std::endl;
-			// if (it != newDataStart)
 			parseRequestLine();
 			newDataStart = it + CRLF.size();
 		}
 		else if (requestStatus == HEADERS)
 		{
-			std::cout << "parse header" << std::endl;
 			parseRequestHeader();
 			newDataStart = it + CRLF.size();
 		}

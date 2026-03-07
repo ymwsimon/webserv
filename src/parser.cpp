@@ -113,7 +113,6 @@ bool	locationContentParser(std::stringstream &ss, Location &res, std::set<std::s
 {
 	std::getline(ss, str, ' ');
 	trim(str);
-	std::cout <<"first str:" << str <<std::endl;
 	if (str.empty())
 		return true;
 	if (str == "cgi")
@@ -212,7 +211,6 @@ bool	locationParser(std::stringstream &ss, Location &res, std::string &str)
 		return false;
 	while (locationContentParser(ss, res, seenKeyword, str))
 		{}
-	std::cout << "location final str:"<<str << std::endl;
 	if (str.empty() || str[0] != '}')
 		return false;
 	str.erase(0, 1);
@@ -266,7 +264,6 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 {
 	std::getline(ss, str, ' ');
 	trim(str);
-	std::cout <<"config content first str:" << str <<std::endl;
 	if (str.empty())
 		return true;
 	if (str == "error_page")
@@ -326,7 +323,6 @@ bool	configContentParser(std::stringstream &ss, Config &res, std::set<std::strin
 			return false;
 		if (!res.addLocation(l))
 			return false;
-		// l.printLocation();
 	}
 	else
 		return false;
@@ -343,7 +339,6 @@ bool	configParser(std::stringstream &ss, Config &res, std::string &str)
 		return false;
 	while (configContentParser(ss, res, seenKeyword, str))
 		{}
-	std::cout << "config final str:"<< str << std::endl;
 	if (str[0] != '}')
 		return false;
 	if (!configParseOk(seenKeyword))
@@ -360,7 +355,6 @@ bool	configParser(std::stringstream &ss, Config &res, std::string &str)
 
 bool	serverConfigParser(Server &res, std::string configFileStr)
 {
-	size_t				i = 1;
 	std::stringstream	ss;
 	std::string			str;
 
@@ -379,9 +373,6 @@ bool	serverConfigParser(Server &res, std::string configFileStr)
 		}
 		else
 			res.addConfig(c);
-		std::cout << "i:" << i << std::endl;
-		// putStrBack(ss, str);
-		++i;
 	}
 	return true;
 }

@@ -39,10 +39,10 @@ int	main(int argc, char **argv)
 				path = argv[1];
 			if (readConfigFile(path, configString))
 			{
-				std::cout << "read ok" << std::endl;
+				std::cout << "config file read ok" << std::endl;
 				if (serverConfigParser(server, configString))
 				{
-					server.printConfig();
+					// server.printConfig();
 					if (server.initService())
 						server.run();
 					else

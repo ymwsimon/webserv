@@ -64,10 +64,7 @@ int	Client::sendData(struct epoll_event *evt)
 
 		sentSize = send(evt->data.fd, response.getResultPage().data(), size, 0);
 		if (sentSize < 0)
-		{
-			std::cout << "error send data out" << std::endl;
 			clientError = true;
-		}
 		else if (sentSize > 0)
 		{
 			// for (size_t i = 0; i < response.getResultPage().size() && i < 500; ++i)
@@ -299,17 +296,14 @@ bool	Client::getClientError() const
 
 void	Client::removeReqResPair()
 {
-	std::cout<<"removing req response"<<std::endl;
 	requests.pop_front();
 	responses.pop_front();
 }
 
 void	Client::processRequestResponse()
 {
-	// std::cout<<"client with fd processing start:"<<socketFd<<std::endl;
 	processRequest();
 	processResponse();
-	// std::cout<<"client with fd processing fin:"<<socketFd<<std::endl;
 }
 
 void	Client::setCgiStageToWaiting()

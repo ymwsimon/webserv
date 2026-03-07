@@ -47,7 +47,6 @@ class Server
 		const std::map<int, Client>		&getClients() const;
 		const int						&getEpollFd() const;
 		void							addConfig(Config &c);
-		bool							readParseConfig(const char *fileName);
 		void							printConfig();
 		bool							initService();
 };
